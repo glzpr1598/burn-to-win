@@ -145,7 +145,8 @@
                                 data-opponent-wins="<%= player.opponentWins %>"
                                 data-opponent-draws="<%= player.opponentDraws %>"
                                 data-opponent-losses="<%= player.opponentLosses %>"
-                                data-opponent-win-rate="<%= player.opponentWinRate %>">
+                                data-opponent-win-rate="<%= player.opponentWinRate %>"
+                                data-win-rate-diff="<%= player.winRateDiff %>">
                                 <td><strong><%= player.name %></strong></td>
                                 <td class="text-teammate"><%= player.sameTeamMatches %></td>
                                 <td class="text-teammate">
@@ -460,20 +461,24 @@
             const oppLosses = parseInt(dataset.opponentLosses);
             const oppWinRate = parseInt(dataset.opponentWinRate);
 
+            // [추가] 승률 차이 데이터 추출
+            const winRateDiff = parseInt(dataset.winRateDiff);
             const totalMatches = sameMatches + oppMatches;
 
-            // --- 조건부 텍스트 생성을 위한 로직 추가 ---
-            // 1. 무승부 텍스트: 무승부가 0보다 클 때만 'X무 ' 텍스트를 생성
+            // --- 조건부 텍스트 생성을 위한 로직 ---
             const sameDrawsText = sameDraws > 0 ? `${sameDraws}무 ` : '';
             const oppDrawsText = oppDraws > 0 ? `${oppDraws}무 ` : '';
-
-            // 2. 승률 텍스트: 승률이 50%를 넘으면 <strong> 태그로 감싸기
             const sameWinRateText = sameWinRate > 50 ? `<strong>(${sameWinRate}%)</strong>` : `(${sameWinRate}%)`;
             const oppWinRateText = oppWinRate > 50 ? `<strong>(${oppWinRate}%)</strong>` : `(${oppWinRate}%)`;
+
+            // [추가] 승률 차이 표시를 위한 클래스 및 기호 설정
+            const diffClass = winRateDiff > 0 ? 'text-teammate' : (winRateDiff < 0 ? 'text-opponent' : '');
+            const diffSign = winRateDiff > 0 ? '+' : '';
+            const winRateDiffHTML = `<span class="${diffClass}">${diffSign}${winRateDiff}%</span>`;
             // --- 로직 추가 끝 ---
 
 
-            // 모달 제목과 내용 구성
+            // 모달 제목과 내용 구성 (승률 차이 행 추가)
             const modalTitle = `<strong>${selectedPlayer}</strong>은(는) <strong>${clickedPlayerName}</strong>과(와)`;
             const modalBodyHTML = `
                 <div class="stat-item">
@@ -487,6 +492,10 @@
                 <div class="stat-item">
                     <span><strong>⚔️&nbsp; 상대편일 때</strong></span>
                     <span class="stat-value text-opponent">${oppMatches}전 ${oppWins}승 ${oppDrawsText}${oppLosses}패 ${oppWinRateText}</span>
+                </div>
+                <div class="stat-item">
+                    <span><strong>⚖️&nbsp; 같은편-상대편 승률 차이</span>
+                    <span class="stat-value">${winRateDiffHTML}</strong></span>
                 </div>
             `;
 

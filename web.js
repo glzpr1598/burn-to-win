@@ -404,7 +404,7 @@ app.get('/chemistry', async (req, res) => {
                         const isCompareOnTeam1 = team1.includes(compareMember.name);
                         const isCompareOnTeam2 = team2.includes(compareMember.name);
 
-                        // 같은 편일 때
+                        // 같은편일 때
                         if ((isBaseOnTeam1 && isCompareOnTeam1) || (isBaseOnTeam2 && isCompareOnTeam2)) {
                             stats.sameTeamMatches++;
                             const result = isBaseOnTeam1 ? match.team1_result : match.team2_result;
@@ -412,7 +412,7 @@ app.get('/chemistry', async (req, res) => {
                             else if (result === '패') stats.sameTeamLosses++;
                             else if (result === '무') stats.sameTeamDraws++;
                         } 
-                        // 상대 편일 때 (기준 플레이어 입장에서의 승/무/패)
+                        // 상대편일 때 (기준 플레이어 입장에서의 승/무/패)
                         else if ((isBaseOnTeam1 && isCompareOnTeam2) || (isBaseOnTeam2 && isCompareOnTeam1)) {
                             stats.opponentMatches++;
                             const result = isBaseOnTeam1 ? match.team1_result : match.team2_result;
@@ -426,11 +426,19 @@ app.get('/chemistry', async (req, res) => {
         }
 
         const safeRate = (numerator, denominator) => denominator > 0 ? Math.round((numerator / denominator) * 100) : 0;
-        const finalChemistryData = chemistryData.map(stats => ({
-            ...stats,
-            sameTeamWinRate: safeRate(stats.sameTeamWins, stats.sameTeamMatches),
-            opponentWinRate: safeRate(stats.opponentWins, stats.opponentMatches)
-        })).sort((a, b) => b.sameTeamMatches - a.sameTeamMatches);
+        const finalChemistryData = chemistryData.map(stats => {
+            const sameTeamWinRate = safeRate(stats.sameTeamWins, stats.sameTeamMatches);
+            const opponentWinRate = safeRate(stats.opponentWins, stats.opponentMatches);
+            // [추가] 승률 차이 계산
+            const winRateDiff = sameTeamWinRate - opponentWinRate;
+
+            return {
+                ...stats,
+                sameTeamWinRate,
+                opponentWinRate,
+                winRateDiff // 템플릿으로 전달할 객체에 추가
+            };
+        }).sort((a, b) => b.sameTeamMatches - a.sameTeamMatches);
         
         res.render('chemistry', {
             members,
