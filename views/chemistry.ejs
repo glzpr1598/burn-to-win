@@ -30,6 +30,23 @@
         #searchToggle .bi-search { font-size: 1.2rem; color: black; margin-right: 15px; }
         .text-teammate { color: darkblue !important; }
         .text-opponent { color: darkred !important; }
+        /* 행 클릭을 유도하기 위해 커서 모양 변경 */
+        #chemistryTable tbody tr { cursor: pointer; }
+        /* 모달 스타일 추가 */
+        .modal-body .stat-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 8px 0;
+            border-bottom: 1px solid #eee;
+        }
+        .modal-body .stat-item:last-child {
+            border-bottom: none;
+        }
+        .modal-body .stat-value {
+            text-align: right;
+            font-size: 0.9rem;
+        }
     </style>
 </head>
 
@@ -108,16 +125,27 @@
                 <thead class="table-light">
                     <tr>
                         <th class="sortable-th" onclick="sortTable(0)">그(녀)와</th>
-                        <th class="sortable-th" onclick="sortTable(1)">같은 편</th>
+                        <th class="sortable-th" onclick="sortTable(1)">같은편</th>
                         <th class="sortable-th" onclick="sortTable(2)">승률</th>
-                        <th class="sortable-th" onclick="sortTable(3)">상대 편</th>
+                        <th class="sortable-th" onclick="sortTable(3)">상대편</th>
                         <th class="sortable-th" onclick="sortTable(4)">승률</th>
                     </tr>
                 </thead>
                 <tbody>
                     <% if (chemistryData && chemistryData.length > 0) { %>
                         <% chemistryData.forEach(player => { %>
-                            <tr>
+                            <tr onclick="showChemistryDetails(this)"
+                                data-name="<%= player.name %>"
+                                data-same-team-matches="<%= player.sameTeamMatches %>"
+                                data-same-team-wins="<%= player.sameTeamWins %>"
+                                data-same-team-draws="<%= player.sameTeamDraws %>"
+                                data-same-team-losses="<%= player.sameTeamLosses %>"
+                                data-same-team-win-rate="<%= player.sameTeamWinRate %>"
+                                data-opponent-matches="<%= player.opponentMatches %>"
+                                data-opponent-wins="<%= player.opponentWins %>"
+                                data-opponent-draws="<%= player.opponentDraws %>"
+                                data-opponent-losses="<%= player.opponentLosses %>"
+                                data-opponent-win-rate="<%= player.opponentWinRate %>">
                                 <td><strong><%= player.name %></strong></td>
                                 <td class="text-teammate"><%= player.sameTeamMatches %></td>
                                 <td class="text-teammate">
@@ -152,6 +180,19 @@
                 <a class="nav-link active" href="/chemistry"><img src="/image/free-icon-people-2118701.png" alt="상대와 케미" /> <span>상대와 케미</span></a>
             </div>
         </nav>
+    </div>
+
+    <div class="modal fade" id="chemistryDetailModal" tabindex="-1" aria-labelledby="chemistryDetailModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="chemistryDetailModalLabel">상세 케미</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div id="modalBodyContent" class="modal-body">
+                    </div>
+            </div>
+        </div>
     </div>
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
@@ -398,6 +439,66 @@
             // 정렬된 순서대로 행을 다시 추가
             tbody.innerHTML = '';
             rows.forEach(row => tbody.appendChild(row));
+        }
+
+        let chemistryModal = null; // 모달 인스턴스를 저장할 변수
+        function showChemistryDetails(rowElement) {
+            const dataset = rowElement.dataset;
+            const selectedPlayer = '<%= selectedPlayer %>';
+            const clickedPlayerName = dataset.name;
+
+            // 데이터셋에서 통계 정보 추출
+            const sameMatches = parseInt(dataset.sameTeamMatches);
+            const sameWins = parseInt(dataset.sameTeamWins);
+            const sameDraws = parseInt(dataset.sameTeamDraws);
+            const sameLosses = parseInt(dataset.sameTeamLosses);
+            const sameWinRate = parseInt(dataset.sameTeamWinRate);
+            
+            const oppMatches = parseInt(dataset.opponentMatches);
+            const oppWins = parseInt(dataset.opponentWins);
+            const oppDraws = parseInt(dataset.opponentDraws);
+            const oppLosses = parseInt(dataset.opponentLosses);
+            const oppWinRate = parseInt(dataset.opponentWinRate);
+
+            const totalMatches = sameMatches + oppMatches;
+
+            // --- 조건부 텍스트 생성을 위한 로직 추가 ---
+            // 1. 무승부 텍스트: 무승부가 0보다 클 때만 'X무 ' 텍스트를 생성
+            const sameDrawsText = sameDraws > 0 ? `${sameDraws}무 ` : '';
+            const oppDrawsText = oppDraws > 0 ? `${oppDraws}무 ` : '';
+
+            // 2. 승률 텍스트: 승률이 50%를 넘으면 <strong> 태그로 감싸기
+            const sameWinRateText = sameWinRate > 50 ? `<strong>(${sameWinRate}%)</strong>` : `(${sameWinRate}%)`;
+            const oppWinRateText = oppWinRate > 50 ? `<strong>(${oppWinRate}%)</strong>` : `(${oppWinRate}%)`;
+            // --- 로직 추가 끝 ---
+
+
+            // 모달 제목과 내용 구성
+            const modalTitle = `<strong>${selectedPlayer}</strong>은(는) <strong>${clickedPlayerName}</strong>과(와)`;
+            const modalBodyHTML = `
+                <div class="stat-item">
+                    <span><strong>📊&nbsp; 전체</strong></span>
+                    <span class="stat-value"><strong>${totalMatches}전</strong></span>
+                </div>
+                <div class="stat-item">
+                    <span><strong>🤝&nbsp; 같은편일 때</strong></span>
+                    <span class="stat-value text-teammate">${sameMatches}전 ${sameWins}승 ${sameDrawsText}${sameLosses}패 ${sameWinRateText}</span>
+                </div>
+                <div class="stat-item">
+                    <span><strong>⚔️&nbsp; 상대편일 때</strong></span>
+                    <span class="stat-value text-opponent">${oppMatches}전 ${oppWins}승 ${oppDrawsText}${oppLosses}패 ${oppWinRateText}</span>
+                </div>
+            `;
+
+            // 모달 요소에 내용 삽입
+            document.getElementById('chemistryDetailModalLabel').innerHTML = modalTitle;
+            document.getElementById('modalBodyContent').innerHTML = modalBodyHTML;
+
+            // 모달 표시
+            if (!chemistryModal) {
+                chemistryModal = new bootstrap.Modal(document.getElementById('chemistryDetailModal'));
+            }
+            chemistryModal.show();
         }
     </script>
 </body>

@@ -301,10 +301,11 @@ app.get('/my-score', async (req, res) => {
         }
         
         const scores = members.map(member => {
+            // [수정] 무승부 및 포지션별 패배, 무승부 기록을 위한 필드 추가
             const stats = {
-                name: member.name, matches: 0, wins: 0, losses: 0,
-                deuceMatches: 0, deuceWins: 0,
-                adMatches: 0, adWins: 0,
+                name: member.name, matches: 0, wins: 0, losses: 0, draws: 0,
+                deuceMatches: 0, deuceWins: 0, deuceLosses: 0, deuceDraws: 0,
+                adMatches: 0, adWins: 0, adLosses: 0, adDraws: 0,
             };
 
             filteredMatches.forEach(match => {
@@ -317,15 +318,22 @@ app.get('/my-score', async (req, res) => {
                 if (isOnTeam1 || isOnTeam2) {
                     stats.matches++;
                     const result = isOnTeam1 ? match.team1_result : match.team2_result;
+                    
+                    // [수정] 승/패/무 결과에 따라 해당 기록 증가
                     if (result === '승') stats.wins++;
-                    if (result === '패') stats.losses++;
+                    else if (result === '패') stats.losses++;
+                    else if (result === '무') stats.draws++;
                     
                     if (position === 'deuce') {
                         stats.deuceMatches++;
                         if (result === '승') stats.deuceWins++;
+                        else if (result === '패') stats.deuceLosses++;
+                        else if (result === '무') stats.deuceDraws++;
                     } else if (position === 'ad') {
                         stats.adMatches++;
                         if (result === '승') stats.adWins++;
+                        else if (result === '패') stats.adLosses++;
+                        else if (result === '무') stats.adDraws++;
                     }
                 }
             });
@@ -351,7 +359,6 @@ app.get('/my-score', async (req, res) => {
         res.status(500).send('서버 오류가 발생했습니다.');
     }
 });
-
 
 // 상대와 케미 페이지
 app.get('/chemistry', async (req, res) => {
@@ -382,7 +389,13 @@ app.get('/chemistry', async (req, res) => {
             chemistryData = members
                 .filter(member => member.name !== player)
                 .map(compareMember => {
-                    const stats = { name: compareMember.name, sameTeamMatches: 0, sameTeamWins: 0, opponentMatches: 0, opponentWins: 0 };
+                    // [수정] 승/무/패를 모두 기록하도록 필드 확장
+                    const stats = { 
+                        name: compareMember.name, 
+                        sameTeamMatches: 0, sameTeamWins: 0, sameTeamDraws: 0, sameTeamLosses: 0,
+                        opponentMatches: 0, opponentWins: 0, opponentDraws: 0, opponentLosses: 0 
+                    };
+
                     filteredMatches.forEach(match => {
                         const team1 = [match.team1_deuce, match.team1_ad].filter(p => p);
                         const team2 = [match.team2_deuce, match.team2_ad].filter(p => p);
@@ -391,12 +404,21 @@ app.get('/chemistry', async (req, res) => {
                         const isCompareOnTeam1 = team1.includes(compareMember.name);
                         const isCompareOnTeam2 = team2.includes(compareMember.name);
 
+                        // 같은 편일 때
                         if ((isBaseOnTeam1 && isCompareOnTeam1) || (isBaseOnTeam2 && isCompareOnTeam2)) {
                             stats.sameTeamMatches++;
-                            if ((isBaseOnTeam1 && match.team1_result === '승') || (isBaseOnTeam2 && match.team2_result === '승')) stats.sameTeamWins++;
-                        } else if ((isBaseOnTeam1 && isCompareOnTeam2) || (isBaseOnTeam2 && isCompareOnTeam1)) {
+                            const result = isBaseOnTeam1 ? match.team1_result : match.team2_result;
+                            if (result === '승') stats.sameTeamWins++;
+                            else if (result === '패') stats.sameTeamLosses++;
+                            else if (result === '무') stats.sameTeamDraws++;
+                        } 
+                        // 상대 편일 때 (기준 플레이어 입장에서의 승/무/패)
+                        else if ((isBaseOnTeam1 && isCompareOnTeam2) || (isBaseOnTeam2 && isCompareOnTeam1)) {
                             stats.opponentMatches++;
-                            if ((isBaseOnTeam1 && match.team1_result === '승') || (isBaseOnTeam2 && match.team2_result === '승')) stats.opponentWins++;
+                            const result = isBaseOnTeam1 ? match.team1_result : match.team2_result;
+                             if (result === '승') stats.opponentWins++;
+                            else if (result === '패') stats.opponentLosses++;
+                            else if (result === '무') stats.opponentDraws++;
                         }
                     });
                     return stats;
