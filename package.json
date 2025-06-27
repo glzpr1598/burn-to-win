@@ -1,0 +1,22 @@
+{
+  "name": "tennis",
+  "version": "1.0.0",
+  "description": "",
+  "main": "web.js",
+  "scripts": {
+    "start": "node web.js",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "engines": {
+    "node": "14.x"
+  },
+  "dependencies": {
+    "body-parser": "1.19.2",
+    "ejs": "3.1.8",
+    "express": "4.17.3",
+    "mysql2": "3.14.1"
+  }
+}

@@ -1,0 +1,339 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <link rel="apple-touch-icon" href="/image/btw.png"/> 
+  <link rel="icon" type="image/png" href="/image/btw.png"/> 
+  <title>불꽃테니스</title>
+  <link
+    href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css"
+    rel="stylesheet"
+  />
+  <style>
+    /* --- 핵심 레이아웃 스타일 (my-score.ejs와 동일) --- */
+    html, body { 
+        height: 100%; 
+        overflow: hidden; 
+        margin: 0; 
+    }
+    .app-container { 
+        display: flex; 
+        flex-direction: column; 
+        height: 100%; 
+    }
+
+    /* --- 헤더 --- */
+    .sticky-header {
+        position: static; /* sticky에서 static으로 변경 */
+        z-index: 102;
+        border-bottom: 1px solid #eee;
+        height: 60px;
+        flex-shrink: 0; /* 높이가 줄어들지 않도록 설정 */
+        padding: 0px 5px;
+    }
+
+    /* --- 테이블 스크롤 영역 --- */
+    .table-responsive {
+        flex-grow: 1; /* 남는 공간을 모두 차지하도록 설정 */
+        overflow-y: auto; /* 내용이 넘치면 스크롤 생성 */
+    }
+
+    /* --- 테이블 헤더 고정 --- */
+    #matchTable thead th {
+        position: sticky;
+        top: 0; /* 스크롤 영역의 최상단에 고정 */
+        background-color: #f8f9fa;
+        z-index: 90;
+        box-shadow: 0 2px 2px -1px rgba(0,0,0,0.1);
+    }
+    
+    /* --- 하단 네비게이션 --- */
+    .bottom-nav {
+        position: static; /* fixed에서 static으로 변경 */
+        border-top: 1px solid #ddd;
+        background-color: white;
+        z-index: 103;
+        flex-shrink: 0; /* 높이가 줄어들지 않도록 설정 */
+    }
+    .bottom-nav .nav-link {
+        font-size: 0.9rem;
+        padding: 0.5rem 0;
+        color: #888888;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        text-align: center;
+    }
+    .bottom-nav .nav-link img {
+        width: 24px;
+        height: 24px;
+        margin-bottom: 4px;
+        filter: grayscale(100%);
+        opacity: 0.3;
+    }
+    .bottom-nav .nav-link.active {
+        color: black !important;
+    }
+    .bottom-nav .nav-link.active img {
+        filter: none;
+        opacity: 1;
+    }
+
+    /* --- 플로팅 버튼 --- */
+    .floating-button {
+        position: fixed;
+        bottom: 100px; /* 하단 네비게이션 높이를 고려하여 조정 */
+        right: 20px;
+        font-size: 2rem;
+        background-color: #007bff;
+        color: white;
+        border-radius: 50%;
+        width: 52px;
+        height: 52px;
+        line-height: 52px;
+        display: flex;
+        justify-content: center;
+        box-shadow: 0 2px 6px rgba(0,0,0,0.2);
+        cursor: pointer;
+        text-decoration: none;
+        text-align: center;
+        z-index: 100;
+    }
+
+    /* --- 나머지 기존 스타일 (검색, 테이블 셀 등) --- */
+    #searchContainer { display: none; width: 150px; }
+    #searchInput { min-width: 100px; }
+    #searchToggle .bi-search { font-size: 1.2rem; color: black; margin-right: 15px; }
+    #searchToggle { white-space: nowrap; }
+    #matchTable { table-layout: fixed; width: 100%; font-size: 0.8rem; }
+    #matchTable tbody tr { height: 35px; }
+    #matchTable tbody tr:hover { cursor: pointer; background-color: #f1f1f1; }
+    #matchTable td { overflow: hidden; text-overflow: ellipsis; }
+    td.hidden-etc { display: none; }
+  </style>
+</head>
+
+<body>
+  <div class="app-container">
+    <!-- 헤더 -->
+    <div class="d-flex align-items-center sticky-header">
+      <div class="d-flex align-items-center flex-grow-1">
+        <img src="/image/btw.png" alt="로고" style="height: 40px; margin-right: 15px;">
+        <h5 style="margin-bottom: 0;"><b>경기 기록</b></h5>
+      </div>
+      <div class="d-flex align-items-center">
+        <div id="searchContainer" class="input-group input-group-sm me-2">
+          <input type="text" id="searchInput" class="form-control" placeholder="검색" />
+          <button class="btn btn-outline-secondary" type="button" id="clearSearchBtn">
+            <i class="bi bi-x-lg"></i>
+          </button>
+        </div>
+        <a href="#" id="searchToggle"><i class="bi bi-search"></i></a>
+      </div>
+    </div>
+
+    <!-- 테이블 -->
+    <div class="table-responsive">
+      <table id="matchTable" class="table table-sm table-striped text-center align-middle text-nowrap">
+        <colgroup>
+          <col style="width: 80px;"> <col style="width: 60px;">  <col style="width: 90px;"> <col style="width: 90px;"> <col style="width: 60px;"> <col style="width: 80px;"> <col style="width: 50px;"> <col style="width: 0px;">
+        </colgroup>
+        <thead class="table-light">
+          <tr>
+            <th onclick="sortTable(0, this)">날짜 <span>↓</span></th>
+            <th onclick="sortTable(1, this)">코트 <span></span></th>
+            <th>팀1 <span></span></th>
+            <th>팀2 <span></span></th>
+            <th>스코어 <span></span></th>
+            <th>분류 <span></span></th>
+            <th>영상 <span></span></th>
+            <th class="hidden-etc"></th>
+          </tr>
+        </thead>
+        <tbody>
+          <% matches.forEach(match => { %>
+            <tr onclick="window.location.href='/edit/<%= match.id %>'">
+              <td><%= match.date ? match.date.substring(2) : '' %></td>
+              <td><%= match.court %></td>
+              <td>
+                <% if (match.team1_score > match.team2_score) { %>
+                  <strong><%= match.team1_deuce %><% if (match.team1_ad) { %>/<%= match.team1_ad %><% } %></strong>
+                <% } else { %>
+                  <%= match.team1_deuce %><% if (match.team1_ad) { %>/<%= match.team1_ad %><% } %>
+                <% } %>
+              </td>
+              <td>
+                <% if (match.team2_score > match.team1_score) { %>
+                  <strong><%= match.team2_deuce %><% if (match.team2_ad) { %>/<%= match.team2_ad %><% } %></strong>
+                <% } else { %>
+                  <%= match.team2_deuce %><% if (match.team2_ad) { %>/<%= match.team2_ad %><% } %>
+                <% } %>
+              </td>
+              <td>
+                <% if (match.team1_score > match.team2_score) { %>
+                  <strong><%= match.team1_score %></strong>:<%= match.team2_score %>
+                <% } else if (match.team2_score > match.team1_score) { %>
+                  <%= match.team1_score %>:<strong><%= match.team2_score %></strong>
+                <% } else { %>
+                  <%= match.team1_score %>:<%= match.team2_score %>
+                <% } %>
+              </td>
+              <td><%= match.type %></td>
+              <td>
+                <% if (match.video) { %>
+                  <a href="<%= match.video %>" target="_blank" rel="noopener" onclick="event.stopPropagation();">
+                    <i class="bi bi-youtube text-danger fs-5"></i>
+                  </a>
+                <% } %>
+              </td>
+              <td class="hidden-etc"><%= match.etc || '' %></td>
+            </tr>
+          <% }) %>
+        </tbody>
+      </table>
+    </div>
+
+    <!-- 플로팅 버튼 -->
+    <a href="/new" class="floating-button">+</a>
+
+    <!-- 하단 네비게이션 -->
+    <nav class="navbar bottom-nav">
+      <div class="container d-flex justify-content-around">
+        <a class="nav-link active" href="/">
+          <img src="/image/free-icon-tennis-8122941.png" alt="테니스 라켓 아이콘" /> <span>경기 기록</span>
+        </a>
+        <a class="nav-link" href="/my-score">
+          <img src="/image/free-icon-individual-11985530.png" alt="개인 아이콘" /> <span>개인 스코어</span>
+        </a>
+        <a class="nav-link" href="/chemistry">
+          <img src="/image/free-icon-people-2118701.png" alt="사람들 아이콘" /> <span>상대와 케미</span>
+        </a>
+      </div>
+    </nav>
+  </div>
+
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css" />
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+
+  <script>
+    // 스크립트 부분은 기존 코드와 동일합니다.
+    let sortDirections = {};
+    let currentSortedCol = 0; // 현재 정렬된 열 인덱스 (초기값: 0번 날짜 열)
+    sortDirections[0] = false; // 초기 날짜 정렬은 내림차순(false)
+
+    function sortTable(colIndex, thElement) {
+      const table = document.getElementById("matchTable");
+      const tbody = table.querySelector("tbody");
+      const rows = Array.from(tbody.querySelectorAll("tr"));
+
+      let ascending;
+
+      if (currentSortedCol !== colIndex) {
+        sortDirections = {}; 
+        ascending = true; 
+        currentSortedCol = colIndex;
+      } else {
+        ascending = !sortDirections[colIndex];
+      }
+      
+      if (colIndex === 0 && sortDirections[colIndex] === undefined) {
+          ascending = false;
+      }
+
+      sortDirections[colIndex] = ascending;
+
+      rows.sort((a, b) => {
+        const valA = a.children[colIndex].innerText.trim();
+        const valB = b.children[colIndex].innerText.trim();
+
+        if (colIndex === 4) {
+          const scoreA = valA.split(':').map(Number);
+          const scoreB = valB.split(':').map(Number);
+          const diffA = Math.abs(scoreA[0] - scoreA[1]);
+          const diffB = Math.abs(scoreB[0] - scoreB[1]);
+
+          if (ascending) {
+            return diffA - diffB || Math.max(...scoreA) - Math.max(...scoreB);
+          } else {
+            return diffB - diffA || Math.max(...scoreB) - Math.max(...scoreA);
+          }
+        }
+        
+        if (colIndex === 0 || (!isNaN(parseFloat(valA)) && !isNaN(parseFloat(valB)))) {
+          if(ascending) {
+              return valA.localeCompare(valB, 'ko', { numeric: true });
+          } else {
+              return valB.localeCompare(valA, 'ko', { numeric: true });
+          }
+        }
+
+        return ascending
+          ? valA.localeCompare(valB, 'ko')
+          : valB.localeCompare(valA, 'ko');
+      });
+
+      rows.forEach(row => tbody.appendChild(row));
+
+      const ths = table.querySelectorAll("th");
+      ths.forEach(th => {
+        const span = th.querySelector("span");
+        if (span) span.innerText = "";
+      });
+
+      const arrow = ascending ? "↑" : "↓";
+      const span = thElement.querySelector("span");
+      if (span) span.innerText = " " + arrow;
+    }
+
+    const searchToggle = document.getElementById('searchToggle');
+    const searchContainer = document.getElementById('searchContainer');
+    const searchInput = document.getElementById('searchInput');
+    const clearSearchBtn = document.getElementById('clearSearchBtn');
+    const matchTableBody = document.querySelector('#matchTable tbody');
+    
+    const originalRows = Array.from(matchTableBody.querySelectorAll('tr')).map(row => {
+      const rowText = Array.from(row.querySelectorAll('td'))
+        .map(td => td.innerText.trim())
+        .join(' ')
+        .toLowerCase();
+      
+      return {
+        element: row,
+        text: rowText
+      };
+    });
+
+    searchToggle.addEventListener('click', function(event) {
+      event.preventDefault();
+
+      searchToggle.style.display = 'none';
+      searchContainer.style.display = 'flex';
+      searchInput.focus();
+    });
+
+    clearSearchBtn.addEventListener('click', function() {
+      searchInput.value = '';
+      filterTable('');
+      searchContainer.style.display = 'none';
+      searchToggle.style.display = 'inline-block';
+    });
+
+    searchInput.addEventListener('keyup', function() {
+      const searchText = searchInput.value.toLowerCase().trim();
+      filterTable(searchText);
+    });
+
+    function filterTable(searchText) {
+      matchTableBody.innerHTML = '';
+
+      originalRows.forEach(rowData => {
+        if (rowData.text.includes(searchText)) {
+          matchTableBody.appendChild(rowData.element);
+        }
+      });
+    }
+  </script>
+</body>
+</html>

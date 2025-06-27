@@ -1,0 +1,401 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <link rel="apple-touch-icon" href="/image/btw.png"/> 
+    <link rel="icon" type="image/png" href="/image/btw.png"/> 
+    <title>불꽃테니스</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet" />
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css" />
+    <style>
+        html, body { height: 100%; overflow: hidden; margin: 0; }
+        .app-container { display: flex; flex-direction: column; height: 100%; }
+        .sticky-header { position: static; z-index: 102; border-bottom: 1px solid #eee; height: 60px; flex-shrink: 0; }
+        .filter-section { position: static; z-index: 101; padding: 15px; background-color: #f8f9fa; border-bottom: 1px solid #eee; flex-shrink: 0; }
+        .filter-section .dropdown-toggle { display: flex; justify-content: space-between; align-items: center; text-align: left; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+        .dropdown-menu { padding: .75rem; width: 100%; font-size: 0.8rem;}
+        .dropdown-menu .checkbox-group { max-height: 200px; overflow-y: auto; margin-bottom: .5rem;}
+        .filter-control-links { padding-bottom: .5rem; margin-bottom: .5rem; border-bottom: 1px solid #eee; }
+        .filter-control-links a { font-size: .8rem; color: #6c757d; text-decoration: none; margin-left: 10px; }
+        .table-responsive { flex-grow: 1; overflow-y: auto; }
+        #scoreTable { font-size: 0.8rem; }
+        #scoreTable th { position: sticky; top: 0; background-color: #f8f9fa; z-index: 90; }
+        #scoreTable .sortable-th { cursor: pointer; }
+        .bottom-nav { position: static; border-top: 1px solid #ddd; background-color: white; z-index: 103; flex-shrink: 0; }
+        .bottom-nav .nav-link { font-size: 0.9rem; padding: 0.5rem 0; color: #888888; display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; }
+        .bottom-nav .nav-link img { width: 24px; height: 24px; margin-bottom: 4px; filter: grayscale(100%); opacity: 0.3; }
+        .bottom-nav .nav-link.active { color: black !important; }
+        .bottom-nav .nav-link.active img { filter: none; opacity: 1; }
+        #searchToggle .bi-search { font-size: 1.2rem; color: black; margin-right: 15px; }
+        .text-deuce { color: darkblue; }
+        .text-ad { color: darkgreen; }
+        .diff-plus { color: darkblue; }
+        .diff-minus { color: darkgreen; }
+    </style>
+</head>
+
+<body>
+    <div class="app-container">
+        <!-- 헤더 -->
+        <div class="d-flex align-items-center sticky-header" style="padding: 0px 5px;">
+             <div class="d-flex align-items-center flex-grow-1">
+                <img src="/image/btw.png" alt="로고" style="height: 40px; margin-right: 15px;">
+                <h5 style="margin-bottom: 0;"><b>개인 스코어</b></h5>
+            </div>
+        </div>
+
+        <!-- 필터 섹션 -->
+        <div class="filter-section">
+             <div class="row g-2">
+                <div class="col-4">
+                    <div class="dropdown">
+                        <button class="btn btn-outline-secondary btn-sm dropdown-toggle w-100" style="font-size: 0.8rem;" type="button" id="periodDropdownButton" data-bs-toggle="dropdown" aria-expanded="false">
+                            기간: 전체
+                        </button>
+                        <ul class="dropdown-menu" aria-labelledby="periodDropdownButton">
+                            <% const periods = [
+                                { value: 'all', text: '전체' }, { value: '1m', text: '최근 1개월' },
+                                { value: '3m', text: '최근 3개월' }, { value: '6m', text: '최근 6개월' },
+                                { value: '1y', text: '최근 1년' }, { value: '2025', text: '2025년' },
+                                { value: '2024', text: '2024년' }
+                            ]; %>
+                            <% periods.forEach(period => { %>
+                                <li><a class="dropdown-item" href="#" onclick="applyFilters({ period: '<%= period.value %>' })"><%= period.text %></a></li>
+                            <% }) %>
+                        </ul>
+                    </div>
+                </div>
+                <div class="col-4">
+                    <div class="dropdown">
+                        <button class="btn btn-outline-secondary btn-sm dropdown-toggle w-100" style="font-size: 0.8rem;" type="button" id="typeDropdownButton" data-bs-toggle="dropdown" data-bs-auto-close="outside" aria-expanded="false">
+                            분류
+                        </button>
+                        <div class="dropdown-menu" aria-labelledby="typeDropdownButton">
+                            <div class="filter-control-links"><a href="#" onclick="selectAll('typeFilter'); return false;">전체선택</a><a href="#" onclick="deselectAll('typeFilter'); return false;">전체해제</a></div>
+                            <div id="typeFilter" class="checkbox-group">
+                                <% const types = ['남단', '여단', '남복', '여복', '혼복', '혼복(남3)', '혼복(여3)', '혼단(남vs여)', '혼복(남vs여)']; %>
+                                <% types.forEach(type => { %>
+                                    <div class="form-check"><input class="form-check-input" type="checkbox" value="<%= type %>" id="type-<%= type %>"><label class="form-check-label" for="type-<%= type %>"><%= type %></label></div>
+                                <% }) %>
+                            </div>
+                            <button class="btn btn-primary btn-sm w-100" onclick="applyFilters()">확인</button>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-4">
+                    <div class="dropdown">
+                        <button class="btn btn-outline-secondary btn-sm dropdown-toggle w-100" style="font-size: 0.8rem;" type="button" id="courtDropdownButton" data-bs-toggle="dropdown" data-bs-auto-close="outside" aria-expanded="false">
+                            코트
+                        </button>
+                        <div class="dropdown-menu" aria-labelledby="courtDropdownButton">
+                            <div class="filter-control-links"><a href="#" onclick="selectAll('courtFilter'); return false;">전체선택</a><a href="#" onclick="deselectAll('courtFilter'); return false;">전체해제</a></div>
+                            <div id="courtFilter" class="checkbox-group">
+                                <% courts.forEach(court => { %>
+                                    <div class="form-check"><input class="form-check-input" type="checkbox" value="<%= court.name %>" id="court-<%= court.name %>"><label class="form-check-label" for="court-<%= court.name %>"><%= court.name %></label></div>
+                                <% }) %>
+                            </div>
+                            <button class="btn btn-primary btn-sm w-100" onclick="applyFilters()">확인</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 테이블 -->
+        <div class="table-responsive">
+            <table id="scoreTable" class="table table-sm table-striped text-center align-middle">
+                <thead class="table-light">
+                    <tr>
+                        <th class="sortable-th" onclick="sortTable(0)">이름</th>
+                        <th class="sortable-th" onclick="sortTable(1)">경기수</th>
+                        <th class="sortable-th" onclick="sortTable(2)">승률</th>
+                        <th class="sortable-th" onclick="sortTable(3)">포<br>비율</th>
+                        <th class="sortable-th" onclick="sortTable(4)">포<br>승률</th>
+                        <th class="sortable-th" onclick="sortTable(5)">백<br>비율</th>
+                        <th class="sortable-th" onclick="sortTable(6)">백<br>승률</th>
+                        <th class="sortable-th" onclick="sortTable(7)">포-백<br>승률차</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <% if (scores && scores.length > 0) { %>
+                        <% scores.forEach(player => { %>
+                            <tr>
+                                <td><strong><%= player.name %></strong></td>
+                                <td><%= player.matches %></td>
+                                <td>
+                                    <span>
+                                    <% if (player.winRate > 50) { %><strong><%= player.winRate %>%</strong><% } else { %><%= player.winRate %>%<% } %>
+                                    </span>
+                                </td>
+                                <td>
+                                    <span class="text-deuce">
+                                    <% if (player.deuceRate > 50) { %><strong><%= player.deuceRate %>%</strong><% } else { %><%= player.deuceRate %>%<% } %>
+                                    </span>
+                                </td>
+                                <td>
+                                    <span class="text-deuce">
+                                    <% if (player.deuceWinRate > 50) { %><strong><%= player.deuceWinRate %>%</strong><% } else { %><%= player.deuceWinRate %>%<% } %>
+                                    </span>
+                                </td>
+                                <td>
+                                    <span class="text-ad">
+                                    <% if (player.adRate > 50) { %><strong><%= player.adRate %>%</strong><% } else { %><%= player.adRate %>%<% } %>
+                                    </span>
+                                </td>
+                                <td>
+                                    <span class="text-ad">
+                                    <% if (player.adWinRate > 50) { %><strong><%= player.adWinRate %>%</strong><% } else { %><%= player.adWinRate %>%<% } %>
+                                    </span>
+                                </td>
+                                <td>
+                                    <span class="<%= player.winRateDiff > 0 ? 'diff-plus' : (player.winRateDiff < 0 ? 'diff-minus' : '') %>">
+                                        <%= player.winRateDiff > 0 ? '+' : '' %><%= player.winRateDiff %>%
+                                    </span>
+                                </td>
+                            </tr>
+                        <% }) %>
+                    <% } else { %>
+                        <tr><td colspan="8" class="text-center p-5">표시할 데이터가 없습니다.<br><small>필터 조건을 변경하거나 경기 기록을 추가해주세요.</small></td></tr>
+                    <% } %>
+                </tbody>
+            </table>
+        </div>
+
+        <!-- 하단 네비게이션 -->
+        <nav class="navbar bottom-nav">
+            <div class="container d-flex justify-content-around">
+                <a class="nav-link" href="/"><img src="/image/free-icon-tennis-8122941.png" alt="경기 기록" /> <span>경기 기록</span></a>
+                <a class="nav-link active" href="/my-score"><img src="/image/free-icon-individual-11985530.png" alt="개인 스코어" /> <span>개인 스코어</span></a>
+                <a class="nav-link" href="/chemistry"><img src="/image/free-icon-people-2118701.png" alt="상대와 케미" /> <span>상대와 케미</span></a>
+            </div>
+        </nav>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        /**
+         * localStorage를 사용하여 필터 값을 관리하는 헬퍼 객체
+         */
+        const filterStorage = {
+            KEY: 'userFilters', // localStorage에 저장될 키 이름
+            
+            // 필터 객체를 받아서 JSON 문자열로 변환 후 localStorage에 저장
+            save(filters) {
+                localStorage.setItem(this.KEY, JSON.stringify(filters));
+            },
+
+            // localStorage에서 필터 값을 불러와 JSON 객체로 변환하여 반환
+            // 저장된 값이 없으면 기본값을 반환
+            load() {
+                const filters = localStorage.getItem(this.KEY);
+                if (filters) {
+                    return JSON.parse(filters);
+                }
+                // 저장된 설정이 없으면 기본 필터 값을 반환
+                return {
+                    period: '6m',
+                    types: ['남단', '여단', '남복', '여복', '혼복'],
+                    courts: [],
+                    player: null
+                };
+            }
+        };
+        
+        /**
+         * 필터가 적용될 때 호출되는 함수.
+         * localStorage의 기존 값을 보존하면서 현재 페이지의 필터만 업데이트합니다.
+         */
+        function applyFilters(options = {}) {
+            // 1. localStorage에서 기존 필터 값을 먼저 불러옵니다.
+            let filters = filterStorage.load();
+
+            // 2. 현재 UI에 있는 공통 필터(분류, 코트) 값으로 불러온 객체를 '업데이트'합니다.
+            const selectedTypes = Array.from(document.querySelectorAll('#typeFilter input:checked')).map(cb => cb.value);
+            const selectedCourts = Array.from(document.querySelectorAll('#courtFilter input:checked')).map(cb => cb.value);
+            filters.types = selectedTypes;
+            filters.courts = selectedCourts;
+
+            // 3. '기준대상' select 박스가 '현재 페이지에 있을 경우에만' 값을 업데이트합니다.
+            //    (my-score.ejs 에서는 이 코드가 무시되므로 기존 player 값이 보존됩니다.)
+            const playerSelect = document.getElementById('playerSelect');
+            if (playerSelect) {
+                filters.player = playerSelect.value;
+            }
+
+            // 4. 옵션으로 전달된 값(기간 드롭다운 클릭, 기준대상 직접 변경 등)이 있으면 최종적으로 덮어씁니다.
+            if (options.period) filters.period = options.period;
+            if (options.player) filters.player = options.player;
+
+            // 5. 최종적으로 합쳐진 필터 객체를 localStorage에 저장합니다.
+            filterStorage.save(filters);
+
+            // 6. 완성된 URL을 만들어 페이지를 이동합니다.
+            const currentPath = window.location.pathname;
+            const params = new URLSearchParams();
+            params.set('period', filters.period);
+            if (filters.types.length > 0) params.set('types', filters.types.join(','));
+            if (filters.courts.length > 0) params.set('courts', filters.courts.join(','));
+            
+            // 이동하려는 페이지가 '/chemistry'가 아니더라도, 현재 페이지가 '/chemistry'라면 player 파라미터를 붙여줍니다.
+            if (currentPath === '/chemistry' && filters.player) {
+                params.set('player', filters.player);
+            }
+            
+            window.location.href = `${currentPath}?${params.toString()}`;
+        }
+
+        /**
+         * 페이지 하단 네비게이션 링크를 업데이트하는 함수
+         * localStorage에 저장된 값을 기준으로 링크의 href를 동적으로 생성합니다.
+         */
+        function updateNavLinks() {
+            const navLinks = document.querySelectorAll('.bottom-nav .nav-link');
+            const savedFilters = filterStorage.load(); // 저장된 필터 불러오기
+            
+            const paramsToCarry = new URLSearchParams();
+            paramsToCarry.set('period', savedFilters.period);
+            if (savedFilters.types.length > 0) paramsToCarry.set('types', savedFilters.types.join(','));
+            if (savedFilters.courts.length > 0) paramsToCarry.set('courts', savedFilters.courts.join(','));
+
+            navLinks.forEach(link => {
+                const targetUrl = new URL(link.href, window.location.origin);
+                const finalParams = new URLSearchParams(paramsToCarry);
+
+                if (targetUrl.pathname === '/chemistry' && savedFilters.player) {
+                    finalParams.set('player', savedFilters.player);
+                }
+                
+                link.href = `${targetUrl.pathname}?${finalParams.toString()}`;
+            });
+        }
+
+        /**
+         * 페이지가 처음 로드될 때 실행되는 초기화 함수
+         */
+        document.addEventListener('DOMContentLoaded', () => {
+            const savedFilters = filterStorage.load();
+            
+            // --- 1. 저장된 필터 값으로 UI(드롭다운, 체크박스 등)를 설정합니다. ---
+            const periods = [ { value: 'all', text: '전체' }, { value: '1m', text: '최근 1개월' }, { value: '3m', text: '최근 3개월' }, { value: '6m', text: '최근 6개월' }, { value: '1y', text: '최근 1년' }, { value: '2025', text: '2025년' }, { value: '2024', text: '2024년' } ];
+            const selectedPeriod = periods.find(p => p.value === savedFilters.period) || periods[3];
+            const periodButton = document.getElementById('periodDropdownButton');
+            if (periodButton) periodButton.textContent = `기간: ${selectedPeriod.text}`;
+
+            savedFilters.types.forEach(type => {
+                const checkbox = document.getElementById(`type-${type}`);
+                if (checkbox) checkbox.checked = true;
+            });
+
+            savedFilters.courts.forEach(court => {
+                const checkbox = document.getElementById(`court-${court}`);
+                if (checkbox) checkbox.checked = true;
+            });
+            
+            const playerSelect = document.getElementById('playerSelect');
+            if (playerSelect && savedFilters.player) {
+                playerSelect.value = savedFilters.player;
+            }
+
+            updateCheckboxDropdownText('typeDropdownButton', 'typeFilter', '분류');
+            updateCheckboxDropdownText('courtDropdownButton', 'courtFilter', '코트');
+            
+            // --- 2. 하단 네비게이션 링크를 업데이트합니다. ---
+            updateNavLinks();
+
+            // --- 3. 현재 URL의 필터와 저장된 필터가 다른지 확인하고, 다르면 페이지를 리로드하여 동기화합니다. ---
+            // 이 로직은 사용자가 URL을 직접 수정했거나, 다른 탭에서 필터를 변경했을 때를 대비합니다.
+            const currentURLParams = new URLSearchParams(window.location.search);
+            if (currentURLParams.get('period') !== savedFilters.period ||
+                currentURLParams.get('types') !== savedFilters.types.join(',')) {
+                // 필터가 일치하지 않으면 저장된 필터를 기준으로 URL을 만들어 페이지를 다시 로드합니다.
+                // 이렇게 함으로써 항상 localStorage의 값과 화면의 내용이 일치하게 됩니다.
+                const params = new URLSearchParams();
+                params.set('period', savedFilters.period);
+                if(savedFilters.types.length > 0) params.set('types', savedFilters.types.join(','));
+                if(savedFilters.courts.length > 0) params.set('courts', savedFilters.courts.join(','));
+                if(window.location.pathname === '/chemistry' && savedFilters.player) params.set('player', savedFilters.player);
+
+                // replace()는 히스토리를 남기지 않아 뒤로가기 시 무한루프에 빠지지 않습니다.
+                window.location.replace(`${window.location.pathname}?${params.toString()}`);
+            } else {
+            // [추가] 페이지가 리로드되지 않을 때, 기본 정렬을 적용합니다.
+            defaultSortTable();
+            }
+        });
+
+        const currentParams = new URLSearchParams(window.location.search);
+        
+        function selectAll(filterId) { document.querySelectorAll(`#${filterId} input[type="checkbox"]`).forEach(checkbox => checkbox.checked = true); }
+        function deselectAll(filterId) { document.querySelectorAll(`#${filterId} input[type="checkbox"]`).forEach(checkbox => checkbox.checked = false); }
+        function updateCheckboxDropdownText(buttonId, filterId, prefix) {
+            const button = document.getElementById(buttonId);
+            const count = document.querySelectorAll(`#${filterId} input:checked`).length;
+            if (count === 0) { button.textContent = prefix; } else { button.textContent = `${prefix}: ${count}개 선택`; }
+        }
+        const sortState = { columnIndex: 1, ascending: false };
+        function sortTable(columnIndex) {
+            const table = document.getElementById('scoreTable');
+            const tbody = table.querySelector('tbody');
+            if (tbody.rows.length <= 1 && tbody.rows[0].cells.length <= 1) { return; }
+            const rows = Array.from(tbody.querySelectorAll('tr'));
+            if (sortState.columnIndex === columnIndex) { sortState.ascending = !sortState.ascending; } else { sortState.columnIndex = columnIndex; sortState.ascending = false; }
+            rows.sort((rowA, rowB) => {
+                const cellA = rowA.cells[columnIndex];
+                const cellB = rowB.cells[columnIndex];
+                let valA, valB;
+                if (columnIndex === 0) {
+                    valA = cellA.innerText.trim();
+                    valB = cellB.innerText.trim();
+                    return sortState.ascending ? valA.localeCompare(valB) : valB.localeCompare(valA);
+                } else {
+                    valA = parseFloat(cellA.innerText.replace(/%|\+/g, '').trim());
+                    valB = parseFloat(cellB.innerText.replace(/%|\+/g, '').trim());
+                    if (isNaN(valA)) valA = -Infinity;
+                    if (isNaN(valB)) valB = -Infinity;
+                    return sortState.ascending ? valA - valB : valB - valA;
+                }
+            });
+            tbody.innerHTML = '';
+            rows.forEach(row => tbody.appendChild(row));
+        }
+
+        /**
+         * 페이지 로드/필터 변경 시 개인 스코어 테이블의 기본 정렬을 적용하는 함수.
+         * 정렬 우선순위: 1.경기수(내림) > 2.승률(내림)
+         */
+        function defaultSortTable() {
+            const table = document.getElementById('scoreTable');
+            const tbody = table.querySelector('tbody');
+            if (!tbody || (tbody.rows.length <= 1 && tbody.rows[0].cells.length <= 1)) { return; }
+
+            const rows = Array.from(tbody.querySelectorAll('tr'));
+
+            // 셀의 텍스트에서 숫자 값만 추출하는 헬퍼 함수
+            const getValue = (row, index) => {
+                const text = row.cells[index].innerText.trim().replace(/%|\+/g, '');
+                const value = parseFloat(text);
+                return isNaN(value) ? -Infinity : value;
+            };
+
+            rows.sort((a, b) => {
+                // 1. 경기수 (내림차순)
+                const matchesA = getValue(a, 1);
+                const matchesB = getValue(b, 1);
+                if (matchesA !== matchesB) {
+                    return matchesB - matchesA;
+                }
+
+                // 2. 승률 (내림차순)
+                const winRateA = getValue(a, 2);
+                const winRateB = getValue(b, 2);
+                return winRateB - winRateA;
+            });
+
+            // 정렬된 순서대로 행을 다시 추가
+            tbody.innerHTML = '';
+            rows.forEach(row => tbody.appendChild(row));
+        }
+    </script>
+</body>
+</html>
