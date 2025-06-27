@@ -147,11 +147,13 @@
                                 data-deuce-losses="<%= player.deuceLosses %>"
                                 data-deuce-draws="<%= player.deuceDraws %>"
                                 data-deuce-win-rate="<%= player.deuceWinRate %>"
+                                data-deuce-rate="<%= player.deuceRate %>"
                                 data-ad-matches="<%= player.adMatches %>"
                                 data-ad-wins="<%= player.adWins %>"
                                 data-ad-losses="<%= player.adLosses %>"
                                 data-ad-draws="<%= player.adDraws %>"
                                 data-ad-win-rate="<%= player.adWinRate %>"
+                                data-ad-rate="<%= player.adRate %>"
                                 data-win-rate-diff="<%= player.winRateDiff %>">
                                 <td><strong><%= player.name %></strong></td>
                                 <td><%= player.matches %></td>
@@ -216,16 +218,20 @@
                         <span class="stat-value" id="modalTotalStats"></span>
                     </div>
                     <div class="stat-item">
-                        <span class="text-deuce"><strong>🫱&nbsp; 듀스코트(포)</strong></span>
+                        <span id="modalDeuceTitle"></span>
                         <span class="stat-value" id="modalDeuceStats"></span>
                     </div>
                     <div class="stat-item">
-                        <span class="text-ad"><strong>🫲&nbsp; 애드코트(백)</strong></span>
+                        <span id="modalAdTitle"></span>
                         <span class="stat-value" id="modalAdStats"></span>
                     </div>
                     <div class="stat-item">
                         <span><strong>⚖️&nbsp; 포-백 승률 차이</strong></span>
                         <span class="stat-value" id="modalWinRateDiff"></span>
+                    </div>
+                    <div class="stat-item">
+                        <span><strong>#&nbsp; 태그</strong></span>
+                        <span class="stat-value" id="modalTags"></span>
                     </div>
                 </div>
             </div>
@@ -462,7 +468,7 @@
         function showPlayerDetails(rowElement) {
             const dataset = rowElement.dataset;
 
-            // 데이터셋에서 모든 기록(승, 패, 무 포함)을 정수형으로 추출
+            // 데이터셋에서 모든 기록을 정수형으로 추출
             const name = dataset.name;
             const matches = parseInt(dataset.matches);
             const wins = parseInt(dataset.wins);
@@ -475,30 +481,56 @@
             const deuceLosses = parseInt(dataset.deuceLosses);
             const deuceDraws = parseInt(dataset.deuceDraws);
             const deuceWinRate = parseInt(dataset.deuceWinRate);
+            const deuceRate = parseInt(dataset.deuceRate);
 
             const adMatches = parseInt(dataset.adMatches);
             const adWins = parseInt(dataset.adWins);
             const adLosses = parseInt(dataset.adLosses);
             const adDraws = parseInt(dataset.adDraws);
             const adWinRate = parseInt(dataset.adWinRate);
+            const adRate = parseInt(dataset.adRate);
 
             const winRateDiff = parseInt(dataset.winRateDiff);
             
-            // --- 조건부 텍스트 생성을 위한 로직 추가 ---
-            // 1. 무승부 텍스트: 무승부가 0보다 클 때만 'X무 ' 텍스트를 생성
+            // --- 조건부 텍스트 생성을 위한 로직 ---
             const drawsText = draws > 0 ? `${draws}무 ` : '';
             const deuceDrawsText = deuceDraws > 0 ? `${deuceDraws}무 ` : '';
             const adDrawsText = adDraws > 0 ? `${adDraws}무 ` : '';
 
-            // 2. 승률 텍스트: 승률이 50%를 넘으면 <strong> 태그로 감싸기
             const winRateText = winRate > 50 ? `<strong>(${winRate}%)</strong>` : `(${winRate}%)`;
             const deuceWinRateText = deuceWinRate > 50 ? `<strong>(${deuceWinRate}%)</strong>` : `(${deuceWinRate}%)`;
             const adWinRateText = adWinRate > 50 ? `<strong>(${adWinRate}%)</strong>` : `(${adWinRate}%)`;
-            // --- 로직 추가 끝 ---
+
+            const deuceRateText = deuceRate > 50 ? `<strong>${deuceRate}%</strong>` : `${deuceRate}%`;
+            const adRateText = adRate > 50 ? `<strong>${adRate}%</strong>` : `${adRate}%`;
+            
+            // [수정] 최종 태그 생성 로직
+            const tags = [];
+            // 1. 포지션 비율 비교
+            if (deuceRate > adRate) {
+                tags.push('#포많이하는');
+            } else if (adRate > deuceRate) {
+                tags.push('#백많이하는');
+            }
+
+            // 2. 승률 비교
+            if (deuceWinRate > adWinRate) {
+                tags.push('#포잡이');
+            } else if (adWinRate > deuceWinRate) {
+                tags.push('#백잡이');
+            }
+            
+            // 태그가 없으면(비율과 승률이 모두 같으면) 자동으로 공백 처리됨
+            const tagsText = tags.join(' ');
+            // --- 로직 수정 끝 ---
 
 
             // 모달 내부 요소에 데이터 채우기
             document.getElementById('modalPlayerName').textContent = name;
+            
+            document.getElementById('modalDeuceTitle').innerHTML = `<span class="text-deuce"><strong>🫱&nbsp; 듀스코트(포)</strong> ${deuceRateText}</span>`;
+            document.getElementById('modalAdTitle').innerHTML = `<span class="text-ad"><strong>🫲&nbsp; 애드코트(백)</strong> ${adRateText}</span>`;
+
             document.getElementById('modalTotalStats').innerHTML = `${matches}전 ${wins}승 ${drawsText}${losses}패 ${winRateText}`;
             document.getElementById('modalDeuceStats').innerHTML = `<span class="text-deuce">${deuceMatches}전 ${deuceWins}승 ${deuceDrawsText}${deuceLosses}패 ${deuceWinRateText}</span>`;
             document.getElementById('modalAdStats').innerHTML = `<span class="text-ad">${adMatches}전 ${adWins}승 ${adDrawsText}${adLosses}패 ${adWinRateText}</span>`;
@@ -506,6 +538,8 @@
             const diffClass = winRateDiff > 0 ? 'diff-plus' : (winRateDiff < 0 ? 'diff-minus' : '');
             const diffSign = winRateDiff > 0 ? '+' : '';
             document.getElementById('modalWinRateDiff').innerHTML = `<span class="${diffClass}">${diffSign}${winRateDiff}%</span>`;
+            
+            document.getElementById('modalTags').textContent = tagsText;
 
             // 모달 인스턴스가 없으면 생성하고, 있으면 재사용
             if (!detailModal) {
