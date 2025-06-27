@@ -461,7 +461,6 @@
             const oppLosses = parseInt(dataset.opponentLosses);
             const oppWinRate = parseInt(dataset.opponentWinRate);
 
-            // [추가] 승률 차이 데이터 추출
             const winRateDiff = parseInt(dataset.winRateDiff);
             const totalMatches = sameMatches + oppMatches;
 
@@ -471,14 +470,33 @@
             const sameWinRateText = sameWinRate > 50 ? `<strong>(${sameWinRate}%)</strong>` : `(${sameWinRate}%)`;
             const oppWinRateText = oppWinRate > 50 ? `<strong>(${oppWinRate}%)</strong>` : `(${oppWinRate}%)`;
 
-            // [추가] 승률 차이 표시를 위한 클래스 및 기호 설정
             const diffClass = winRateDiff > 0 ? 'text-teammate' : (winRateDiff < 0 ? 'text-opponent' : '');
             const diffSign = winRateDiff > 0 ? '+' : '';
             const winRateDiffHTML = `<span class="${diffClass}">${diffSign}${winRateDiff}%</span>`;
+
+            // [추가] 케미 태그 생성 로직
+            const tags = [];
+            // 1. 같은 편일 때 태그
+            if (sameMatches > 0) {
+                if (sameWinRate > 50) {
+                    tags.push('#환상의케미');
+                } else if (sameWinRate < 50) {
+                    tags.push('#케미는그닥');
+                }
+            }
+            // 2. 다른 편일 때 태그
+            if (oppMatches > 0) {
+                if (oppWinRate > 50) {
+                    tags.push('#상대하기편해');
+                } else if (oppWinRate < 50) {
+                    tags.push('#상대하기싫어');
+                }
+            }
+            const tagsText = tags.join(' ');
             // --- 로직 추가 끝 ---
 
 
-            // 모달 제목과 내용 구성 (승률 차이 행 추가)
+            // 모달 제목과 내용 구성 (태그 행 추가)
             const modalTitle = `<strong>${selectedPlayer}</strong>은(는) <strong>${clickedPlayerName}</strong>과(와)`;
             const modalBodyHTML = `
                 <div class="stat-item">
@@ -486,16 +504,20 @@
                     <span class="stat-value"><strong>${totalMatches}전</strong></span>
                 </div>
                 <div class="stat-item">
-                    <span><strong>🤝&nbsp; 같은편일 때</strong></span>
+                    <span>🤝&nbsp; 같은 편일 때</span>
                     <span class="stat-value text-teammate">${sameMatches}전 ${sameWins}승 ${sameDrawsText}${sameLosses}패 ${sameWinRateText}</span>
                 </div>
                 <div class="stat-item">
-                    <span><strong>⚔️&nbsp; 상대편일 때</strong></span>
+                    <span>⚔️&nbsp; 상대 편일 때</span>
                     <span class="stat-value text-opponent">${oppMatches}전 ${oppWins}승 ${oppDrawsText}${oppLosses}패 ${oppWinRateText}</span>
                 </div>
                 <div class="stat-item">
-                    <span><strong>⚖️&nbsp; 같은편-상대편 승률 차이</span>
-                    <span class="stat-value">${winRateDiffHTML}</strong></span>
+                    <span>⚖️&nbsp; 승률 차이</span>
+                    <span class="stat-value">${winRateDiffHTML}</span>
+                </div>
+                <div class="stat-item">
+                    <span><strong>#&nbsp; 태그</strong></span>
+                    <span class="stat-value">${tagsText}</span>
                 </div>
             `;
 
