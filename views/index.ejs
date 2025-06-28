@@ -112,12 +112,16 @@
     #matchTable tbody tr:hover { cursor: pointer; background-color: #f1f1f1; }
     #matchTable td { overflow: hidden; text-overflow: ellipsis; }
     td.hidden-etc { display: none; }
+
+    /* --- ✨ 추가 및 수정된 스타일 --- */
+    .winner-team {
+        color: darkblue;
+    }
   </style>
 </head>
 
 <body>
   <div class="app-container">
-    <!-- 헤더 -->
     <div class="d-flex align-items-center sticky-header">
       <div class="d-flex align-items-center flex-grow-1">
         <img src="/image/btw.png" alt="로고" style="height: 40px; margin-right: 15px;">
@@ -134,7 +138,6 @@
       </div>
     </div>
 
-    <!-- 테이블 -->
     <div class="table-responsive">
       <table id="matchTable" class="table table-sm table-striped text-center align-middle text-nowrap">
         <colgroup>
@@ -167,27 +170,24 @@
               <td><%= match.date ? match.date.substring(2) : '' %></td>
               <td><%= match.court %></td>
               <td>
+                <%# ✨ 1. 이긴팀 스타일 변경: strong 태그 대신 .winner-team 클래스를 가진 span 사용 %>
                 <% if (match.team1_score > match.team2_score) { %>
-                  <strong><%= match.team1_deuce %><% if (match.team1_ad) { %>/<%= match.team1_ad %><% } %></strong>
+                  <span class="winner-team"><%= match.team1_deuce %><% if (match.team1_ad) { %>/<%= match.team1_ad %><% } %></span>
                 <% } else { %>
                   <%= match.team1_deuce %><% if (match.team1_ad) { %>/<%= match.team1_ad %><% } %>
                 <% } %>
               </td>
               <td>
+                <%# ✨ 1. 이긴팀 스타일 변경: strong 태그 대신 .winner-team 클래스를 가진 span 사용 %>
                 <% if (match.team2_score > match.team1_score) { %>
-                  <strong><%= match.team2_deuce %><% if (match.team2_ad) { %>/<%= match.team2_ad %><% } %></strong>
+                  <span class="winner-team"><%= match.team2_deuce %><% if (match.team2_ad) { %>/<%= match.team2_ad %><% } %></span>
                 <% } else { %>
                   <%= match.team2_deuce %><% if (match.team2_ad) { %>/<%= match.team2_ad %><% } %>
                 <% } %>
               </td>
               <td>
-                <% if (match.team1_score > match.team2_score) { %>
-                  <strong><%= match.team1_score %></strong>:<%= match.team2_score %>
-                <% } else if (match.team2_score > match.team1_score) { %>
-                  <%= match.team1_score %>:<strong><%= match.team2_score %></strong>
-                <% } else { %>
-                  <%= match.team1_score %>:<%= match.team2_score %>
-                <% } %>
+                <%# ✨ 2. 스코어 볼드체 제거 %>
+                <%= match.team1_score %>:<%= match.team2_score %>
               </td>
               <td><%= match.type %></td>
               <td>
@@ -205,10 +205,8 @@
       </table>
     </div>
 
-    <!-- 플로팅 버튼 -->
     <a href="/new" class="floating-button">+</a>
 
-    <!-- 하단 네비게이션 -->
     <nav class="navbar bottom-nav">
       <div class="container d-flex justify-content-around">
         <a class="nav-link active" href="/">
@@ -228,16 +226,15 @@
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
 
   <script>
-    // 스크립트 부분은 기존 코드와 동일합니다.
+    // 스크립트 정렬 부분은 기존 코드와 동일
     let sortDirections = {};
-    let currentSortedCol = 0; // 현재 정렬된 열 인덱스 (초기값: 0번 날짜 열)
-    sortDirections[0] = false; // 초기 날짜 정렬은 내림차순(false)
+    let currentSortedCol = 0;
+    sortDirections[0] = false;
 
     function sortTable(colIndex, thElement) {
       const table = document.getElementById("matchTable");
       const tbody = table.querySelector("tbody");
       const rows = Array.from(tbody.querySelectorAll("tr"));
-
       let ascending;
 
       if (currentSortedCol !== colIndex) {
@@ -317,7 +314,6 @@
 
     searchToggle.addEventListener('click', function(event) {
       event.preventDefault();
-
       searchToggle.style.display = 'none';
       searchContainer.style.display = 'flex';
       searchInput.focus();
@@ -331,16 +327,39 @@
     });
 
     searchInput.addEventListener('keyup', function() {
-      const searchText = searchInput.value.toLowerCase().trim();
+      const searchText = searchInput.value.trim();
       filterTable(searchText);
     });
 
+    // ✨ 3. 검색 기능 수정
     function filterTable(searchText) {
-      matchTableBody.innerHTML = '';
+      matchTableBody.innerHTML = ''; // 테이블 비우기
+
+      // 검색어가 없으면 원본 행들을 그대로 추가
+      if (!searchText) {
+        originalRows.forEach(rowData => {
+          matchTableBody.appendChild(rowData.element);
+        });
+        return;
+      }
+
+      // 검색어가 있으면 필터링 및 하이라이팅
+      const lowerCaseSearchText = searchText.toLowerCase();
+      const searchRegex = new RegExp(searchText.replace(/[-\/\\^$*+?.()|[\]{}]/g, '\\$&'), 'gi');
 
       originalRows.forEach(rowData => {
-        if (rowData.text.includes(searchText)) {
-          matchTableBody.appendChild(rowData.element);
+        if (rowData.text.includes(lowerCaseSearchText)) {
+          // 원본 행을 복제하여 수정 (원본은 보존)
+          const newRow = rowData.element.cloneNode(true);
+          
+          // 복제된 행의 모든 셀(td)을 순회하며 하이라이팅 적용
+          newRow.querySelectorAll('td').forEach(td => {
+            // 셀의 내부 HTML을 읽어와서 정규식으로 키워드 치환
+            // '<strong>$&</strong>'에서 $&는 정규식에 매칭된 원래 문자열을 의미
+            td.innerHTML = td.innerHTML.replace(searchRegex, '<strong>$&</strong>');
+          });
+
+          matchTableBody.appendChild(newRow);
         }
       });
     }
