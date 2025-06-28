@@ -345,9 +345,9 @@ app.get('/my-score', async (req, res) => {
             const deuceWinRate = safeRate(stats.deuceWins, stats.deuceMatches);
             const adRate = safeRate(stats.adMatches, stats.matches);
             const adWinRate = safeRate(stats.adWins, stats.adMatches);
-            const winRateDiff = deuceWinRate - adWinRate;
+            const weightedDiff = stats.matches > 0 ? Math.round(((stats.deuceWins - stats.adWins) / stats.matches) * 100) : 0;
 
-            return { ...stats, winRate, deuceRate, deuceWinRate, adRate, adWinRate, winRateDiff };
+            return { ...stats, winRate, deuceRate, deuceWinRate, adRate, adWinRate, weightedDiff };
         });
         
         scores.sort((a, b) => b.matches - a.matches);

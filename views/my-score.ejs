@@ -129,7 +129,7 @@
                         <th class="sortable-th" onclick="sortTable(4)">포<br>승률</th>
                         <th class="sortable-th" onclick="sortTable(5)">백<br>비율</th>
                         <th class="sortable-th" onclick="sortTable(6)">백<br>승률</th>
-                        <th class="sortable-th" onclick="sortTable(7)">포-백<br>승률차</th>
+                        <th class="sortable-th" onclick="sortTable(7)">가중<br>포-백</th>
                         <th></th>
                     </tr>
                 </thead>
@@ -155,7 +155,7 @@
                                 data-ad-draws="<%= player.adDraws %>"
                                 data-ad-win-rate="<%= player.adWinRate %>"
                                 data-ad-rate="<%= player.adRate %>"
-                                data-win-rate-diff="<%= player.winRateDiff %>">
+                                data-weighted-diff="<%= player.weightedDiff %>">
                                 <td><strong><%= player.name %></strong></td>
                                 <td><%= player.matches %></td>
                                 <td>
@@ -184,8 +184,8 @@
                                     </span>
                                 </td>
                                 <td>
-                                    <span class="<%= player.winRateDiff > 0 ? 'diff-plus' : (player.winRateDiff < 0 ? 'diff-minus' : '') %>">
-                                        <%= player.winRateDiff > 0 ? '+' : '' %><%= player.winRateDiff %>%
+                                    <span class="<%= player.weightedDiff > 0 ? 'diff-plus' : (player.weightedDiff < 0 ? 'diff-minus' : '') %>">
+                                        <%= player.weightedDiff > 0 ? '+' : '' %><%= player.weightedDiff %>%
                                     </span>
                                 </td>
                                 <td><i class="bi bi-chevron-right text-muted"></i></td>
@@ -228,7 +228,7 @@
                         <span class="stat-value" id="modalAdStats"></span>
                     </div>
                     <div class="stat-item">
-                        <span><strong>⚖️&nbsp; 포-백 승률 차이</strong></span>
+                        <span><strong>⚖️&nbsp; 포-백 승리 가중치</strong></span>
                         <span class="stat-value" id="modalWinRateDiff"></span>
                     </div>
                     <div class="stat-item">
@@ -492,7 +492,8 @@
             const adWinRate = parseInt(dataset.adWinRate);
             const adRate = parseInt(dataset.adRate);
 
-            const winRateDiff = parseInt(dataset.winRateDiff);
+            // [수정] 올바른 dataset 속성 이름으로 데이터 추출
+            const weightedDiff = parseInt(dataset.weightedDiff);
             
             // --- 조건부 텍스트 생성을 위한 로직 ---
             const drawsText = draws > 0 ? `${draws}무 ` : '';
@@ -506,23 +507,17 @@
             const deuceRateText = deuceRate > 50 ? `<strong>${deuceRate}%</strong>` : `${deuceRate}%`;
             const adRateText = adRate > 50 ? `<strong>${adRate}%</strong>` : `${adRate}%`;
             
-            // [수정] 최종 태그 생성 로직
             const tags = [];
-            // 1. 포지션 비율 비교
             if (deuceRate > adRate) {
                 tags.push('#포많이하는');
             } else if (adRate > deuceRate) {
                 tags.push('#백많이하는');
             }
-
-            // 2. 승률 비교
             if (deuceWinRate > adWinRate) {
                 tags.push('#포잡이');
             } else if (adWinRate > deuceWinRate) {
                 tags.push('#백잡이');
             }
-            
-            // 태그가 없으면(비율과 승률이 모두 같으면) 자동으로 공백 처리됨
             const tagsText = tags.join(' ');
             // --- 로직 수정 끝 ---
 
@@ -530,16 +525,18 @@
             // 모달 내부 요소에 데이터 채우기
             document.getElementById('modalPlayerName').textContent = name;
             
-            document.getElementById('modalDeuceTitle').innerHTML = `<span class="text-deuce"><strong>🫱&nbsp; 포 비율</strong> ${deuceRateText}</span>`;
-            document.getElementById('modalAdTitle').innerHTML = `<span class="text-ad"><strong>🫲&nbsp; 백 비율</strong> ${adRateText}</span>`;
+            document.getElementById('modalDeuceTitle').innerHTML = `<span class="text-deuce"><strong>🫱&nbsp; 듀스코트(포)</strong> ${deuceRateText}</span>`;
+            document.getElementById('modalAdTitle').innerHTML = `<span class="text-ad"><strong>🫲&nbsp; 애드코트(백)</strong> ${adRateText}</span>`;
 
             document.getElementById('modalTotalStats').innerHTML = `${matches}전 ${wins}승 ${drawsText}${losses}패 ${winRateText}`;
             document.getElementById('modalDeuceStats').innerHTML = `<span class="text-deuce">${deuceMatches}전 ${deuceWins}승 ${deuceDrawsText}${deuceLosses}패 ${deuceWinRateText}</span>`;
             document.getElementById('modalAdStats').innerHTML = `<span class="text-ad">${adMatches}전 ${adWins}승 ${adDrawsText}${adLosses}패 ${adWinRateText}</span>`;
-
-            const diffClass = winRateDiff > 0 ? 'diff-plus' : (winRateDiff < 0 ? 'diff-minus' : '');
-            const diffSign = winRateDiff > 0 ? '+' : '';
-            document.getElementById('modalWinRateDiff').innerHTML = `<span class="${diffClass}">${diffSign}${winRateDiff}%</span>`;
+            
+            document.querySelector('#modalWinRateDiff').previousElementSibling.innerHTML = `<strong>⚖️&nbsp; 포-백 승리 가중치</strong>`;
+            const diffClass = weightedDiff > 0 ? 'diff-plus' : (weightedDiff < 0 ? 'diff-minus' : '');
+            const diffSign = weightedDiff > 0 ? '+' : '';
+            // [수정] 표시 내용에서 % 기호 제거
+            document.getElementById('modalWinRateDiff').innerHTML = `<span class="${diffClass}">${diffSign}${weightedDiff}%</span>`;
             
             document.getElementById('modalTags').textContent = tagsText;
 
