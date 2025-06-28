@@ -130,6 +130,7 @@
                         <th class="sortable-th" onclick="sortTable(5)">백<br>비율</th>
                         <th class="sortable-th" onclick="sortTable(6)">백<br>승률</th>
                         <th class="sortable-th" onclick="sortTable(7)">포-백<br>승률차</th>
+                        <th></th>
                     </tr>
                 </thead>
                 <tbody>
@@ -187,10 +188,11 @@
                                         <%= player.winRateDiff > 0 ? '+' : '' %><%= player.winRateDiff %>%
                                     </span>
                                 </td>
+                                <td><i class="bi bi-chevron-right text-muted"></i></td>
                             </tr>
                         <% }) %>
                     <% } else { %>
-                        <tr><td colspan="8" class="text-center p-5">표시할 데이터가 없습니다.<br><small>필터 조건을 변경하거나 경기 기록을 추가해주세요.</small></td></tr>
+                        <tr><td colspan="9" class="text-center p-5">표시할 데이터가 없습니다.<br><small>필터 조건을 변경하거나 경기 기록을 추가해주세요.</small></td></tr>
                     <% } %>
                 </tbody>
             </table>
@@ -528,8 +530,8 @@
             // 모달 내부 요소에 데이터 채우기
             document.getElementById('modalPlayerName').textContent = name;
             
-            document.getElementById('modalDeuceTitle').innerHTML = `<span class="text-deuce"><strong>🫱&nbsp; 듀스코트(포)</strong> ${deuceRateText}</span>`;
-            document.getElementById('modalAdTitle').innerHTML = `<span class="text-ad"><strong>🫲&nbsp; 애드코트(백)</strong> ${adRateText}</span>`;
+            document.getElementById('modalDeuceTitle').innerHTML = `<span class="text-deuce"><strong>🫱&nbsp; 포 비율</strong> ${deuceRateText}</span>`;
+            document.getElementById('modalAdTitle').innerHTML = `<span class="text-ad"><strong>🫲&nbsp; 백 비율</strong> ${adRateText}</span>`;
 
             document.getElementById('modalTotalStats').innerHTML = `${matches}전 ${wins}승 ${drawsText}${losses}패 ${winRateText}`;
             document.getElementById('modalDeuceStats').innerHTML = `<span class="text-deuce">${deuceMatches}전 ${deuceWins}승 ${deuceDrawsText}${deuceLosses}패 ${deuceWinRateText}</span>`;

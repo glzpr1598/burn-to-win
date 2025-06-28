@@ -129,6 +129,7 @@
                         <th class="sortable-th" onclick="sortTable(2)">승률</th>
                         <th class="sortable-th" onclick="sortTable(3)">상대편</th>
                         <th class="sortable-th" onclick="sortTable(4)">승률</th>
+                        <th></th>
                     </tr>
                 </thead>
                 <tbody>
@@ -164,10 +165,11 @@
                                         <%= player.opponentWinRate %>%
                                     <% } %>
                                 </td>
+                                <td><i class="bi bi-chevron-right text-muted"></i></td>
                             </tr>
                         <% }) %>
                     <% } else { %>
-                        <tr><td colspan="5" class="text-center p-5">표시할 데이터가 없습니다.<br><small>필터 조건을 변경해주세요.</small></td></tr>
+                        <tr><td colspan="6" class="text-center p-5">표시할 데이터가 없습니다.<br><small>필터 조건을 변경해주세요.</small></td></tr>
                     <% } %>
                 </tbody>
             </table>
@@ -487,9 +489,9 @@
             // 2. 다른 편일 때 태그
             if (oppMatches > 0) {
                 if (oppWinRate > 50) {
-                    tags.push('#상대하기편해');
+                    tags.push('#상대하기좋아');
                 } else if (oppWinRate < 50) {
-                    tags.push('#상대하기싫어');
+                    tags.push('#상대하기무섭');
                 }
             }
             const tagsText = tags.join(' ');
