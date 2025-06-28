@@ -444,97 +444,87 @@
             rows.forEach(row => tbody.appendChild(row));
         }
 
-        let chemistryModal = null; // 모달 인스턴스를 저장할 변수
-        function showChemistryDetails(rowElement) {
-            const dataset = rowElement.dataset;
-            const selectedPlayer = '<%= selectedPlayer %>';
-            const clickedPlayerName = dataset.name;
+		let chemistryModal = null;
+		function showChemistryDetails(rowElement) {
+			const dataset = rowElement.dataset;
+			const selectedPlayer = '<%= selectedPlayer %>';
+			const clickedPlayerName = dataset.name;
 
-            // 데이터셋에서 통계 정보 추출
-            const sameMatches = parseInt(dataset.sameTeamMatches);
-            const sameWins = parseInt(dataset.sameTeamWins);
-            const sameDraws = parseInt(dataset.sameTeamDraws);
-            const sameLosses = parseInt(dataset.sameTeamLosses);
-            const sameWinRate = parseInt(dataset.sameTeamWinRate);
-            
-            const oppMatches = parseInt(dataset.opponentMatches);
-            const oppWins = parseInt(dataset.opponentWins);
-            const oppDraws = parseInt(dataset.opponentDraws);
-            const oppLosses = parseInt(dataset.opponentLosses);
-            const oppWinRate = parseInt(dataset.opponentWinRate);
+			const sameMatches = parseInt(dataset.sameTeamMatches);
+			const sameWins = parseInt(dataset.sameTeamWins);
+			const sameDraws = parseInt(dataset.sameTeamDraws);
+			const sameLosses = parseInt(dataset.sameTeamLosses);
+			const sameWinRate = parseInt(dataset.sameTeamWinRate);
+			
+			const oppMatches = parseInt(dataset.opponentMatches);
+			const oppWins = parseInt(dataset.opponentWins);
+			const oppDraws = parseInt(dataset.opponentDraws);
+			const oppLosses = parseInt(dataset.opponentLosses);
+			const oppWinRate = parseInt(dataset.opponentWinRate);
 
-            const winRateDiff = parseInt(dataset.winRateDiff);
-            const totalMatches = sameMatches + oppMatches;
+			const winRateDiff = parseInt(dataset.winRateDiff);
+			const totalMatches = sameMatches + oppMatches;
 
-            // --- 조건부 텍스트 생성을 위한 로직 ---
-            const sameDrawsText = sameDraws > 0 ? `${sameDraws}무 ` : '';
-            const oppDrawsText = oppDraws > 0 ? `${oppDraws}무 ` : '';
-            const sameWinRateText = sameWinRate > 50 ? `<strong>(${sameWinRate}%)</strong>` : `(${sameWinRate}%)`;
-            const oppWinRateText = oppWinRate > 50 ? `<strong>(${oppWinRate}%)</strong>` : `(${oppWinRate}%)`;
+			const sameDrawsText = sameDraws > 0 ? `${sameDraws}무 ` : '';
+			const oppDrawsText = oppDraws > 0 ? `${oppDraws}무 ` : '';
+			const sameWinRateText = sameWinRate > 50 ? `<strong>(${sameWinRate}%)</strong>` : `(${sameWinRate}%)`;
+			const oppWinRateText = oppWinRate > 50 ? `<strong>(${oppWinRate}%)</strong>` : `(${oppWinRate}%)`;
 
-            const diffClass = winRateDiff > 0 ? 'text-teammate' : (winRateDiff < 0 ? 'text-opponent' : '');
-            const diffSign = winRateDiff > 0 ? '+' : '';
-            const winRateDiffHTML = `<span class="${diffClass}">${diffSign}${winRateDiff}%</span>`;
+			const diffClass = winRateDiff > 0 ? 'text-teammate' : (winRateDiff < 0 ? 'text-opponent' : '');
+			const diffSign = winRateDiff > 0 ? '+' : '';
+			const winRateDiffHTML = `<span class="${diffClass}">${diffSign}${winRateDiff}%</span>`;
 
-            // [추가] 케미 태그 생성 로직
-            const tags = [];
-            // 1. 같은 편일 때 태그
+            // [수정] 케미 태그를 종류별로 분리하여 생성
+            const sameTeamTags = [];
             if (sameMatches > 0) {
-                if (sameWinRate == 100) {
-                    tags.push('#환상의케미');
-                } else if (sameWinRate > 50) {
-                    tags.push('#케미가좋아');
-                } else if (sameWinRate < 50) {
-                    tags.push('#케미는그닥');
-                }
+                if (sameWinRate == 100) { sameTeamTags.push('#환상의케미'); } 
+                else if (sameWinRate > 50) { sameTeamTags.push('#케미가좋아'); } 
+                else if (sameWinRate < 50) { sameTeamTags.push('#케미는그닥'); }
             }
-            // 2. 다른 편일 때 태그
+            const sameTeamTagsText = sameTeamTags.join(' ');
+
+            const opponentTags = [];
             if (oppMatches > 0) {
-                if (oppWinRate > 50) {
-                    tags.push('#상대하기좋아');
-                } else if (oppWinRate < 50) {
-                    tags.push('#상대하기무섭');
-                }
+                if (oppWinRate > 50) { opponentTags.push('#상대하기좋아'); } 
+                else if (oppWinRate < 50) { opponentTags.push('#상대하기무섭'); }
             }
-            const tagsText = tags.join(' ');
-            // --- 로직 추가 끝 ---
+            const opponentTagsText = opponentTags.join(' ');
 
-
-            // 모달 제목과 내용 구성 (태그 행 추가)
-            const modalTitle = `<strong>${selectedPlayer}</strong>은(는) <strong>${clickedPlayerName}</strong>과(와)`;
-            const modalBodyHTML = `
-                <div class="stat-item">
-                    <span><strong>📊&nbsp; 전체</strong></span>
-                    <span class="stat-value"><strong>${totalMatches}전</strong></span>
-                </div>
-                <div class="stat-item">
-                    <span>🤝&nbsp; 같은 편일 때</span>
-                    <span class="stat-value text-teammate">${sameMatches}전 ${sameWins}승 ${sameDrawsText}${sameLosses}패 ${sameWinRateText}</span>
-                </div>
-                <div class="stat-item">
-                    <span>⚔️&nbsp; 상대 편일 때</span>
-                    <span class="stat-value text-opponent">${oppMatches}전 ${oppWins}승 ${oppDrawsText}${oppLosses}패 ${oppWinRateText}</span>
-                </div>
-                <div class="stat-item">
-                    <span>⚖️&nbsp; 승률 차이</span>
-                    <span class="stat-value">${winRateDiffHTML}</span>
-                </div>
+			// [수정] 모달 내용 구성 시, 각 태그를 해당 전적 아래에 오도록 변경
+			const modalTitle = `<strong>${selectedPlayer}</strong>은(는) <strong>${clickedPlayerName}</strong>과(와)`;
+			const modalBodyHTML = `
+				<div class="stat-item">
+					<span><strong>📊&nbsp; 전체</strong></span>
+					<span class="stat-value"><strong>${totalMatches}전</strong></span>
+				</div>
+				<div class="stat-item">
+					<span>🤝&nbsp; 같은 편일 때</span>
+					<span class="stat-value text-teammate">${sameMatches}전 ${sameWins}승 ${sameDrawsText}${sameLosses}패 ${sameWinRateText}</span>
+				</div>
+                ${sameTeamTagsText ? `
                 <div class="stat-item">
                     <span></span>
-                    <span class="stat-value">${tagsText}</span>
-                </div>
-            `;
+                    <span class="stat-value">${sameTeamTagsText}</span>
+                </div>` : ''}
+				<div class="stat-item">
+					<span>⚔️&nbsp; 상대 편일 때</span>
+					<span class="stat-value text-opponent">${oppMatches}전 ${oppWins}승 ${oppDrawsText}${oppLosses}패 ${oppWinRateText}</span>
+				</div>
+                ${opponentTagsText ? `
+                <div class="stat-item">
+                    <span></span>
+                    <span class="stat-value">${opponentTagsText}</span>
+                </div>` : ''}
+			`;
 
-            // 모달 요소에 내용 삽입
-            document.getElementById('chemistryDetailModalLabel').innerHTML = modalTitle;
-            document.getElementById('modalBodyContent').innerHTML = modalBodyHTML;
+			document.getElementById('chemistryDetailModalLabel').innerHTML = modalTitle;
+			document.getElementById('modalBodyContent').innerHTML = modalBodyHTML;
 
-            // 모달 표시
-            if (!chemistryModal) {
-                chemistryModal = new bootstrap.Modal(document.getElementById('chemistryDetailModal'));
-            }
-            chemistryModal.show();
-        }
+			if (!chemistryModal) {
+				chemistryModal = new bootstrap.Modal(document.getElementById('chemistryDetailModal'));
+			}
+			chemistryModal.show();
+		}
     </script>
 </body>
 </html>
