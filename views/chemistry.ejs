@@ -480,8 +480,10 @@
             const tags = [];
             // 1. 같은 편일 때 태그
             if (sameMatches > 0) {
-                if (sameWinRate > 50) {
+                if (sameWinRate == 100) {
                     tags.push('#환상의케미');
+                } else if (sameWinRate > 50) {
+                    tags.push('#케미가좋아');
                 } else if (sameWinRate < 50) {
                     tags.push('#케미는그닥');
                 }
