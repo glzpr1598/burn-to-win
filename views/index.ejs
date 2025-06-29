@@ -331,37 +331,48 @@
       filterTable(searchText);
     });
 
-    // ✨ 3. 검색 기능 수정
+    // ✨ 검색 기능 수정: 띄어쓰기로 구분된 모든 단어 포함 시 검색 (AND 조건)
     function filterTable(searchText) {
-      matchTableBody.innerHTML = ''; // 테이블 비우기
+        matchTableBody.innerHTML = ''; // 테이블 비우기
 
-      // 검색어가 없으면 원본 행들을 그대로 추가
-      if (!searchText) {
-        originalRows.forEach(rowData => {
-          matchTableBody.appendChild(rowData.element);
-        });
-        return;
-      }
-
-      // 검색어가 있으면 필터링 및 하이라이팅
-      const lowerCaseSearchText = searchText.toLowerCase();
-      const searchRegex = new RegExp(searchText.replace(/[-\/\\^$*+?.()|[\]{}]/g, '\\$&'), 'gi');
-
-      originalRows.forEach(rowData => {
-        if (rowData.text.includes(lowerCaseSearchText)) {
-          // 원본 행을 복제하여 수정 (원본은 보존)
-          const newRow = rowData.element.cloneNode(true);
-          
-          // 복제된 행의 모든 셀(td)을 순회하며 하이라이팅 적용
-          newRow.querySelectorAll('td').forEach(td => {
-            // 셀의 내부 HTML을 읽어와서 정규식으로 키워드 치환
-            // '<strong>$&</strong>'에서 $&는 정규식에 매칭된 원래 문자열을 의미
-            td.innerHTML = td.innerHTML.replace(searchRegex, '<strong>$&</strong>');
-          });
-
-          matchTableBody.appendChild(newRow);
+        // 검색어가 없으면 원본 행들을 그대로 추가
+        if (!searchText) {
+            originalRows.forEach(rowData => {
+                matchTableBody.appendChild(rowData.element);
+            });
+            return;
         }
-      });
+
+        // 1. 검색어를 소문자로 변환하고 띄어쓰기 기준으로 나눠 배열로 만듦
+        const keywords = searchText.toLowerCase().split(' ').filter(k => k);
+
+        // 검색어 배열이 비어있으면 (공백만 입력된 경우) 전체 목록 표시
+        if (keywords.length === 0) {
+            originalRows.forEach(rowData => {
+                matchTableBody.appendChild(rowData.element);
+            });
+            return;
+        }
+
+        // 2. 하이라이팅을 위한 정규식 생성 (모든 키워드와 일치하도록)
+        const searchRegex = new RegExp(keywords.join('|'), 'gi');
+
+        originalRows.forEach(rowData => {
+            // 3. 모든 키워드가 행 텍스트에 포함되어 있는지 확인
+            const isMatch = keywords.every(keyword => rowData.text.includes(keyword));
+
+            if (isMatch) {
+                const newRow = rowData.element.cloneNode(true);
+                
+                // 복제된 행의 모든 셀(td)을 순회하며 하이라이팅 적용
+                newRow.querySelectorAll('td').forEach(td => {
+                    // '<strong>$&</strong>'에서 $&는 정규식에 매칭된 원래 문자열을 의미
+                    td.innerHTML = td.innerHTML.replace(searchRegex, '<strong>$&</strong>');
+                });
+
+                matchTableBody.appendChild(newRow);
+            }
+        });
     }
   </script>
 </body>
