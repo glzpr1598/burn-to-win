@@ -477,16 +477,32 @@
             // [수정] 케미 태그를 종류별로 분리하여 생성
             const sameTeamTags = [];
             if (sameMatches > 0) {
-                if (sameWinRate == 100) { sameTeamTags.push('#환상의케미'); } 
-                else if (sameWinRate > 50) { sameTeamTags.push('#케미가좋아'); } 
-                else if (sameWinRate < 50) { sameTeamTags.push('#케미는그닥'); }
+                if (sameWinRate >= 90) { sameTeamTags.push('#환상의케미'); } 
+                else if (sameWinRate >= 80) { sameTeamTags.push('#우린그냥운명이야'); } 
+                else if (sameWinRate >= 70) { sameTeamTags.push('#시너지폭발'); } 
+                else if (sameWinRate >= 60) { sameTeamTags.push('#꿀케미'); } 
+                else if (sameWinRate >= 50) { sameTeamTags.push('#믿고가는조합'); } 
+                else if (sameWinRate >= 40) { sameTeamTags.push('#흔들리는케미'); } 
+                else if (sameWinRate >= 30) { sameTeamTags.push('#분발하자'); } 
+                else if (sameWinRate >= 20) { sameTeamTags.push('#눈물의듀오'); } 
+                else if (sameWinRate >= 10) { sameTeamTags.push('#승률도망'); } 
+                else { sameTeamTags.push('#케미실종'); } 
             }
             const sameTeamTagsText = sameTeamTags.join(' ');
 
             const opponentTags = [];
             if (oppMatches > 0) {
-                if (oppWinRate > 50) { opponentTags.push('#상대하기좋아'); } 
-                else if (oppWinRate < 50) { opponentTags.push('#상대하기무섭'); }
+                if (oppWinRate >= 90) { opponentTags.push('#통곡의벽'); } 
+                else if (oppWinRate >= 80) { opponentTags.push('#' + clickedPlayerName +'지배자'); }
+                else if (oppWinRate >= 70) { opponentTags.push('#' + clickedPlayerName +'사냥꾼'); }
+                else if (oppWinRate >= 60) { opponentTags.push('#판독끝'); }
+                else if (oppWinRate >= 50) { opponentTags.push('#상대로또만나자'); }
+                else if (oppWinRate >= 40) { opponentTags.push('#복수예정'); }
+                else if (oppWinRate >= 30) { opponentTags.push('#알고도못막는'); }
+                else if (oppWinRate >= 20) { opponentTags.push('#패배는과학'); }
+                else if (oppWinRate >= 10) { opponentTags.push('#코트위의실험쥐'); }
+                else if (oppWinRate > 0) { opponentTags.push('#악몽의재림'); }
+                else { opponentTags.push('#제발한번만이기자'); }
             }
             const opponentTagsText = opponentTags.join(' ');
 
