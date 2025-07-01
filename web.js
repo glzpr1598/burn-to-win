@@ -7,7 +7,6 @@ const mysql = require('mysql2/promise'); // promise 기반 라이브러리 사�
 // 커넥션 풀 생성
 const pool = mysql.createPool({
   host: process.env.DB_HOST || 'localhost', // 서버: 10.0.0.1, 로컬: localhost 
-  charset: 'utf8', // 서버: utf8mb4, 로컬: utf8
   user: process.env.DB_USER || 'burntowin',
   password: process.env.DB_PASSWORD || 'qnfRhc1@',
   database: process.env.DB_NAME || 'burntowin',
