@@ -452,9 +452,72 @@ app.get('/chemistry', async (req, res) => {
     }
 });
 
-// 케미 순위 페이지 (준비 중)
-app.get('/chemistry-rank', (req, res) => {
-    res.render('coming-soon', { title: '케미 순위' });
+// 케미 스코어
+app.get('/chemistry-score', async (req, res) => {
+    try {
+        // 1. 필요한 모든 데이터를 병렬로 가져옵니다.
+        const matchesPromise = pool.query(`
+            SELECT * FROM matchrecord 
+            WHERE team1_result IS NOT NULL 
+              AND team1_ad IS NOT NULL AND team1_ad != ''
+              AND team2_ad IS NOT NULL AND team2_ad != ''
+        `);
+        const courtsPromise = pool.query("SELECT DISTINCT court AS name FROM matchrecord WHERE court IS NOT NULL AND court != '' ORDER BY name ASC");
+        // ✨ 정회원(order=0) 명단을 가져오는 쿼리 추가
+        const membersPromise = pool.query("SELECT name FROM member WHERE `order` = 0");
+
+        const [[allMatches], [courts], [regularMembers]] = await Promise.all([matchesPromise, courtsPromise, membersPromise]);
+        
+        // 정회원 이름을 Set으로 만들어 빠른 조회를 가능하게 함
+        const regularMemberSet = new Set(regularMembers.map(m => m.name));
+
+        // 2. 필터 처리
+        let { period = '6m', types = '남복,여복,혼복', courts: courtFilter } = req.query;
+        let filteredMatches = applyPeriodFilter(allMatches, period);
+        if (types) {
+            filteredMatches = filteredMatches.filter(m => types.split(',').includes(m.type));
+        }
+        if (courtFilter) {
+            filteredMatches = filteredMatches.filter(m => courtFilter.split(',').includes(m.court));
+        }
+
+        // 3. 페어별 통계 계산
+        const pairStats = {};
+        filteredMatches.forEach(match => {
+            const team1Players = [match.team1_deuce, match.team1_ad];
+            const team2Players = [match.team2_deuce, match.team2_ad];
+
+            const processPair = (players, result) => {
+                // ✨ 페어의 모든 멤버가 정회원인지 확인
+                const isRegularPair = players.every(p => regularMemberSet.has(p));
+                if (!isRegularPair) return; // 정회원 페어가 아니면 건너뜀
+
+                const pairKey = players.sort().join('/');
+                if (!pairStats[pairKey]) {
+                    pairStats[pairKey] = { matches: 0, wins: 0, losses: 0 };
+                }
+                pairStats[pairKey].matches++;
+                if (result === '승') pairStats[pairKey].wins++;
+                else if (result === '패') pairStats[pairKey].losses++;
+            };
+
+            processPair(team1Players, match.team1_result);
+            processPair(team2Players, match.team2_result);
+        });
+
+        // 4. 최종 데이터 가공 및 렌더링
+        const pairData = Object.keys(pairStats).map(key => {
+            const stats = pairStats[key];
+            const winRate = stats.matches > 0 ? Math.round((stats.wins / stats.matches) * 100) : 0;
+            return { pair: key, matches: stats.matches, wins: stats.wins, losses: stats.losses, winRate };
+        });
+        
+        res.render('chemistry-score', { pairData, courts });
+
+    } catch (err) {
+        console.error('[/chemistry-score] 에러:', err.message);
+        res.status(500).send('서버 오류가 발생했습니다.');
+    }
 });
 
 // 출석부 페이지

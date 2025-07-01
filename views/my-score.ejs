@@ -15,7 +15,7 @@
         .filter-section { position: static; z-index: 101; padding: 15px; background-color: #f8f9fa; border-bottom: 1px solid #eee; flex-shrink: 0; }
         .filter-section .dropdown-toggle { display: flex; justify-content: space-between; align-items: center; text-align: left; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
         .dropdown-menu { padding: .75rem; width: 100%; font-size: 0.8rem;}
-        .dropdown-menu .checkbox-group { max-height: 200px; overflow-y: auto; margin-bottom: .5rem;}
+        .dropdown-menu .checkbox-group { max-height: 250px; overflow-y: auto; margin-bottom: .5rem;}
         .filter-control-links { padding-bottom: .5rem; margin-bottom: .5rem; border-bottom: 1px solid #eee; }
         .filter-control-links a { font-size: .8rem; color: #6c757d; text-decoration: none; margin-left: 10px; }
         .table-responsive { flex-grow: 1; overflow-y: auto; }
@@ -83,7 +83,7 @@
         <div class="side-menu">
             <h5>메뉴</h5>
             <hr>
-            <a href="/chemistry-rank">케미 순위</a>
+            <a href="/chemistry-score"><i class="bi bi-person-heart"></i>&nbsp;&nbsp;케미 스코어</a>
             <a href="/attendance"><i class="bi bi-calendar-check"></i>&nbsp;&nbsp;출석부</a>
         </div>
         <div class="overlay"></div>
@@ -269,144 +269,48 @@
     </div>
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="/js/common-filter.js"></script>
     <script>
-        // --- ✨ 햄버거 메뉴 스크립트 추가 ---
-        document.addEventListener('DOMContentLoaded', function () {
-            const hamburger = document.querySelector('.hamburger-icon');
-            const sideMenu = document.querySelector('.side-menu');
-            const overlay = document.querySelector('.overlay');
-
-            hamburger.addEventListener('click', function () {
-                sideMenu.classList.toggle('active');
-                overlay.classList.toggle('active');
-            });
-
-            overlay.addEventListener('click', function () {
-                sideMenu.classList.remove('active');
-                overlay.classList.remove('active');
-            });
-
-            // --- 나머지 DOMContentLoaded 이벤트 리스너 코드는 여기에 위치 ---
-            const savedFilters = filterStorage.load();
-                        
-            // --- 1. 저장된 필터 값으로 UI(드롭다운, 체크박스 등)를 설정합니다. ---
-            const periods = [ { value: 'all', text: '전체' }, { value: '1m', text: '최근 1개월' }, { value: '3m', text: '최근 3개월' }, { value: '6m', text: '최근 6개월' }, { value: '1y', text: '최근 1년' }, { value: '2025', text: '2025년' }, { value: '2024', text: '2024년' } ];
-            const selectedPeriod = periods.find(p => p.value === savedFilters.period) || periods[3];
-            const periodButton = document.getElementById('periodDropdownButton');
-            if (periodButton) periodButton.textContent = `기간: ${selectedPeriod.text}`;
-
-            savedFilters.types.forEach(type => {
-                const checkbox = document.getElementById(`type-${type}`);
-                if (checkbox) checkbox.checked = true;
-            });
-
-            savedFilters.courts.forEach(court => {
-                const checkbox = document.getElementById(`court-${court}`);
-                if (checkbox) checkbox.checked = true;
-            });
-            
-            const playerSelect = document.getElementById('playerSelect');
-            if (playerSelect && savedFilters.player) {
-                playerSelect.value = savedFilters.player;
-            }
-
-            updateCheckboxDropdownText('typeDropdownButton', 'typeFilter', '분류');
-            updateCheckboxDropdownText('courtDropdownButton', 'courtFilter', '코트');
-            
-            // --- 2. 하단 네비게이션 링크를 업데이트합니다. ---
-            updateNavLinks();
-
-            // --- 3. 현재 URL의 필터와 저장된 필터가 다른지 확인하고, 다르면 페이지를 리로드하여 동기화합니다. ---
-            // 이 로직은 사용자가 URL을 직접 수정했거나, 다른 탭에서 필터를 변경했을 때를 대비합니다.
-            const currentURLParams = new URLSearchParams(window.location.search);
-            if (currentURLParams.get('period') !== savedFilters.period ||
-                currentURLParams.get('types') !== savedFilters.types.join(',')) {
-                // 필터가 일치하지 않으면 저장된 필터를 기준으로 URL을 만들어 페이지를 다시 로드합니다.
-                // 이렇게 함으로써 항상 localStorage의 값과 화면의 내용이 일치하게 됩니다.
-                const params = new URLSearchParams();
-                params.set('period', savedFilters.period);
-                if(savedFilters.types.length > 0) params.set('types', savedFilters.types.join(','));
-                if(savedFilters.courts.length > 0) params.set('courts', savedFilters.courts.join(','));
-                if(window.location.pathname === '/chemistry' && savedFilters.player) params.set('player', savedFilters.player);
-
-                // replace()는 히스토리를 남기지 않아 뒤로가기 시 무한루프에 빠지지 않습니다.
-                window.location.replace(`${window.location.pathname}?${params.toString()}`);
-            } else {
-            // [추가] 페이지가 리로드되지 않을 때, 기본 정렬을 적용합니다.
-            defaultSortTable();
-            }
-        });
-
-        /**
-         * localStorage를 사용하여 필터 값을 관리하는 헬퍼 객체
-         */
-        const filterStorage = {
-            KEY: 'userFilters', // localStorage에 저장될 키 이름
-            
-            // 필터 객체를 받아서 JSON 문자열로 변환 후 localStorage에 저장
-            save(filters) {
-                localStorage.setItem(this.KEY, JSON.stringify(filters));
-            },
-
-            // localStorage에서 필터 값을 불러와 JSON 객체로 변환하여 반환
-            // 저장된 값이 없으면 기본값을 반환
-            load() {
-                const filters = localStorage.getItem(this.KEY);
-                if (filters) {
-                    return JSON.parse(filters);
-                }
-                // 저장된 설정이 없으면 기본 필터 값을 반환
-                return {
-                    period: '6m',
-                    types: ['남단', '여단', '남복', '여복', '혼복'],
-                    courts: [],
-                    player: null
-                };
-            }
-        };
-        
-        /**
-         * 필터가 적용될 때 호출되는 함수.
-         * localStorage의 기존 값을 보존하면서 현재 페이지의 필터만 업데이트합니다.
-         */
         function applyFilters(options = {}) {
-            // 1. localStorage에서 기존 필터 값을 먼저 불러옵니다.
             let filters = filterStorage.load();
-
-            // 2. 현재 UI에 있는 공통 필터(분류, 코트) 값으로 불러온 객체를 '업데이트'합니다.
-            const selectedTypes = Array.from(document.querySelectorAll('#typeFilter input:checked')).map(cb => cb.value);
-            const selectedCourts = Array.from(document.querySelectorAll('#courtFilter input:checked')).map(cb => cb.value);
-            filters.types = selectedTypes;
-            filters.courts = selectedCourts;
-
-            // 3. '기준대상' select 박스가 '현재 페이지에 있을 경우에만' 값을 업데이트합니다.
-            //    (my-score.ejs 에서는 이 코드가 무시되므로 기존 player 값이 보존됩니다.)
-            const playerSelect = document.getElementById('playerSelect');
-            if (playerSelect) {
-                filters.player = playerSelect.value;
-            }
-
-            // 4. 옵션으로 전달된 값(기간 드롭다운 클릭, 기준대상 직접 변경 등)이 있으면 최종적으로 덮어씁니다.
+            filters.types = Array.from(document.querySelectorAll('#typeFilter input:checked')).map(cb => cb.value);
+            filters.courts = Array.from(document.querySelectorAll('#courtFilter input:checked')).map(cb => cb.value);
             if (options.period) filters.period = options.period;
-            if (options.player) filters.player = options.player;
-
-            // 5. 최종적으로 합쳐진 필터 객체를 localStorage에 저장합니다.
             filterStorage.save(filters);
 
-            // 6. 완성된 URL을 만들어 페이지를 이동합니다.
-            const currentPath = window.location.pathname;
             const params = new URLSearchParams();
             params.set('period', filters.period);
             if (filters.types.length > 0) params.set('types', filters.types.join(','));
-            if (filters.courts.length > 0) params.set('courts', filters.courts.join(','));
+            if (filters.courts && filters.courts.length > 0) params.set('courts', filters.courts.join(','));
             
-            // 이동하려는 페이지가 '/chemistry'가 아니더라도, 현재 페이지가 '/chemistry'라면 player 파라미터를 붙여줍니다.
-            if (currentPath === '/chemistry' && filters.player) {
-                params.set('player', filters.player);
-            }
-            
-            window.location.href = `${currentPath}?${params.toString()}`;
+            window.location.href = `/my-score?${params.toString()}`;
         }
+        
+        document.addEventListener('DOMContentLoaded', () => {
+            const savedFilters = filterStorage.load();
+            
+            const currentParams = new URLSearchParams(window.location.search);
+            const savedParams = new URLSearchParams();
+            savedParams.set('period', savedFilters.period);
+            if (savedFilters.types.length > 0) savedParams.set('types', savedFilters.types.join(','));
+            if (savedFilters.courts && savedFilters.courts.length > 0) savedParams.set('courts', savedFilters.courts.join(','));
+
+            if (currentParams.toString() !== savedParams.toString()) {
+                window.location.replace(`/my-score?${savedParams.toString()}`);
+                return;
+            }
+
+            const periods = [ { value: 'all', text: '전체' }, { value: '1m', text: '최근 1개월' }, { value: '3m', text: '최근 3개월' }, { value: '6m', text: '최근 6개월' }, { value: '1y', text: '최근 1년' }, { value: '2025', text: '2025년' }, { value: '2024', text: '2024년' } ];
+            const selectedPeriod = periods.find(p => p.value === savedFilters.period) || periods[3];
+            document.getElementById('periodDropdownButton').textContent = `기간: ${selectedPeriod.text}`;
+            document.querySelectorAll('#typeFilter input').forEach(cb => { if (savedFilters.types.includes(cb.value)) cb.checked = true; });
+            if (savedFilters.courts) document.querySelectorAll('#courtFilter input').forEach(cb => { if (savedFilters.courts.includes(cb.value)) cb.checked = true; });
+            
+            updateCheckboxDropdownText('typeDropdownButton', 'typeFilter', '분류');
+            updateCheckboxDropdownText('courtDropdownButton', 'courtFilter', '코트');
+            
+            defaultSortTable();
+        });
 
         /**
          * 페이지 하단 네비게이션 링크를 업데이트하는 함수
@@ -435,13 +339,6 @@
 
         const currentParams = new URLSearchParams(window.location.search);
         
-        function selectAll(filterId) { document.querySelectorAll(`#${filterId} input[type="checkbox"]`).forEach(checkbox => checkbox.checked = true); }
-        function deselectAll(filterId) { document.querySelectorAll(`#${filterId} input[type="checkbox"]`).forEach(checkbox => checkbox.checked = false); }
-        function updateCheckboxDropdownText(buttonId, filterId, prefix) {
-            const button = document.getElementById(buttonId);
-            const count = document.querySelectorAll(`#${filterId} input:checked`).length;
-            if (count === 0) { button.textContent = prefix; } else { button.textContent = `${prefix}: ${count}개 선택`; }
-        }
         const sortState = { columnIndex: 1, ascending: false };
         function sortTable(columnIndex) {
             const table = document.getElementById('scoreTable');

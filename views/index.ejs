@@ -177,7 +177,7 @@
     <div class="side-menu">
         <h5>메뉴</h5>
         <hr>
-        <a href="/chemistry-rank">케미 순위</a>
+        <a href="/chemistry-score"><i class="bi bi-person-heart"></i>&nbsp;&nbsp;케미 스코어</a>
         <a href="/attendance"><i class="bi bi-calendar-check"></i>&nbsp;&nbsp;출석부</a>
     </div>
     <div class="overlay"></div>
@@ -187,8 +187,8 @@
         <colgroup>
             <col style="width: 80px;">
             <col style="width: 60px;">
-            <col style="width: 90px;">
-            <col style="width: 90px;">
+            <col style="width: 95px;">
+            <col style="width: 95px;">
             <col style="width: 60px;">
             <col style="width: 80px;">
             <col style="width: 50px;">
@@ -197,8 +197,10 @@
         </colgroup>
         <thead class="table-light">
           <tr>
-            <th onclick="sortTable(0, this)">날짜 <span>↓</span></th>
-            <th onclick="sortTable(1, this)">코트 <span></span></th>
+            <th onclick="sortTable(0, this)" style="cursor: pointer;">
+              날짜 <i class="bi bi-sort-down"></i>
+            </th>
+            <th>코트 <span></span></th>
             <th>팀1 <span></span></th>
             <th>팀2 <span></span></th>
             <th>스코어 <span></span></th>
@@ -327,15 +329,12 @@
 
       rows.forEach(row => tbody.appendChild(row));
 
-      const ths = table.querySelectorAll("th");
-      ths.forEach(th => {
-        const span = th.querySelector("span");
-        if (span) span.innerText = "";
-      });
-
-      const arrow = ascending ? "↑" : "↓";
-      const span = thElement.querySelector("span");
-      if (span) span.innerText = " " + arrow;
+      // ✨ 아이콘 변경 로직 수정
+      const icon = thElement.querySelector("i.bi");
+      if (icon) {
+        // 오름차순이면 'up', 내림차순이면 'down' 아이콘으로 클래스 변경
+        icon.className = ascending ? "bi bi-sort-up" : "bi bi-sort-down";
+      }
     }
 
     const searchToggle = document.getElementById('searchToggle');
