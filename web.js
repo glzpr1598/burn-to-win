@@ -457,9 +457,117 @@ app.get('/chemistry-rank', (req, res) => {
     res.render('coming-soon', { title: '케미 순위' });
 });
 
-// 출석부 페이지 (준비 중)
-app.get('/attendance', (req, res) => {
-    res.render('coming-soon', { title: '출석부' });
+// 출석부 페이지
+app.get('/attendance', async (req, res) => {
+    try {
+        // 1. 년/월 파라미터 가져오기 (없으면 현재 날짜 기준)
+        const year = parseInt(req.query.year) || new Date().getFullYear();
+        const month = parseInt(req.query.month) || new Date().getMonth() + 1;
+
+        const startDate = `${year}-${String(month).padStart(2, '0')}-01`;
+        const lastDayOfMonth = new Date(year, month, 0).getDate();
+        const endDate = `${year}-${String(month).padStart(2, '0')}-${String(lastDayOfMonth).padStart(2, '0')}`;
+
+        // 2. DB에서 데이터 가져오기 (정회원 목록, 해당 월의 경기 기록)
+        const membersPromise = pool.query('SELECT name FROM member WHERE etc = "" ORDER BY name ASC');
+        const matchesPromise = pool.query(
+            `SELECT date, team1_deuce, team1_ad, team2_deuce, team2_ad FROM matchrecord WHERE date BETWEEN ? AND ?`,
+            [startDate, endDate]
+        );
+
+        const [[members], [matches]] = await Promise.all([membersPromise, matchesPromise]);
+
+        // 3. 출석 데이터 가공
+        const attendanceData = members.map(member => {
+            const attendedDates = new Set();
+            matches.forEach(match => {
+                const players = [match.team1_deuce, match.team1_ad, match.team2_deuce, match.team2_ad];
+                if (players.includes(member.name)) {
+                    attendedDates.add(new Date(match.date).getDate()); // 날짜(일)만 Set에 추가하여 중복 방지
+                }
+            });
+            return {
+                name: member.name,
+                attendanceCount: attendedDates.size,
+                // Set을 배열로 변환하고, 오름차순 정렬 후, 쉼표로 구분된 문자열로 만듭니다.
+                attendedDays: Array.from(attendedDates).sort((a, b) => a - b).join(', ')
+            };
+        });
+
+        // 4. EJS 템플릿 렌더링
+        res.render('attendance', {
+            year,
+            month,
+            attendanceData,
+        });
+
+    } catch (err) {
+        console.error('[/attendance] 에러:', err.message);
+        res.status(500).send('서버 오류가 발생했습니다.');
+    }
+});
+
+// API: 특정 멤버의 전체 출석 기록 조회
+app.get('/api/member-attendance/:name', async (req, res) => {
+    try {
+        const memberName = req.params.name;
+
+        // 1. 해당 멤버가 참여한 모든 경기 기록을 날짜 오름차순으로 가져온다.
+        const sql = `
+            SELECT date
+            FROM matchrecord
+            WHERE team1_deuce = ? OR team1_ad = ? OR team2_deuce = ? OR team2_ad = ?
+            ORDER BY date DESC
+        `;
+        const [matches] = await pool.query(sql, [memberName, memberName, memberName, memberName]);
+
+        if (matches.length === 0) {
+            return res.json([]); // 출석 기록이 없으면 빈 배열 반환
+        }
+
+        // 2. 월별로 데이터 가공 (년-월을 key로 사용)
+        const monthlyStats = {}; // ex: { "2025-07": { days: Set(1, 2, 3) } }
+
+        matches.forEach(match => {
+            const date = new Date(match.date);
+            const year = date.getFullYear();
+            const month = date.getMonth() + 1;
+            const day = date.getDate();
+            const yearMonthKey = `${year}-${String(month).padStart(2, '0')}`;
+
+            if (!monthlyStats[yearMonthKey]) {
+                monthlyStats[yearMonthKey] = {
+                    days: new Set()
+                };
+            }
+            monthlyStats[yearMonthKey].days.add(day);
+        });
+
+        // 3. 최종 결과 배열로 변환
+        const result = Object.keys(monthlyStats).map(key => {
+            const [year, month] = key.split('-');
+            const daysSet = monthlyStats[key].days;
+            return {
+                yearMonth: `${year}년 ${parseInt(month, 10)}월`,
+                attendanceCount: daysSet.size,
+                attendedDays: Array.from(daysSet).sort((a, b) => a - b).join(', ')
+            };
+        });
+        
+        // 년-월 최신순으로 정렬
+        result.sort((a, b) => {
+            const dateA = new Date(a.yearMonth.replace('년 ', '-').replace('월', ''));
+            const dateB = new Date(b.yearMonth.replace('년 ', '-').replace('월', ''));
+            return dateB - dateA;
+        });
+
+
+        res.json(result);
+
+    } catch (err) {
+        console.error(`[/api/member-attendance/:name] 에러:`, err.message);
+        res.status(500).json({ error: '서버 오류가 발생했습니다.' });
+    }
 });
 
 const PORT = 8001;
