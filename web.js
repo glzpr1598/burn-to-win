@@ -453,6 +453,15 @@ app.get('/chemistry', async (req, res) => {
     }
 });
 
+// 케미 순위 페이지 (준비 중)
+app.get('/chemistry-rank', (req, res) => {
+    res.render('coming-soon', { title: '케미 순위' });
+});
+
+// 출석부 페이지 (준비 중)
+app.get('/attendance', (req, res) => {
+    res.render('coming-soon', { title: '출석부' });
+});
 
 const PORT = 8001;
 app.listen(PORT, () => {

@@ -47,6 +47,25 @@
             text-align: right;
             font-size: 0.9rem;
         }
+        /* --- ✨ 햄버거 메뉴 스타일 추가 --- */
+    .hamburger-icon { font-size: 1.8rem; margin-right: 10px; color: black; cursor: pointer; }
+        .side-menu {
+            position: fixed;
+            top: 0;
+            right: -250px;
+            width: 250px;
+            height: 100%;
+            background-color: white;
+            box-shadow: -2px 0 5px rgba(0,0,0,0.1);
+            transition: right 0.3s ease-in-out;
+            z-index: 1040;
+            padding: 20px;
+        }
+        .side-menu.active { right: 0; }
+        .side-menu a { display: block; padding: 15px 10px; color: #333; text-decoration: none; border-bottom: 1px solid #f0f0f0; }
+        .side-menu a:hover { background-color: #f8f9fa; }
+        .overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background-color: rgba(0,0,0,0.5); z-index: 1030; }
+        .overlay.active { display: block; }
     </style>
 </head>
 
@@ -58,7 +77,16 @@
                 <img src="/image/btw.png" alt="로고" style="height: 40px; margin-right: 15px;">
                 <h5 style="margin-bottom: 0;"><b>상대와 케미</b></h5>
             </div>
+            <i class="bi bi-list hamburger-icon"></i>
         </div>
+
+        <div class="side-menu">
+            <h5>메뉴</h5>
+            <hr>
+            <a href="/chemistry-rank">케미 순위</a>
+            <a href="/attendance">출석부</a>
+        </div>
+        <div class="overlay"></div>
 
         <!-- 필터 섹션 -->
         <div class="filter-section">
@@ -200,6 +228,73 @@
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
     <script>
+        // --- ✨ 햄버거 메뉴 스크립트 추가 ---
+        document.addEventListener('DOMContentLoaded', function () {
+            const hamburger = document.querySelector('.hamburger-icon');
+            const sideMenu = document.querySelector('.side-menu');
+            const overlay = document.querySelector('.overlay');
+
+            hamburger.addEventListener('click', function () {
+                sideMenu.classList.toggle('active');
+                overlay.classList.toggle('active');
+            });
+
+            overlay.addEventListener('click', function () {
+                sideMenu.classList.remove('active');
+                overlay.classList.remove('active');
+            });
+            
+            // --- 나머지 DOMContentLoaded 이벤트 리스너 코드는 여기에 위치 ---
+            const savedFilters = filterStorage.load();
+                        
+            // --- 1. 저장된 필터 값으로 UI(드롭다운, 체크박스 등)를 설정합니다. ---
+            const periods = [ { value: 'all', text: '전체' }, { value: '1m', text: '최근 1개월' }, { value: '3m', text: '최근 3개월' }, { value: '6m', text: '최근 6개월' }, { value: '1y', text: '최근 1년' }, { value: '2025', text: '2025년' }, { value: '2024', text: '2024년' } ];
+            const selectedPeriod = periods.find(p => p.value === savedFilters.period) || periods[3];
+            const periodButton = document.getElementById('periodDropdownButton');
+            if (periodButton) periodButton.textContent = `기간: ${selectedPeriod.text}`;
+
+            savedFilters.types.forEach(type => {
+                const checkbox = document.getElementById(`type-${type}`);
+                if (checkbox) checkbox.checked = true;
+            });
+
+            savedFilters.courts.forEach(court => {
+                const checkbox = document.getElementById(`court-${court}`);
+                if (checkbox) checkbox.checked = true;
+            });
+            
+            const playerSelect = document.getElementById('playerSelect');
+            if (playerSelect && savedFilters.player) {
+                playerSelect.value = savedFilters.player;
+            }
+
+            updateCheckboxDropdownText('typeDropdownButton', 'typeFilter', '분류');
+            updateCheckboxDropdownText('courtDropdownButton', 'courtFilter', '코트');
+            
+            // --- 2. 하단 네비게이션 링크를 업데이트합니다. ---
+            updateNavLinks();
+
+            // --- 3. 현재 URL의 필터와 저장된 필터가 다른지 확인하고, 다르면 페이지를 리로드하여 동기화합니다. ---
+            // 이 로직은 사용자가 URL을 직접 수정했거나, 다른 탭에서 필터를 변경했을 때를 대비합니다.
+            const currentURLParams = new URLSearchParams(window.location.search);
+            if (currentURLParams.get('period') !== savedFilters.period ||
+                currentURLParams.get('types') !== savedFilters.types.join(',')) {
+                // 필터가 일치하지 않으면 저장된 필터를 기준으로 URL을 만들어 페이지를 다시 로드합니다.
+                // 이렇게 함으로써 항상 localStorage의 값과 화면의 내용이 일치하게 됩니다.
+                const params = new URLSearchParams();
+                params.set('period', savedFilters.period);
+                if(savedFilters.types.length > 0) params.set('types', savedFilters.types.join(','));
+                if(savedFilters.courts.length > 0) params.set('courts', savedFilters.courts.join(','));
+                if(window.location.pathname === '/chemistry' && savedFilters.player) params.set('player', savedFilters.player);
+
+                // replace()는 히스토리를 남기지 않아 뒤로가기 시 무한루프에 빠지지 않습니다.
+                window.location.replace(`${window.location.pathname}?${params.toString()}`);
+            } else {
+                // [추가] URL과 필터가 일치하여 페이지가 리로드되지 않을 때, 기본 정렬을 적용합니다.
+                defaultSortTable();
+            }
+        });
+
         /**
          * localStorage를 사용하여 필터 값을 관리하는 헬퍼 객체
          */
@@ -295,60 +390,6 @@
                 link.href = `${targetUrl.pathname}?${finalParams.toString()}`;
             });
         }
-
-        /**
-         * 페이지가 처음 로드될 때 실행되는 초기화 함수
-         */
-        document.addEventListener('DOMContentLoaded', () => {
-            const savedFilters = filterStorage.load();
-            
-            // --- 1. 저장된 필터 값으로 UI(드롭다운, 체크박스 등)를 설정합니다. ---
-            const periods = [ { value: 'all', text: '전체' }, { value: '1m', text: '최근 1개월' }, { value: '3m', text: '최근 3개월' }, { value: '6m', text: '최근 6개월' }, { value: '1y', text: '최근 1년' }, { value: '2025', text: '2025년' }, { value: '2024', text: '2024년' } ];
-            const selectedPeriod = periods.find(p => p.value === savedFilters.period) || periods[3];
-            const periodButton = document.getElementById('periodDropdownButton');
-            if (periodButton) periodButton.textContent = `기간: ${selectedPeriod.text}`;
-
-            savedFilters.types.forEach(type => {
-                const checkbox = document.getElementById(`type-${type}`);
-                if (checkbox) checkbox.checked = true;
-            });
-
-            savedFilters.courts.forEach(court => {
-                const checkbox = document.getElementById(`court-${court}`);
-                if (checkbox) checkbox.checked = true;
-            });
-            
-            const playerSelect = document.getElementById('playerSelect');
-            if (playerSelect && savedFilters.player) {
-                playerSelect.value = savedFilters.player;
-            }
-
-            updateCheckboxDropdownText('typeDropdownButton', 'typeFilter', '분류');
-            updateCheckboxDropdownText('courtDropdownButton', 'courtFilter', '코트');
-            
-            // --- 2. 하단 네비게이션 링크를 업데이트합니다. ---
-            updateNavLinks();
-
-            // --- 3. 현재 URL의 필터와 저장된 필터가 다른지 확인하고, 다르면 페이지를 리로드하여 동기화합니다. ---
-            // 이 로직은 사용자가 URL을 직접 수정했거나, 다른 탭에서 필터를 변경했을 때를 대비합니다.
-            const currentURLParams = new URLSearchParams(window.location.search);
-            if (currentURLParams.get('period') !== savedFilters.period ||
-                currentURLParams.get('types') !== savedFilters.types.join(',')) {
-                // 필터가 일치하지 않으면 저장된 필터를 기준으로 URL을 만들어 페이지를 다시 로드합니다.
-                // 이렇게 함으로써 항상 localStorage의 값과 화면의 내용이 일치하게 됩니다.
-                const params = new URLSearchParams();
-                params.set('period', savedFilters.period);
-                if(savedFilters.types.length > 0) params.set('types', savedFilters.types.join(','));
-                if(savedFilters.courts.length > 0) params.set('courts', savedFilters.courts.join(','));
-                if(window.location.pathname === '/chemistry' && savedFilters.player) params.set('player', savedFilters.player);
-
-                // replace()는 히스토리를 남기지 않아 뒤로가기 시 무한루프에 빠지지 않습니다.
-                window.location.replace(`${window.location.pathname}?${params.toString()}`);
-            } else {
-                // [추가] URL과 필터가 일치하여 페이지가 리로드되지 않을 때, 기본 정렬을 적용합니다.
-                defaultSortTable();
-            }
-        });
 
         function selectAll(filterId) { document.querySelectorAll(`#${filterId} input[type="checkbox"]`).forEach(checkbox => checkbox.checked = true); }
         function deselectAll(filterId) { document.querySelectorAll(`#${filterId} input[type="checkbox"]`).forEach(checkbox => checkbox.checked = false); }
