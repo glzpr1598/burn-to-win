@@ -81,7 +81,7 @@ app.get('/', async (req, res) => {
 // 경기 기록 입력 페이지 보여주기
 app.get('/new', async (req, res) => {
   try {
-    const membersPromise = pool.query('SELECT name FROM member ORDER BY id ASC');
+    const membersPromise = pool.query('SELECT name FROM member ORDER BY `order` ASC, name ASC');
     const courtsPromise = pool.query("SELECT DISTINCT court AS name FROM matchrecord WHERE court IS NOT NULL AND court != '' ORDER BY name ASC");
 
     // 두 쿼리를 병렬로 실행
