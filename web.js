@@ -472,7 +472,7 @@ app.get('/chemistry-score', async (req, res) => {
         const regularMemberSet = new Set(regularMembers.map(m => m.name));
 
         // 2. 필터 처리
-        let { period = '6m', types = '남복,여복,혼복', courts: courtFilter } = req.query;
+        let { period = '6m', types = '남복,여복,혼복,혼복(남3),혼복(여3),혼복(남vs여)', courts: courtFilter } = req.query;
         let filteredMatches = applyPeriodFilter(allMatches, period);
         if (types) {
             filteredMatches = filteredMatches.filter(m => types.split(',').includes(m.type));
@@ -517,6 +517,49 @@ app.get('/chemistry-score', async (req, res) => {
     } catch (err) {
         console.error('[/chemistry-score] 에러:', err.message);
         res.status(500).send('서버 오류가 발생했습니다.');
+    }
+});
+
+// ✨ API: 특정 페어의 경기 기록 조회 (추가)
+app.get('/api/matches/pair', async (req, res) => {
+    try {
+        // 1. 요청으로부터 필터 조건과 페어 정보 가져오기
+        let { pair, period, types, courts: courtFilter } = req.query;
+        if (!pair) {
+            return res.status(400).json({ message: '페어 정보가 필요합니다.' });
+        }
+        const [player1, player2] = pair.split('/');
+
+        // 2. 전체 경기 기록 가져오기
+        const [allMatches] = await pool.query('SELECT * FROM matchrecord WHERE team1_result IS NOT NULL');
+        
+        // 3. 기간, 분류, 코트 필터 적용
+        let filteredMatches = applyPeriodFilter(allMatches, period);
+        if (types) {
+            filteredMatches = filteredMatches.filter(m => types.split(',').includes(m.type));
+        }
+        if (courtFilter) {
+            filteredMatches = filteredMatches.filter(m => courtFilter.split(',').includes(m.court));
+        }
+
+        // 4. 해당 페어가 '같은 팀'으로 뛴 경기만 필터링
+        const pairMatches = filteredMatches.filter(match => {
+            const team1 = [match.team1_deuce, match.team1_ad];
+            const team2 = [match.team2_deuce, match.team2_ad];
+            const isTeam1 = team1.includes(player1) && team1.includes(player2);
+            const isTeam2 = team2.includes(player1) && team2.includes(player2);
+            return isTeam1 || isTeam2;
+        });
+
+        // 5. 최신순으로 정렬
+        pairMatches.sort((a, b) => new Date(b.date) - new Date(a.date) || b.id - a.id);
+        
+        // 6. 결과 전송
+        res.json(pairMatches);
+
+    } catch (err) {
+        console.error('[/api/matches/pair] 에러:', err.message);
+        res.status(500).json({ error: '서버 오류가 발생했습니다.' });
     }
 });
 

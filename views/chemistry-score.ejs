@@ -40,6 +40,19 @@
     </style>
 </head>
 <body>
+    <div class="modal fade" id="matchDetailModal" tabindex="-1" aria-labelledby="matchDetailModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="matchDetailModalLabel">경기 기록</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body" id="matchDetailModalBody" style="padding: 0;">
+                    </div>
+            </div>
+        </div>
+    </div>
+
     <div class="app-container">
         <div class="d-flex align-items-center justify-content-between sticky-header">
             <div class="d-flex align-items-center">
@@ -113,17 +126,17 @@
             <table id="scoreTable" class="table table-sm table-striped text-center align-middle">
                 <thead class="table-light">
                     <tr>
-                        <th style="width: 30%;">페어</th>
-                        <th class="sortable-th" style="width: 17%;" onclick="sortTable(1, 'num')">경기수 <i class="bi bi-arrow-down-up"></i></th>
-                        <th class="sortable-th" style="width: 17%;" onclick="sortTable(2, 'num')">승리 <i class="bi bi-arrow-down-up"></i></th>
-                        <th class="sortable-th" style="width: 17%;" onclick="sortTable(3, 'num')">패배 <i class="bi bi-arrow-down-up"></i></th>
-                        <th class="sortable-th" style="width: 19%;" onclick="sortTable(4, 'num')">승률 <i class="bi bi-arrow-down-up"></i></th>
-                    </tr>
+                        <th style="width: 29%;">페어</th>
+                        <th class="sortable-th" style="width: 16%;" onclick="sortTable(1, 'num')">경기수 <i class="bi bi-arrow-down-up"></i></th>
+                        <th class="sortable-th" style="width: 16%;" onclick="sortTable(2, 'num')">승리 <i class="bi bi-arrow-down-up"></i></th>
+                        <th class="sortable-th" style="width: 16%;" onclick="sortTable(3, 'num')">패배 <i class="bi bi-arrow-down-up"></i></th>
+                        <th class="sortable-th" style="width: 18%;" onclick="sortTable(4, 'num')">승률 <i class="bi bi-arrow-down-up"></i></th>
+                        <th style="width: 5%;"></th> </tr>
                 </thead>
                 <tbody id="scoreTbody">
                     <% if (pairData && pairData.length > 0) { %>
                         <% pairData.forEach(item => { %>
-                            <tr>
+                            <tr data-pair="<%= item.pair %>" style="cursor: pointer;" onclick="showMatchDetails(this)">
                                 <td><%= item.pair %></td>
                                 <td><%= item.matches %></td>
                                 <td><%= item.wins %></td>
@@ -133,10 +146,10 @@
                                 <% } else { %>
                                     <td><%= item.winRate %>%</td>
                                 <% } %>
-                            </tr>
+                                <td><i class="bi bi-chevron-right text-muted"></i></td> </tr>
                         <% }) %>
                     <% } else { %>
-                        <tr><td colspan="5" class="text-center p-5">표시할 데이터가 없습니다.<br><small>필터 조건을 변경하거나 경기 기록을 추가해주세요.</small></td></tr>
+                        <tr><td colspan="6" class="text-center p-5">표시할 데이터가 없습니다.<br><small>필터 조건을 변경하거나 경기 기록을 추가해주세요.</small></td></tr>
                     <% } %>
                 </tbody>
             </table>
@@ -157,7 +170,7 @@
         function applyFilters(options = {}) {
             let filters = filterStorage.load();
             
-            const singleTypes = filters.types.filter(t => t.includes('단') || t.includes('남vs여'));
+            const singleTypes = filters.types.filter(t => t.includes('단'));
             const newDoubleTypes = Array.from(document.querySelectorAll('#typeFilter input:checked')).map(cb => cb.value);
             filters.types = [...new Set([...singleTypes, ...newDoubleTypes])];
             filters.courts = Array.from(document.querySelectorAll('#courtFilter input:checked')).map(cb => cb.value);
@@ -249,13 +262,112 @@
             });
         }
 
+                // ✨ 모달 관련 전역 변수 및 함수 추가
+        const matchDetailModal = new bootstrap.Modal(document.getElementById('matchDetailModal'));
+        
+        async function showMatchDetails(rowElement) {
+            const pair = rowElement.dataset.pair;
+            const currentFilters = new URLSearchParams(window.location.search);
+            
+            const period = currentFilters.get('period') || '6m';
+            const types = currentFilters.get('types') || '남복,여복,혼복';
+            const courts = currentFilters.get('courts') || '';
+
+            try {
+                const response = await fetch(`/api/matches/pair?pair=${encodeURIComponent(pair)}&period=${period}&types=${types}&courts=${courts}`);
+                if (!response.ok) {
+                    throw new Error('경기 기록을 불러오는데 실패했습니다.');
+                }
+                const matches = await response.json();
+                
+                document.getElementById('matchDetailModalLabel').innerText = `${pair} 페어 경기 기록`;
+                const modalBody = document.getElementById('matchDetailModalBody');
+                
+                if (matches.length > 0) {
+                    // ✨ buildMatchTableHtml 함수에 pair 정보를 넘겨줍니다.
+                    modalBody.innerHTML = buildMatchTableHtml(matches, pair);
+                } else {
+                    modalBody.innerHTML = '<p class="text-center p-4">해당 조건의 경기 기록이 없습니다.</p>';
+                }
+
+                matchDetailModal.show();
+            } catch (error) {
+                console.error('Error fetching match details:', error);
+                alert(error.message);
+            }
+        }
+        
+        // ✨ 함수 로직 전체 수정
+        function buildMatchTableHtml(matches, pair) {
+            const [player1, player2] = pair.split('/');
+
+            let tableHtml = `
+                <div class="table-responsive">
+                    <table class="table table-sm table-striped text-center align-middle text-nowrap" style="font-size: 0.8rem;">
+                        <colgroup>
+                            <col style="width: 15%;"><col style="width: 13%;"><col style="width: 25%;"><col style="width: 13%;"><col style="width: 12%;"><col style="width: 12%;"><col style="width: 10%;">
+                        </colgroup>
+                        <thead class="table-light">
+                            <tr><th>날짜</th><th>코트</th><th>상대팀</th><th>스코어</th><th>결과</th><th>분류</th><th>영상</th></tr>
+                        </thead>
+                        <tbody>
+            `;
+            
+            matches.forEach(match => {
+                const team1Players = [match.team1_deuce, match.team1_ad];
+                const isPairOnTeam1 = team1Players.includes(player1) && team1Players.includes(player2);
+
+                let opponentPair, result, selectedScore, opponentScore;
+
+                if (isPairOnTeam1) {
+                    opponentPair = `${match.team2_deuce}${match.team2_ad ? '/' + match.team2_ad : ''}`;
+                    result = match.team1_result;
+                    selectedScore = match.team1_score;
+                    opponentScore = match.team2_score;
+                } else {
+                    opponentPair = `${match.team1_deuce}${match.team1_ad ? '/' + match.team1_ad : ''}`;
+                    result = match.team2_result;
+                    selectedScore = match.team2_score;
+                    opponentScore = match.team1_score;
+                }
+
+                let resultDisplay;
+                if (result === '승') {
+                    resultDisplay = '<span style="color: darkblue;">승</span>';
+                } else if (result === '패') {
+                    resultDisplay = '<span style="color: darkred;">패</span>';
+                } else {
+                    resultDisplay = '<span>무</span>';
+                }
+                
+                const videoLink = match.video 
+                    ? `<a href="${match.video}" target="_blank" rel="noopener" onclick="event.stopPropagation();"><i class="bi bi-youtube text-danger fs-5"></i></a>`
+                    : '';
+
+                tableHtml += `
+                    <tr>
+                        <td>${match.date ? match.date.substring(2) : ''}</td>
+                        <td>${match.court}</td>
+                        <td>${opponentPair}</td>
+                        <td>${selectedScore}:${opponentScore}</td>
+                        <td>${resultDisplay}</td>
+                        <td>${match.type}</td>
+                        <td>${videoLink}</td>
+                    </tr>
+                `;
+            });
+
+            tableHtml += `</tbody></table></div>`;
+            return tableHtml;
+        }
+
         document.addEventListener('DOMContentLoaded', () => {
             originalRows = Array.from(document.querySelectorAll('#scoreTbody tr'));
 
             const savedFilters = filterStorage.load();
             
             const currentParams = new URLSearchParams(window.location.search);
-            const scoreTypes = savedFilters.types.filter(t => !t.includes('단') && !t.includes('남vs여'));
+            const scoreTypes = savedFilters.types.filter(t => !t.includes('단'));
             const savedParams = new URLSearchParams();
             savedParams.set('period', savedFilters.period);
             if (scoreTypes.length > 0) savedParams.set('types', scoreTypes.join(','));

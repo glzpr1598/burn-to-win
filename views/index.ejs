@@ -108,7 +108,7 @@
     #searchToggle .bi-search { font-size: 1.2rem; color: black; margin-right: 15px; }
     #searchToggle { white-space: nowrap; }
     #matchTable { table-layout: fixed; width: 100%; font-size: 0.8rem; }
-    #matchTable tbody tr { height: 35px; }
+    #matchTable tbody tr { height: 30px; }
     #matchTable tbody tr:hover { cursor: pointer; background-color: #f1f1f1; }
     #matchTable td { overflow: hidden; text-overflow: ellipsis; }
     td.hidden-etc { display: none; }
@@ -239,7 +239,7 @@
               <td>
                 <% if (match.video) { %>
                   <a href="<%= match.video %>" target="_blank" rel="noopener" onclick="event.stopPropagation();">
-                    <i class="bi bi-youtube text-danger fs-5"></i>
+                    <i class="bi bi-youtube text-danger fs-6"></i>
                   </a>
                 <% } %>
               </td>
@@ -374,6 +374,10 @@
       filterTable(searchText);
     });
 
+    function escapeRegex(string) {
+      return string.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    }
+
     // ✨ 검색 기능 수정: 띄어쓰기로 구분된 모든 단어 포함 시 검색 (AND 조건)
     function filterTable(searchText) {
         matchTableBody.innerHTML = ''; // 테이블 비우기
@@ -398,7 +402,8 @@
         }
 
         // 2. 하이라이팅을 위한 정규식 생성 (모든 키워드와 일치하도록)
-        const searchRegex = new RegExp(keywords.join('|'), 'gi');
+        const escapedKeywords = keywords.map(escapeRegex); // 이스케이프
+        const searchRegex = new RegExp(escapedKeywords.join('|'), 'gi');
 
         originalRows.forEach(rowData => {
             // 3. 모든 키워드가 행 텍스트에 포함되어 있는지 확인
@@ -417,6 +422,7 @@
             }
         });
     }
+
     // --- ✨ 햄버거 메뉴 스크립트 추가 ---
     document.addEventListener('DOMContentLoaded', function () {
         const hamburger = document.querySelector('.hamburger-icon');
