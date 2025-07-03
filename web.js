@@ -6,7 +6,7 @@ const mysql = require('mysql2/promise'); // promise 기반 라이브러리 사�
 
 // 커넥션 풀 생성
 const pool = mysql.createPool({
-  host: process.env.DB_HOST || 'localhost', // 서버: 10.0.0.1, 로컬: localhost 
+  host: process.env.DB_HOST || 'burntowin.cafe24app.com', // 서버: 10.0.0.1, 로컬: burntowin.cafe24app.com 
   user: process.env.DB_USER || 'burntowin',
   password: process.env.DB_PASSWORD || 'qnfRhc1@',
   database: process.env.DB_NAME || 'burntowin',
@@ -71,7 +71,7 @@ app.get('/', async (req, res) => {
   try {
     const sql = 'SELECT * FROM matchrecord ORDER BY date DESC, id DESC';
     const [rows] = await pool.query(sql);
-    res.render('index', { matches: rows });
+    res.render('index', { matches: rows, currentPage: 'index' });
   } catch (err) {
     console.error('[/] 에러:', err.message);
     res.status(500).send('서버 오류가 발생했습니다.');
@@ -351,7 +351,7 @@ app.get('/my-score', async (req, res) => {
         
         scores.sort((a, b) => b.matches - a.matches);
 
-        res.render('my-score', { scores, courts });
+        res.render('my-score', { scores, courts, currentPage: 'my-score' });
 
     } catch (err) {
         console.error('[/my-score] 에러:', err.message);
@@ -444,6 +444,7 @@ app.get('/chemistry', async (req, res) => {
             courts,
             chemistryData: finalChemistryData,
             selectedPlayer: player,
+            currentPage: 'chemistry'
         });
 
     } catch (err) {
@@ -512,7 +513,7 @@ app.get('/chemistry-score', async (req, res) => {
             return { pair: key, matches: stats.matches, wins: stats.wins, losses: stats.losses, winRate };
         });
         
-        res.render('chemistry-score', { pairData, courts });
+        res.render('chemistry-score', { pairData, courts, currentPage: 'chemistry-score' });
 
     } catch (err) {
         console.error('[/chemistry-score] 에러:', err.message);
@@ -605,6 +606,7 @@ app.get('/attendance', async (req, res) => {
             year,
             month,
             attendanceData,
+            currentPage: 'attendance'
         });
 
     } catch (err) {

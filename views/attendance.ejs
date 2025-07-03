@@ -5,13 +5,11 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <link rel="apple-touch-icon" href="/image/btw-tran-180x180.png"/>
     <link rel="icon" type="image/png" href="/image/btw-tran-180x180.png"/>
-    <title>불꽃테니스 - 출석부</title>
+    <link rel="stylesheet" href="/css/common.css" />
+    <title>불꽃테니스</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet" />
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css" />
     <style>
-        html, body { height: 100%; overflow: hidden; margin: 0; }
-        .app-container { display: flex; flex-direction: column; height: 100%; }
-        .sticky-header { position: static; z-index: 102; border-bottom: 1px solid #eee; height: 60px; flex-shrink: 0; padding: 0px 5px; }
         .month-navigator { display: flex; justify-content: center; align-items: center; padding: 15px; background-color: #f8f9fa; border-bottom: 1px solid #eee; flex-shrink: 0; }
         .month-navigator a { text-decoration: none; color: #212529; }
         .month-navigator h5 { margin: 0; }
@@ -21,18 +19,6 @@
         #attendanceTable tbody tr { cursor: pointer; }
         #attendanceTable td { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; } /* 셀 내용이 길어질 경우 대비 */
         .sortable-th { cursor: pointer; }
-        .bottom-nav { position: static; border-top: 1px solid #ddd; background-color: white; z-index: 103; flex-shrink: 0; }
-        .bottom-nav .nav-link { font-size: 0.9rem; padding: 0.5rem 0; color: #888888; display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; }
-        .bottom-nav .nav-link img { width: 24px; height: 24px; margin-bottom: 4px; filter: grayscale(100%); opacity: 0.3; }
-        .bottom-nav .nav-link.active { color: black !important; }
-        .bottom-nav .nav-link.active img { filter: none; opacity: 1; }
-        .hamburger-icon { font-size: 1.8rem; margin-right: 10px; color: black; cursor: pointer; }
-        .side-menu { position: fixed; top: 0; right: -200px; width: 200px; height: 100%; background-color: white; box-shadow: -2px 0 5px rgba(0,0,0,0.1); transition: right 0.3s ease-in-out; z-index: 1040; padding: 20px; }
-        .side-menu.active { right: 0; }
-        .side-menu a { display: block; padding: 15px 10px; color: #333; text-decoration: none; border-bottom: 1px solid #f0f0f0; }
-        .side-menu a:hover { background-color: #f8f9fa; }
-        .overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background-color: rgba(0,0,0,0.5); z-index: 1030; }
-        .overlay.active { display: block; }
     </style>
 </head>
 <body>
@@ -45,13 +31,8 @@
             <i class="bi bi-list hamburger-icon"></i>
         </div>
 
-        <div class="side-menu">
-            <h5>메뉴</h5>
-            <hr>
-            <a href="/chemistry-score"><i class="bi bi-person-heart"></i>&nbsp;&nbsp;케미 스코어</a>
-            <a href="/attendance"><i class="bi bi-calendar-check"></i>&nbsp;&nbsp;출석부</a>
-        </div>
-        <div class="overlay"></div>
+        <!-- 사이드 메뉴 -->
+        <%- include('partials/sidemenu') %>
 
         <div class="month-navigator">
             <div class="d-flex align-items-center" style="gap: 1rem;">
@@ -108,13 +89,8 @@
             </table>
         </div>
 
-        <nav class="navbar bottom-nav">
-            <div class="container d-flex justify-content-around">
-                <a class="nav-link" href="/"><img src="/image/free-icon-tennis-8122941.png" alt="경기 기록" /> <span>경기 기록</span></a>
-                <a class="nav-link" href="/my-score"><img src="/image/free-icon-individual-11985530.png" alt="개인 스코어" /> <span>개인 스코어</span></a>
-                <a class="nav-link" href="/chemistry"><img src="/image/free-icon-people-2118701.png" alt="상대와 케미" /> <span>상대와 케미</span></a>
-            </div>
-        </nav>
+        <!-- 하단 네비게이션 -->
+        <%- include('partials/navbar', { currentPage: 'attendance' }) %>
     </div>
 
     <div class="modal fade" id="memberDetailModal" tabindex="-1">
