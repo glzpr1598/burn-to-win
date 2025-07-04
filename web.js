@@ -69,7 +69,7 @@ const applyPeriodFilter = (matches, period) => {
 // 홈화면 (경기 기록 목록)
 app.get('/', async (req, res) => {
   try {
-    const sql = 'SELECT * FROM matchrecord ORDER BY date DESC, id DESC';
+    const sql = 'SELECT * FROM matchrecord ORDER BY date DESC, court ASC, id DESC';
     const [rows] = await pool.query(sql);
     res.render('index', { matches: rows, currentPage: 'index' });
   } catch (err) {
