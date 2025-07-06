@@ -573,9 +573,11 @@
             }
 
             // 참석 인원에 따른 UI 변경
-            if (attendees.length >= 6 && !isAttending) {
+            if (attendees.length >= 6) {
                 attendeeCountSpan.style.color = 'red';
-                attendBtn.disabled = true;
+                if (!isAttending) {
+                    attendBtn.disabled = true;
+                }
             } else {
                 attendeeCountSpan.style.color = '';
             }
