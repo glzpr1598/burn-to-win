@@ -88,8 +88,22 @@
 
         <div class="schedule-container" id="scheduleList">
             <% if (schedules.length > 0) { %>
+                <% 
+                    let currentWeek = 0;
+                    const getWeekOfMonth = (date) => {
+                        const firstDay = new Date(date.getFullYear(), date.getMonth(), 1).getDay();
+                        return Math.ceil((date.getDate() + firstDay) / 7);
+                    };
+                %>
                 <% schedules.forEach(schedule => {
                     const date = new Date(schedule.schedule_date + 'T00:00:00');
+                    const weekOfMonth = getWeekOfMonth(date);
+                    if (weekOfMonth !== currentWeek) {
+                        currentWeek = weekOfMonth;
+                %>
+                    <h6 class="text-muted mb-2 mt-3"><b><%= currentWeek %>주차</b></h6>
+                <% 
+                    }
                     const weekdays = ['일', '월', '화', '수', '목', '금', '토'];
                     const dayOfWeek = weekdays[date.getDay()];
                     const formattedDate = `${date.getDate()} ${dayOfWeek}`;
@@ -101,8 +115,19 @@
                         <div>
                             <div class="fw-bold">
                                 <%= formattedDate %> | <%= startTime %>~<%= endTime %> | <%= schedule.location %>
-                                <% if (schedule.notes && schedule.notes.trim() !== '') { %>
-                                    | <%= schedule.notes %>
+                                <%
+                                    if (schedule.notes && schedule.notes.trim() !== '') {
+                                        const notes = schedule.notes;
+                                        let notesDisplay = `| ${notes}`;
+                                        if (notes.includes('여복데이')) {
+                                            notesDisplay = `| <span style="color: darkred; font-weight: bold;">${notes}</span>`;
+                                        } else if (notes.includes('준도데이')) {
+                                            notesDisplay = `| <span style="color: darkblue; font-weight: bold;">${notes}</span>`;
+                                        } else if (notes.includes('정기대관')) {
+                                            notesDisplay = `| <span style="color: darkgreen; font-weight: bold;">${notes}</span>`;
+                                        }
+                                %>
+                                    <%- notesDisplay %>
                                 <% } %>
                             </div>
                             <div class="text-muted" style="font-size: 0.75rem;">
@@ -532,22 +557,40 @@
         function updateSingleCardUI(card) {
             const attendees = getAttendees(card.querySelector('.attendees-list'));
             const attendBtn = card.querySelector('.attend-btn');
-            if (attendees.includes(selectedUser)) {
+            const attendeeCountSpan = card.querySelector('.attendee-count');
+            const isAttending = attendees.includes(selectedUser);
+
+            if (isAttending) {
                 attendBtn.textContent = '취소';
                 attendBtn.classList.replace('btn-primary', 'btn-outline-danger');
             } else {
                 attendBtn.textContent = '참석';
                 attendBtn.classList.replace('btn-outline-danger', 'btn-primary');
             }
+
+            // 참석 인원에 따른 UI 변경
+            if (attendees.length >= 6) {
+                attendeeCountSpan.style.color = 'red';
+                attendBtn.disabled = !isAttending; // 내가 참석중이 아니면 (꽉 찼으므로) 비활성화
+            } else {
+                attendeeCountSpan.style.color = ''; // 기본값으로 되돌리기
+                attendBtn.disabled = false;
+            }
+
             // ✨ 내가 참석한 일정 배경색 변경
-            card.classList.toggle('attending', attendees.includes(selectedUser));
+            card.classList.toggle('attending', isAttending);
         }
 
         function stylePastSchedules() {
             const today = new Date().toLocaleDateString('en-CA');
             document.querySelectorAll('.schedule-card').forEach(card => {
-                if (card.dataset.date < today) {
+                const isPast = card.dataset.date < today;
+                if (isPast) {
                     card.classList.add('past-schedule');
+                    const attendBtn = card.querySelector('.attend-btn');
+                    if (attendBtn) {
+                        attendBtn.disabled = true;
+                    }
                 }
             });
         }
@@ -635,11 +678,15 @@
                     const scheduleInJS = schedulesData.find(s => s.id == scheduleId);
                     if(scheduleInJS) scheduleInJS.attendees = attendees;
 
+                } else {
+                    // 서버에서 요청이 실패한 경우 (e.g. 이미 마감) UI를 다시 동기화
+                    alert(result.message); // 실패 원인 알려주기
+                    updateSingleCardUI(card);
                 }
             } catch (error) { 
-                console.error('Error:', error); 
-            } finally { 
-                button.disabled = false; 
+                console.error('Error:', error);
+                // 네트워크 오류 등이 발생한 경우 UI를 다시 동기화
+                updateSingleCardUI(card);
             }
         }
 
