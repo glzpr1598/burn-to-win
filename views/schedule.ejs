@@ -135,7 +135,7 @@
                                 <span class="ms-2"><i class="bi bi-coin"></i> <%= new Intl.NumberFormat().format(schedule.price || 0) %>원</span>
                             </div>
                         </div>
-                        <button class="btn btn-sm btn-outline-success py-0 px-2 record-btn" data-schedule-id="<%= schedule.id %>">기록</button>
+                        <button class="btn btn-sm btn-success py-0 px-2 record-btn" data-schedule-id="<%= schedule.id %>">기록</button>
                     </div>
 
                     <div class="mb-2">
@@ -146,7 +146,7 @@
                     <div>
                         <div class="d-flex justify-content-between align-items-center">
                             <button class="btn btn-sm btn-primary py-0 px-2 attend-btn" data-schedule-id="<%= schedule.id %>">참석</button>
-                            <button class="btn btn-sm btn-outline-secondary py-0 px-2 comment-btn" data-schedule-id="<%= schedule.id %>">댓글</button>
+                            <button class="btn btn-sm btn-secondary py-0 px-2 comment-btn" data-schedule-id="<%= schedule.id %>">댓글</button>
                         </div>
                         <div class="comment-container">
                             <% if (schedule.comments.length > 0) { %>
@@ -560,21 +560,41 @@
             const attendeeCountSpan = card.querySelector('.attendee-count');
             const isAttending = attendees.includes(selectedUser);
 
+            // 버튼 상태 초기화
+            attendBtn.disabled = false;
+            attendBtn.classList.remove('btn-primary', 'btn-outline-danger', 'btn-danger');
+
             if (isAttending) {
                 attendBtn.textContent = '취소';
-                attendBtn.classList.replace('btn-primary', 'btn-outline-danger');
+                attendBtn.classList.add('btn-danger'); // 활성 취소 버튼
             } else {
                 attendBtn.textContent = '참석';
-                attendBtn.classList.replace('btn-outline-danger', 'btn-primary');
+                attendBtn.classList.add('btn-primary'); // 활성 참석 버튼
             }
 
             // 참석 인원에 따른 UI 변경
-            if (attendees.length >= 6) {
+            if (attendees.length >= 6 && !isAttending) {
                 attendeeCountSpan.style.color = 'red';
-                attendBtn.disabled = !isAttending; // 내가 참석중이 아니면 (꽉 찼으므로) 비활성화
+                attendBtn.disabled = true;
             } else {
-                attendeeCountSpan.style.color = ''; // 기본값으로 되돌리기
-                attendBtn.disabled = false;
+                attendeeCountSpan.style.color = '';
+            }
+
+            // 지난 일정 버튼 비활성화 (stylePastSchedules 함수에서도 처리하지만, 동적 업데이트를 위해 여기에도 추가)
+            const today = new Date().toLocaleDateString('en-CA');
+            if (card.dataset.date < today) {
+                attendBtn.disabled = true;
+            }
+
+            // 최종적으로 비활성화된 버튼 스타일 처리
+            if (attendBtn.disabled) {
+                if(isAttending) {
+                    attendBtn.classList.remove('btn-danger');
+                    attendBtn.classList.add('btn-outline-danger');
+                } else {
+                    attendBtn.classList.remove('btn-primary');
+                    attendBtn.classList.add('btn-outline-primary');
+                }
             }
 
             // ✨ 내가 참석한 일정 배경색 변경
