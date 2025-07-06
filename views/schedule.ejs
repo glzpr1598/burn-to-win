@@ -516,6 +516,7 @@
             localStorage.setItem('tennis-schedule-user', name);
             document.getElementById('currentUser').textContent = selectedUser;
             updateAllSchedulesUI();
+            scrollToUpcoming();
         }
 
         // --- UI 업데이트 및 상호작용 ---
