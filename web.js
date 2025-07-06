@@ -933,6 +933,49 @@ app.post('/api/user/change-password', async (req, res) => {
     }
 });
 
+// API: 일정 정산 상태 토글
+app.post('/api/schedule/:id/toggle-calculation', async (req, res) => {
+    const scheduleId = req.params.id;
+    let connection;
+
+    try {
+        connection = await pool.getConnection();
+        await connection.beginTransaction();
+
+        // 1. 현재 상태를 조회합니다.
+        const [rows] = await connection.query('SELECT calculated FROM schedules WHERE id = ?', [scheduleId]);
+
+        if (rows.length === 0) {
+            await connection.rollback();
+            return res.status(404).json({ success: false, message: '해당 일정을 찾을 수 없습니다.' });
+        }
+
+        // 2. 상태를 토글합니다. ('Y' -> 'N', 'N' -> 'Y')
+        const currentStatus = rows[0].calculated;
+        const newStatus = currentStatus === 'Y' ? 'N' : 'Y';
+
+        // 3. 새로운 상태로 업데이트합니다.
+        const updateSql = 'UPDATE schedules SET calculated = ? WHERE id = ?';
+        await connection.query(updateSql, [newStatus, scheduleId]);
+
+        await connection.commit();
+        
+        // 4. 성공 응답과 함께 새로운 상태를 클라이언트에 전달합니다.
+        res.json({ 
+            success: true, 
+            message: `정산 상태가 '${newStatus === 'Y' ? '완료' : '미완료'}'로 변경되었습니다.`,
+            newStatus: newStatus
+        });
+
+    } catch (err) {
+        if (connection) await connection.rollback();
+        console.error(`[/api/schedule/${scheduleId}/toggle-calculation] 에러:`, err.message);
+        res.status(500).json({ success: false, message: '정산 상태 변경 중 오류가 발생했습니다.' });
+    } finally {
+        if (connection) connection.release();
+    }
+});
+
 const PORT = 8001;
 app.listen(PORT, () => {
     console.log(`http://localhost:${PORT} 에서 서버 실행 중`);

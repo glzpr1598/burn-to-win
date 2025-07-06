@@ -54,6 +54,21 @@
             text-decoration: none;
             cursor: pointer;
         }
+        /* ✨ 정산 체크박스 스타일 추가 */
+        .settlement-status {
+            font-size: 0.75rem;
+        }
+        .settlement-status label {
+            cursor: pointer;
+            font-weight: 500;
+        }
+        .settlement-checkbox {
+            vertical-align: middle;
+            margin-left: 2px;
+        }
+        .settlement-checkbox:disabled {
+            cursor: not-allowed;
+        }
     </style>
 </head>
 <body>
@@ -130,9 +145,19 @@
                                     <%- notesDisplay %>
                                 <% } %>
                             </div>
-                            <div class="text-muted" style="font-size: 0.75rem;">
+                            <div class="text-muted mt-1" style="font-size: 0.8rem;">
                                 <span><i class="bi bi-person"></i> <%= schedule.booker || '-' %></span>
                                 <span class="ms-2"><i class="bi bi-coin"></i> <%= new Intl.NumberFormat().format(schedule.price || 0) %>원</span>
+                                <span class="ms-2 settlement-status">
+                                    <label>
+                                        <i class="bi bi-wallet"></i> 정산여부
+                                        <input type="checkbox"
+                                               class="settlement-checkbox"
+                                               data-schedule-id="<%= schedule.id %>"
+                                               data-booker="<%= schedule.booker %>"
+                                               <%= schedule.calculated === 'Y' ? 'checked' : '' %>>
+                                    </label>
+                                </span>
                             </div>
                         </div>
                         <button class="btn btn-sm btn-success py-0 px-2 record-btn" data-schedule-id="<%= schedule.id %>">기록</button>
@@ -365,7 +390,7 @@
             initializeModals();
             initializeUser();
             initializeNavigators();
-            addEventListenersToButtons(); // ✨ 모든 버튼의 이벤트 리스너를 한 번에 설정
+            addEventListenersToElements();
             setupSideMenu();
             stylePastSchedules();
         });
@@ -385,12 +410,13 @@
             });
         }
 
-        function addEventListenersToButtons() {
+        function addEventListenersToElements() {
             document.querySelectorAll('.record-btn').forEach(b => b.addEventListener('click', (e) => openRecordModal(e.target.dataset.scheduleId)));
             document.querySelectorAll('.comment-btn').forEach(b => b.addEventListener('click', (e) => openCommentModal(e.target.dataset.scheduleId)));
             document.querySelectorAll('.attend-btn').forEach(b => b.addEventListener('click', handleAttendClick));
             document.querySelectorAll('.delete-comment-btn').forEach(b => b.addEventListener('click', handleDeleteCommentClick));
             document.querySelectorAll('.show-more-comments-btn').forEach(btn => btn.addEventListener('click', handleShowMoreComments));
+            document.querySelectorAll('.settlement-checkbox').forEach(cb => cb.addEventListener('change', handleSettlementChange));
             document.getElementById('submitMatchRecordBtn').addEventListener('click', handleMatchRecordSubmit);
             document.getElementById('submitCommentBtn').addEventListener('click', submitComment);
             document.getElementById('loginBtn').addEventListener('click', handleLogin);
@@ -445,6 +471,38 @@
 
                 // '더보기' 버튼 자신은 숨김
                 btn.style.display = 'none';
+            }
+        }
+
+        // ✨ 정산 체크박스 변경 이벤트 핸들러
+        async function handleSettlementChange(event) {
+            const checkbox = event.target;
+            const scheduleId = checkbox.dataset.scheduleId;
+            const isChecked = checkbox.checked; // 사용자가 변경한 후의 상태
+
+            // API 호출 중 중복 변경을 막기 위해 임시로 비활성화
+            checkbox.disabled = true;
+
+            try {
+                const response = await fetch(`/api/schedule/${scheduleId}/toggle-calculation`, { 
+                    method: 'POST' 
+                });
+                
+                const result = await response.json();
+
+                if (!response.ok || !result.success) {
+                    // API 호출이 실패하면 사용자에게 알리고 체크박스를 원래 상태로 되돌림
+                    alert(result.message || '상태 변경에 실패했습니다.');
+                    checkbox.checked = !isChecked; 
+                }
+                // 성공하면 UI는 이미 변경된 상태이므로 아무것도 하지 않음
+            } catch (error) {
+                console.error('Settlement Change Error:', error);
+                alert('오류가 발생하여 상태를 변경하지 못했습니다.');
+                checkbox.checked = !isChecked; // 에러 발생 시에도 원래 상태로 되돌림
+            } finally {
+                // API 호출이 끝나면 다시 활성화
+                checkbox.disabled = false;
             }
         }
         
@@ -557,6 +615,7 @@
         function updateSingleCardUI(card) {
             const attendees = getAttendees(card.querySelector('.attendees-list'));
             const attendBtn = card.querySelector('.attend-btn');
+            const settleBtn = card.querySelector('.settle-btn'); // ✨ 정산 버튼 가져오기
             const attendeeCountSpan = card.querySelector('.attendee-count');
             const isAttending = attendees.includes(selectedUser);
 
@@ -597,6 +656,15 @@
                     attendBtn.classList.remove('btn-primary');
                     attendBtn.classList.add('btn-outline-primary');
                 }
+            }
+
+            // ✨ 정산 체크박스 UI 업데이트 로직
+            const settleCheckbox = card.querySelector('.settlement-checkbox');
+            if (settleCheckbox) {
+                const booker = settleCheckbox.dataset.booker;
+                const isBooker = selectedUser === booker;
+                // 예약자가 아니면 체크박스를 비활성화
+                settleCheckbox.disabled = !isBooker;
             }
 
             // ✨ 내가 참석한 일정 배경색 변경
