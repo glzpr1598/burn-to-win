@@ -1,8 +1,9 @@
 const express = require('express');
 const path = require('path');
 const bodyParser = require('body-parser');
-
 const mysql = require('mysql2/promise'); // promise 기반 라이브러리 사용
+const bcrypt = require('bcrypt');
+const saltRounds = 10;
 
 // 커넥션 풀 생성
 const pool = mysql.createPool({
@@ -22,6 +23,8 @@ const app = express();
 app.set('views', path.join(__dirname, 'views'));
 app.set('view engine', 'ejs');
 app.use(bodyParser.urlencoded({ extended: false }));
+app.use(bodyParser.urlencoded({ extended: false }));
+app.use(express.json()); // JSON 요청 본문을 파싱하기 위해 추가
 app.use(express.static(path.join(__dirname, 'public')));
 
 // --- 유틸리티 함수 ---
@@ -66,12 +69,17 @@ const applyPeriodFilter = (matches, period) => {
 
 // --- 라우트 핸들러 ---
 
-// 홈화면 (경기 기록 목록)
-app.get('/', async (req, res) => {
+// 홈화면 -> 일정 페이지로 리디렉션
+app.get('/', (req, res) => {
+    res.redirect('/schedule');
+});
+
+// 경기 기록
+app.get('/match-record', async (req, res) => {
   try {
     const sql = 'SELECT * FROM matchrecord ORDER BY date DESC, court ASC, id DESC';
     const [rows] = await pool.query(sql);
-    res.render('index', { matches: rows, currentPage: 'index' });
+    res.render('match-record', { matches: rows, currentPage: 'match-record' });
   } catch (err) {
     console.error('[/] 에러:', err.message);
     res.status(500).send('서버 오류가 발생했습니다.');
@@ -217,7 +225,7 @@ app.post('/update/:id', async (req, res) => {
         ];
         
         await pool.query(sql, params);
-        res.redirect('/');
+        res.redirect('/match-record');
 
     } catch (err) {
         console.error(`[/update/${matchId}] 에러:`, err.message);
@@ -265,11 +273,24 @@ app.post('/matches', async (req, res) => {
         ];
         
         await pool.query(sql, params);
-        res.redirect('/');
+        
+        // ✨ 요청 타입을 확인하여 다르게 응답하는 로직
+        if (req.is('json')) {
+            // 'Content-Type'이 'application/json'인 경우 (fetch 요청)
+            res.json({ success: true, message: '경기가 성공적으로 기록되었습니다.' });
+        } else {
+            // 그 외의 경우 (일반 form 제출)
+            res.redirect('/match-record');
+        }
 
     } catch (err) {
         console.error('[/matches] 에러:', err.message);
-        res.status(500).send('데이터 저장 중 오류가 발생했습니다.');
+        
+        if (req.is('json')) {
+            res.status(500).json({ success: false, message: '데이터 저장 중 오류가 발생했습니다.'});
+        } else {
+            res.status(500).send('데이터 저장 중 오류가 발생했습니다.');
+        }
     }
 });
 
@@ -675,6 +696,239 @@ app.get('/api/member-attendance/:name', async (req, res) => {
     } catch (err) {
         console.error(`[/api/member-attendance/:name] 에러:`, err.message);
         res.status(500).json({ error: '서버 오류가 발생했습니다.' });
+    }
+});
+
+// 일정 페이지
+app.get('/schedule', async (req, res) => {
+    try {
+        const year = parseInt(req.query.year) || new Date().getFullYear();
+        const month = parseInt(req.query.month) || new Date().getMonth() + 1;
+
+        const startDate = `${year}-${String(month).padStart(2, '0')}-01`;
+        const endDate = new Date(year, month, 0).toLocaleDateString('en-CA');
+
+        const membersPromise = pool.query('SELECT name FROM member WHERE etc = "" ORDER BY name ASC');
+        const schedulesPromise = pool.query(
+            `SELECT * FROM schedules WHERE schedule_date BETWEEN ? AND ? ORDER BY schedule_date ASC, start_time ASC, location ASC`,
+            [startDate, endDate]
+        );
+
+        const [[members], [schedules]] = await Promise.all([membersPromise, schedulesPromise]);
+
+        if (schedules.length > 0) {
+            const scheduleIds = schedules.map(s => s.id);
+
+            // 각 일정의 참석자와 댓글을 병렬로 가져옵니다.
+            const attendeesPromise = pool.query(`SELECT schedule_id, member_name FROM schedule_attendees WHERE schedule_id IN (?)`, [scheduleIds]);
+            const commentsPromise = pool.query(`SELECT * FROM schedule_comments WHERE schedule_id IN (?) ORDER BY created_at ASC`, [scheduleIds]);
+            const [[attendees], [comments]] = await Promise.all([attendeesPromise, commentsPromise]);
+
+            const attendeesMap = new Map();
+            attendees.forEach(att => {
+                const list = attendeesMap.get(att.schedule_id) || [];
+                list.push(att.member_name);
+                attendeesMap.set(att.schedule_id, list);
+            });
+
+            const commentsMap = new Map();
+            comments.forEach(comment => {
+                const list = commentsMap.get(comment.schedule_id) || [];
+                // 날짜 포맷 변경
+                comment.created_at = new Date(comment.created_at).toLocaleString('ko-KR', {
+                    year: '2-digit', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit', hour12: false
+                }).replace(/\. /g, '.');
+                list.push(comment);
+                commentsMap.set(comment.schedule_id, list);
+            });
+
+            const scheduleData = schedules.map(schedule => ({
+                ...schedule,
+                attendees: attendeesMap.get(schedule.id) || [],
+                comments: commentsMap.get(schedule.id) || []
+            }));
+
+            res.render('schedule', { year, month, members, schedules: scheduleData, currentPage: 'schedule' });
+
+        } else {
+            res.render('schedule', { year, month, members, schedules: [], currentPage: 'schedule' });
+        }
+
+    } catch (err) {
+        console.error('[/schedule] 에러:', err.message);
+        res.status(500).send('서버 오류가 발생했습니다.');
+    }
+});
+
+// API: 일정 참석
+app.post('/api/schedule/:id/attend', async (req, res) => {
+    const scheduleId = req.params.id;
+    const { memberName } = req.body;
+    if (!memberName) {
+        return res.status(400).json({ success: false, message: '사용자 이름이 필요합니다.' });
+    }
+
+    let connection;
+    try {
+        // 커넥션 풀에서 커넥션을 가져옵니다.
+        connection = await pool.getConnection();
+        // 트랜잭션 시작
+        await connection.beginTransaction();
+
+        // 1. 참석자 명단에 추가
+        const attendSql = 'INSERT INTO schedule_attendees (schedule_id, member_name) VALUES (?, ?)';
+        await connection.query(attendSql, [scheduleId, memberName]);
+
+        // 2. 로그 기록
+        const logSql = 'INSERT INTO schedule_attendance_log (schedule_id, member_name, action) VALUES (?, ?, ?)';
+        await connection.query(logSql, [scheduleId, memberName, 'attend']);
+
+        // 모든 쿼리가 성공하면 변경사항을 확정(commit)
+        await connection.commit();
+        
+        res.json({ success: true, message: '참석 처리되었습니다.' });
+
+    } catch (err) {
+        // 쿼리 중 에러가 발생하면 모든 변경사항을 되돌림(rollback)
+        if (connection) await connection.rollback();
+        
+        console.error(`[/api/schedule/${scheduleId}/attend] 에러:`, err.message);
+        res.status(500).json({ success: false, message: '참석 처리에 실패했습니다.' });
+    } finally {
+        // 사용한 커넥션을 풀에 반환
+        if (connection) connection.release();
+    }
+});
+
+// API: 일정 참석 취소
+app.post('/api/schedule/:id/cancel', async (req, res) => {
+    const scheduleId = req.params.id;
+    const { memberName } = req.body;
+    if (!memberName) {
+        return res.status(400).json({ success: false, message: '사용자 이름이 필요합니다.' });
+    }
+
+    let connection;
+    try {
+        connection = await pool.getConnection();
+        await connection.beginTransaction();
+
+        // 1. 참석자 명단에서 삭제
+        const cancelSql = 'DELETE FROM schedule_attendees WHERE schedule_id = ? AND member_name = ?';
+        const [result] = await connection.query(cancelSql, [scheduleId, memberName]);
+
+        // 삭제가 성공했을 때만 로그 기록
+        if (result.affectedRows > 0) {
+            // 2. 로그 기록
+            const logSql = 'INSERT INTO schedule_attendance_log (schedule_id, member_name, action) VALUES (?, ?, ?)';
+            await connection.query(logSql, [scheduleId, memberName, 'cancel']);
+            
+            await connection.commit();
+            res.json({ success: true, message: '참석이 취소되었습니다.' });
+        } else {
+            // 삭제할 데이터가 없으면 롤백하고 에러 메시지 전송
+            await connection.rollback();
+            res.status(404).json({ success: false, message: '취소할 참석 정보를 찾을 수 없습니다.' });
+        }
+
+    } catch (err) {
+        if (connection) await connection.rollback();
+        
+        console.error(`[/api/schedule/${scheduleId}/cancel] 에러:`, err.message);
+        res.status(500).json({ success: false, message: '참석 취소에 실패했습니다.' });
+    } finally {
+        if (connection) connection.release();
+    }
+});
+
+// API: 댓글 생성
+app.post('/api/comments', async (req, res) => {
+    const { schedule_id, member_name, comment } = req.body;
+    if (!schedule_id || !member_name || !comment) {
+        return res.status(400).json({ success: false, message: '모든 필드를 입력해야 합니다.' });
+    }
+    try {
+        const sql = 'INSERT INTO schedule_comments (schedule_id, member_name, comment) VALUES (?, ?, ?)';
+        const [result] = await pool.query(sql, [schedule_id, member_name, comment]);
+        const [rows] = await pool.query('SELECT * FROM schedule_comments WHERE id = ?', [result.insertId]);
+        const newComment = rows[0];
+        // 날짜 포맷 변경
+        newComment.created_at = new Date(newComment.created_at).toLocaleString('ko-KR', {
+            year: '2-digit', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit', hour12: false
+        }).replace(/\. /g, '.');
+
+        res.status(201).json({ success: true, comment: newComment });
+    } catch (err) {
+        console.error('[/api/comments] 에러:', err.message);
+        res.status(500).json({ success: false, message: '댓글 작성에 실패했습니다.' });
+    }
+});
+
+// API: 댓글 삭제
+app.delete('/api/comments/:id', async (req, res) => {
+    const commentId = req.params.id;
+    // 실제 운영 환경에서는 요청을 보낸 사용자와 댓글 작성자가 일치하는지 한번 더 확인하는 로직이 필요합니다.
+    try {
+        await pool.query('DELETE FROM schedule_comments WHERE id = ?', [commentId]);
+        res.json({ success: true, message: '댓글이 삭제되었습니다.' });
+    } catch (err) {
+        console.error(`[/api/comments/${commentId}] 에러:`, err.message);
+        res.status(500).json({ success: false, message: '댓글 삭제에 실패했습니다.' });
+    }
+});
+
+// API: 사용자 로그인 (선택 및 비밀번호 확인)
+app.post('/api/user/login', async (req, res) => {
+    const { name, password } = req.body;
+    if (!name || !password) {
+        return res.status(400).json({ success: false, message: '이름과 비밀번호를 모두 입력하세요.' });
+    }
+    try {
+        const [rows] = await pool.query('SELECT password FROM member WHERE name = ?', [name]);
+        if (rows.length === 0) {
+            return res.status(404).json({ success: false, message: '존재하지 않는 사용자입니다.' });
+        }
+        
+        const hashedPassword = rows[0].password;
+        const match = await bcrypt.compare(password, hashedPassword);
+
+        if (match) {
+            res.json({ success: true, message: '로그인 성공' });
+        } else {
+            res.status(401).json({ success: false, message: '비밀번호가 일치하지 않습니다.' });
+        }
+    } catch (err) {
+        console.error('[/api/user/login] 에러:', err.message);
+        res.status(500).json({ success: false, message: '로그인 처리 중 오류 발생' });
+    }
+});
+
+// API: 비밀번호 변경
+app.post('/api/user/change-password', async (req, res) => {
+    const { name, currentPassword, newPassword } = req.body;
+    if (!name || !currentPassword || !newPassword) {
+        return res.status(400).json({ success: false, message: '모든 필드를 입력하세요.' });
+    }
+    try {
+        const [rows] = await pool.query('SELECT password FROM member WHERE name = ?', [name]);
+        if (rows.length === 0) {
+            return res.status(404).json({ success: false, message: '사용자를 찾을 수 없습니다.' });
+        }
+
+        const hashedPassword = rows[0].password;
+        const match = await bcrypt.compare(currentPassword, hashedPassword);
+
+        if (!match) {
+            return res.status(401).json({ success: false, message: '현재 비밀번호가 일치하지 않습니다.' });
+        }
+
+        const newHashedPassword = await bcrypt.hash(newPassword, saltRounds);
+        await pool.query('UPDATE member SET password = ? WHERE name = ?', [newHashedPassword, name]);
+        
+        res.json({ success: true, message: '비밀번호가 성공적으로 변경되었습니다.' });
+    } catch (err) {
+        console.error('[/api/user/change-password] 에러:', err.message);
+        res.status(500).json({ success: false, message: '비밀번호 변경 중 오류 발생' });
     }
 });
 
