@@ -476,6 +476,8 @@
 
         // ✨ 정산 체크박스 변경 이벤트 핸들러
         async function handleSettlementChange(event) {
+            if (!selectedUser) return userSelectModal.show();
+
             const checkbox = event.target;
             const scheduleId = checkbox.dataset.scheduleId;
             const isChecked = checkbox.checked; // 사용자가 변경한 후의 상태
@@ -519,11 +521,12 @@
             if (savedUser) {
                 selectedUser = savedUser;
                 document.getElementById('currentUser').textContent = selectedUser;
-                updateAllSchedulesUI();
                 scrollToUpcoming();
             } else {
                 userSelectModal.show();
             }
+            // Always call updateAllSchedulesUI to ensure correct initial state of elements like checkboxes
+            updateAllSchedulesUI();
         }
 
         function setupSideMenu() {
@@ -662,8 +665,8 @@
             const settleCheckbox = card.querySelector('.settlement-checkbox');
             if (settleCheckbox) {
                 const booker = settleCheckbox.dataset.booker;
-                const isBooker = selectedUser === booker;
-                // 예약자가 아니면 체크박스를 비활성화
+                const isBooker = selectedUser && selectedUser === booker;
+                // 예약자가 아니거나 selectedUser가 없으면 체크박스를 비활성화
                 settleCheckbox.disabled = !isBooker;
             }
 
