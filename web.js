@@ -1207,7 +1207,7 @@ app.get('/api/admin/schedules', isAuthenticated, async (req, res) => {
 // API: 모든 경기 기록 가져오기
 app.get('/api/admin/matchrecords', isAuthenticated, async (req, res) => {
     try {
-        const [matchrecords] = await pool.query('SELECT id, date, court, team1_deuce, team1_ad, team2_deuce, team2_ad, team1_score, team2_score FROM matchrecord ORDER BY date DESC, id DESC');
+        const [matchrecords] = await pool.query('SELECT id, date, court, team1_deuce, team1_ad, team2_deuce, team2_ad, team1_score, team2_score, etc FROM matchrecord ORDER BY date DESC, id DESC');
         res.json({ success: true, matchrecords });
     } catch (err) {
         console.error('모든 경기 기록 가져오기 에러:', err.message);
