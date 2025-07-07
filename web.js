@@ -4,6 +4,7 @@ const bodyParser = require('body-parser');
 const mysql = require('mysql2/promise'); // promise 기반 라이브러리 사용
 const bcrypt = require('bcrypt');
 const saltRounds = 10;
+const session = require('express-session'); // express-session 추가
 
 // 커넥션 풀 생성
 const pool = mysql.createPool({
@@ -26,6 +27,23 @@ app.use(bodyParser.urlencoded({ extended: false }));
 app.use(bodyParser.urlencoded({ extended: false }));
 app.use(express.json()); // JSON 요청 본문을 파싱하기 위해 추가
 app.use(express.static(path.join(__dirname, 'public')));
+
+// 세션 미들웨어 설정
+app.use(session({
+    secret: 'your_secret_key', // 실제 환경에서는 더 복잡하고 안전한 키를 사용해야 합니다.
+    resave: false,
+    saveUninitialized: true,
+    cookie: { secure: false } // HTTPS를 사용하지 않는 경우 false로 설정
+}));
+
+// 관리자 인증 미들웨어
+const isAuthenticated = (req, res, next) => {
+    if (req.session.isAdmin) {
+        next();
+    } else {
+        res.redirect('/admin');
+    }
+};
 
 // --- 유틸리티 함수 ---
 // 쿼리 파라미터에 따른 기간 필터링 로직 (중복을 줄이기 위해 함수로 추출)
@@ -596,7 +614,7 @@ app.get('/attendance', async (req, res) => {
         const endDate = `${year}-${String(month).padStart(2, '0')}-${String(lastDayOfMonth).padStart(2, '0')}`;
 
         // 1. 정회원 목록과 해당 월의 '일정 참석' 기록을 가져옵니다.
-        const membersPromise = pool.query('SELECT name FROM member WHERE etc = "" ORDER BY name ASC');
+        const membersPromise = pool.query('SELECT name FROM member WHERE `order` = 0 ORDER BY name ASC');
         const attendanceRecordsPromise = pool.query(
             `SELECT sa.member_name, s.schedule_date
              FROM schedule_attendees sa
@@ -973,6 +991,254 @@ app.post('/api/schedule/:id/toggle-calculation', async (req, res) => {
         res.status(500).json({ success: false, message: '정산 상태 변경 중 오류가 발생했습니다.' });
     } finally {
         if (connection) connection.release();
+    }
+});
+
+// --- 관리자 페이지 라우트 ---
+app.get('/admin', (req, res) => {
+    if (req.session.isAdmin) {
+        res.redirect('/admin/dashboard');
+    } else {
+        res.render('admin-login', { message: req.query.message });
+    }
+});
+
+app.post('/admin/login', (req, res) => {
+    const { password } = req.body;
+    if (password === '9999') { // 비밀번호 9999로 설정
+        req.session.isAdmin = true;
+        res.redirect('/admin/dashboard');
+    } else {
+        res.redirect('/admin?message=Invalid Password');
+    }
+});
+
+app.get('/admin/dashboard', isAuthenticated, (req, res) => {
+    res.render('admin', { currentPage: 'admin' });
+});
+
+app.get('/admin/logout', (req, res) => {
+    req.session.destroy(err => {
+        if (err) {
+            console.error('로그아웃 에러:', err);
+            return res.status(500).send('로그아웃 중 오류가 발생했습니다.');
+        }
+        res.redirect('/admin');
+    });
+});
+
+// 경기 기록 삭제
+app.post('/admin/delete-match', isAuthenticated, async (req, res) => {
+    const { matchId } = req.body;
+    try {
+        const [result] = await pool.query('DELETE FROM matchrecord WHERE id = ?', [matchId]);
+        if (result.affectedRows > 0) {
+            res.json({ success: true, message: `경기 기록 (ID: ${matchId})이 삭제되었습니다.` });
+        } else {
+            res.status(404).json({ success: false, message: `경기 기록 (ID: ${matchId})을 찾을 수 없습니다.` });
+        }
+    } catch (err) {
+        console.error('경기 기록 삭제 에러:', err.message);
+        res.status(500).json({ success: false, message: '경기 기록 삭제 중 오류가 발생했습니다.' });
+    }
+});
+
+// 일정 등록
+app.post('/admin/add-schedule', isAuthenticated, async (req, res) => {
+    const { schedule_date, start_time, end_time, location, notes, booker, price } = req.body;
+    try {
+        const [result] = await pool.query(
+            'INSERT INTO schedules (schedule_date, start_time, end_time, location, notes, booker, price) VALUES (?, ?, ?, ?, ?, ?, ?)',
+            [schedule_date, start_time, end_time, location, notes, booker || null, price || null]
+        );
+        res.json({ success: true, message: `일정 (ID: ${result.insertId})이 성공적으로 등록되었습니다.` });
+    } catch (err) {
+        console.error('일정 등록 에러:', err.message);
+        res.status(500).json({ success: false, message: '일정 등록 중 오류가 발생했습니다.' });
+    }
+});
+
+// 일정 수정
+app.post('/admin/update-schedule', isAuthenticated, async (req, res) => {
+    const { id, schedule_date, start_time, end_time, location, notes, booker, price, calculated } = req.body;
+    try {
+        const [result] = await pool.query(
+            'UPDATE schedules SET schedule_date = ?, start_time = ?, end_time = ?, location = ?, notes = ?, booker = ?, price = ?, calculated = ? WHERE id = ?',
+            [schedule_date, start_time, end_time, location, notes, booker || null, price || null, calculated, id]
+        );
+        if (result.affectedRows > 0) {
+            res.json({ success: true, message: `일정 (ID: ${id})이 성공적으로 수정되었습니다.` });
+        } else {
+            res.status(404).json({ success: false, message: `일정 (ID: ${id})을 찾을 수 없습니다.` });
+        }
+    } catch (err) {
+        console.error('일정 수정 에러:', err.message);
+        res.status(500).json({ success: false, message: '일정 수정 중 오류가 발생했습니다.' });
+    }
+});
+
+// 일정 삭제
+app.post('/admin/delete-schedule', isAuthenticated, async (req, res) => {
+    const { scheduleId } = req.body;
+    try {
+        const [result] = await pool.query('DELETE FROM schedules WHERE id = ?', [scheduleId]);
+        if (result.affectedRows > 0) {
+            res.json({ success: true, message: `일정 (ID: ${scheduleId})이 삭제되었습니다.` });
+        } else {
+            res.status(404).json({ success: false, message: `일정 (ID: ${scheduleId})을 찾을 수 없습니다.` });
+        }
+    } catch (err) {
+        console.error('일정 삭제 에러:', err.message);
+        res.status(500).json({ success: false, message: '일정 삭제 중 오류가 발생했습니다.' });
+    }
+});
+
+app.post('/admin/delete-schedule', isAuthenticated, async (req, res) => {
+    const { scheduleId } = req.body;
+    try {
+        const [result] = await pool.query('DELETE FROM schedules WHERE id = ?', [scheduleId]);
+        if (result.affectedRows > 0) {
+            res.json({ success: true, message: `일정 (ID: ${scheduleId})이 삭제되었습니다.` });
+        } else {
+            res.status(404).json({ success: false, message: `일정 (ID: ${scheduleId})을 찾을 수 없습니다.` });
+        }
+    } catch (err) {
+        console.error('일정 삭제 에러:', err.message);
+        res.status(500).json({ success: false, message: '일정 삭제 중 오류가 발생했습니다.' });
+    }
+});
+
+// 멤버 등록
+app.post('/admin/add-member', isAuthenticated, async (req, res) => {
+    const { name, gender, etc, order } = req.body;
+    try {
+        // 기본 비밀번호 '0000'을 해싱하여 저장
+        const hashedPassword = await bcrypt.hash('0000', saltRounds);
+        const [result] = await pool.query(
+            'INSERT INTO member (name, gender, etc, `order`, password) VALUES (?, ?, ?, ?, ?)',
+            [name, gender, etc || '', order || 0, hashedPassword]
+        );
+        res.json({ success: true, message: `멤버 ${name}이(가) 성공적으로 등록되었습니다.` });
+    } catch (err) {
+        console.error('멤버 등록 에러:', err.message);
+        res.status(500).json({ success: false, message: '멤버 등록 중 오류가 발생했습니다.' });
+    }
+});
+
+// 멤버 수정
+app.post('/admin/update-member', isAuthenticated, async (req, res) => {
+    const { originalName, name, gender, etc, order } = req.body;
+    try {
+        const [result] = await pool.query(
+            'UPDATE member SET name = ?, gender = ?, etc = ?, `order` = ? WHERE name = ?',
+            [name, gender, etc || '', order || 0, originalName]
+        );
+        if (result.affectedRows > 0) {
+            res.json({ success: true, message: `멤버 ${originalName}이(가) ${name}으로 성공적으로 수정되었습니다.` });
+        } else {
+            res.status(404).json({ success: false, message: `멤버 ${originalName}을(를) 찾을 수 없습니다.` });
+        }
+    } catch (err) {
+        console.error('멤버 수정 에러:', err.message);
+        res.status(500).json({ success: false, message: '멤버 수정 중 오류가 발생했습니다.' });
+    }
+});
+
+// 멤버 삭제
+app.post('/admin/delete-member', isAuthenticated, async (req, res) => {
+    const { name } = req.body;
+    try {
+        const [result] = await pool.query('DELETE FROM member WHERE name = ?', [name]);
+        if (result.affectedRows > 0) {
+            res.json({ success: true, message: `멤버 ${name}이(가) 삭제되었습니다.` });
+        } else {
+            res.status(404).json({ success: false, message: `멤버 ${name}을(를) 찾을 수 없습니다.` });
+        }
+    } catch (err) {
+        console.error('멤버 삭제 에러:', err.message);
+        res.status(500).json({ success: false, message: '멤버 삭제 중 오류가 발생했습니다.' });
+    }
+});
+
+// 비밀번호 초기화
+app.post('/admin/reset-password', isAuthenticated, async (req, res) => {
+    const { name } = req.body;
+    try {
+        const hashedPassword = await bcrypt.hash('0000', saltRounds);
+        const [result] = await pool.query('UPDATE member SET password = ? WHERE name = ?', [hashedPassword, name]);
+        if (result.affectedRows > 0) {
+            res.json({ success: true, message: `멤버 ${name}의 비밀번호가 0000으로 초기화되었습니다.` });
+        } else {
+            res.status(404).json({ success: false, message: `멤버 ${name}을(를) 찾을 수 없습니다.` });
+        }
+    } catch (err) {
+        console.error('비밀번호 초기화 에러:', err.message);
+        res.status(500).json({ success: false, message: '비밀번호 초기화 중 오류가 발생했습니다.' });
+    }
+});
+
+app.post('/admin/reset-password', isAuthenticated, async (req, res) => {
+    const { name } = req.body;
+    try {
+        const hashedPassword = await bcrypt.hash('0000', saltRounds);
+        const [result] = await pool.query('UPDATE member SET password = ? WHERE name = ?', [hashedPassword, name]);
+        if (result.affectedRows > 0) {
+            res.json({ success: true, message: `멤버 ${name}의 비밀번호가 0000으로 초기화되었습니다.` });
+        } else {
+            res.status(404).json({ success: false, message: `멤버 ${name}을(를) 찾을 수 없습니다.` });
+        }
+    } catch (err) {
+        console.error('비밀번호 초기화 에러:', err.message);
+        res.status(500).json({ success: false, message: '비밀번호 초기화 중 오류가 발생했습니다.' });
+    }
+});
+
+// API: 모든 일정 가져오기
+app.get('/api/admin/schedules', isAuthenticated, async (req, res) => {
+    try {
+        const [schedules] = await pool.query('SELECT id, schedule_date, start_time, end_time, location, notes, booker, price, calculated FROM schedules ORDER BY schedule_date DESC, start_time DESC');
+        res.json({ success: true, schedules });
+    } catch (err) {
+        console.error('모든 일정 가져오기 에러:', err.message);
+        res.status(500).json({ success: false, message: '일정 정보를 가져오는 중 오류가 발생했습니다.' });
+    }
+});
+
+// API: 모든 경기 기록 가져오기
+app.get('/api/admin/matchrecords', isAuthenticated, async (req, res) => {
+    try {
+        const [matchrecords] = await pool.query('SELECT id, date, court, team1_deuce, team1_ad, team2_deuce, team2_ad, team1_score, team2_score FROM matchrecord ORDER BY date DESC, id DESC');
+        res.json({ success: true, matchrecords });
+    } catch (err) {
+        console.error('모든 경기 기록 가져오기 에러:', err.message);
+        res.status(500).json({ success: false, message: '경기 기록 정보를 가져오는 중 오류가 발생했습니다.' });
+    }
+});
+
+// API: 모든 멤버 가져오기
+app.get('/api/admin/members', isAuthenticated, async (req, res) => {
+    try {
+        const [members] = await pool.query('SELECT name, gender, etc, `order` FROM member ORDER BY `order` ASC, name ASC');
+        res.json({ success: true, members });
+    } catch (err) {
+        console.error('모든 멤버 가져오기 에러:', err.message);
+        res.status(500).json({ success: false, message: '멤버 정보를 가져오는 중 오류가 발생했습니다.' });
+    }
+});
+
+// API: 특정 멤버 정보 가져오기
+app.get('/api/admin/member/:name', isAuthenticated, async (req, res) => {
+    const memberName = req.params.name;
+    try {
+        const [member] = await pool.query('SELECT name, gender, etc, `order` FROM member WHERE name = ?', [memberName]);
+        if (member.length > 0) {
+            res.json({ success: true, member: member[0] });
+        } else {
+            res.status(404).json({ success: false, message: '멤버를 찾을 수 없습니다.' });
+        }
+    } catch (err) {
+        console.error('특정 멤버 정보 가져오기 에러:', err.message);
+        res.status(500).json({ success: false, message: '멤버 정보를 가져오는 중 오류가 발생했습니다.' });
     }
 });
 

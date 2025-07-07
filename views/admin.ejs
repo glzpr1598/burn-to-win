@@ -1,0 +1,836 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="apple-touch-icon" href="/image/btw-tran-180x180.png"/>
+    <link rel="icon" type="image/png" href="/image/btw-tran-180x180.png"/>
+    <title>관리자 대시보드</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet" />
+    <link rel="stylesheet" href="/css/common.css">
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f4f4f4;
+            margin: 0;
+            padding-top: 60px; /* Height of the new header */
+            overflow-y: auto; /* Allow vertical scrolling */
+        }
+        .admin-header {
+            background-color: white;
+            padding: 10px 10px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            box-sizing: border-box;
+            z-index: 1000;
+            box-shadow: 0 2px 4px rgba(0,0,0,.05);
+        }
+        .admin-header h1 {
+            margin: 0;
+            font-size: 1.25em;
+        }
+        .admin-container {
+            display: flex;
+            width: 100%;
+            flex-grow: 1;
+        }
+        .main-content {
+            padding: 20px 10px;
+            box-sizing: border-box;
+            flex-grow: 1;
+            width: 100%;
+            overflow-y: auto;
+            font-size: 1rem;
+        }
+        .accordion button{
+            width: 100%;
+        }
+        .section {
+            margin-bottom: 20px;
+        }
+        .section h3 {
+            color: #007bff;
+            margin-top: 0;
+        }
+        /* Admin Page Form Styling for Mobile */
+        .section form label,
+        .section form input[type="text"],
+        .section form input[type="number"],
+        .section form input[type="date"],
+        .section form input[type="time"],
+        .section form select,
+        .section form button {
+            display: block;
+            width: 100%;
+            margin-bottom: 10px;
+            padding: 8px;
+            box-sizing: border-box;
+        }
+        .section form button {
+            background-color: #007bff;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 1em;
+        }
+        .section form button:hover {
+            background-color: #0056b3;
+        }
+        .form-row {
+            display: flex;
+            align-items: center;
+            margin-bottom: 10px;
+        }
+        .form-row label {
+            width: 80px;
+            margin-right: 10px;
+            margin-bottom: 0;
+            text-align: center;
+        }
+        .form-row input,
+        .form-row select {
+            flex: 1;
+        }
+        .logout-button {
+            display: block;
+            width: 100%;
+            margin-top: 30px;
+        }
+        /* Modal Styles */
+        .modal {
+            display: none; /* Hidden by default */
+            position: fixed; /* Stay in place */
+            z-index: 10000; /* Sit on top */
+            left: 0;
+            top: 0;
+            width: 100%; /* Full width */
+            height: 100%; /* Full height */
+            overflow: auto; /* Enable scroll if needed */
+            background-color: rgba(0,0,0,0.4); /* Black w/ opacity */
+        }
+
+        .modal-content {
+            background-color: #fefefe;
+            margin: 20px 5px;
+            padding: 5px;
+            border: 1px solid #888;
+            width: auto; 
+            max-width: 600px;
+            border-radius: 8px;
+            position: relative;
+        }
+
+        .close-button {
+            color: #aaa;
+            float: right;
+            font-size: 28px;
+            font-weight: bold;
+        }
+
+        .close-button:hover,
+        .close-button:focus {
+            color: black;
+            text-decoration: none;
+            cursor: pointer;
+        }
+
+        .modal ul {
+            list-style: none;
+            padding: 0;
+            max-height: 500px;
+            overflow-y: auto;
+            border: 1px solid #eee;
+            margin-top: 10px;
+        }
+
+        .modal ul li {
+            padding: 10px;
+            border-bottom: 1px solid #eee;
+            cursor: pointer;
+        }
+
+        .modal ul li:hover {
+            background-color: #f2f2f2;
+        }
+
+        .modal input[type="text"] {
+            width: 100%;
+            padding: 10px;
+            margin-bottom: 10px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+        }
+    </style>
+</head>
+<body>
+    <header class="admin-header">
+        <div class="d-flex align-items-center flex-grow-1">
+            <img src="/image/btw-tran-180x180.png" alt="로고" style="height: 40px; margin-right: 5px;">
+            <h1><b>관리자 페이지</b></h1>
+        </div>
+    </header>
+
+    <div class="admin-container">
+        <div class="main-content">
+            <div class="accordion" id="adminAccordion">
+                <div class="accordion-item">
+                    <h2 class="accordion-header" id="headingAddSchedule">
+                        <button class="accordion-button" type="button" data-bs-toggle="collapse" data-bs-target="#collapseAddSchedule" aria-expanded="true" aria-controls="collapseAddSchedule">
+                            일정 등록
+                        </button>
+                    </h2>
+                    <div id="collapseAddSchedule" class="accordion-collapse collapse show" aria-labelledby="headingAddSchedule" data-bs-parent="#adminAccordion">
+                        <div class="accordion-body">
+                            <form id="addScheduleForm">
+                                <div class="form-row">
+                                    <label for="addDate" class="form-label">날짜</label>
+                                    <input type="date" id="addDate" name="schedule_date" class="form-control" required>
+                                </div>
+                                <div class="form-row">
+                                    <label for="addStartTime" class="form-label">시작 시간</label>
+                                    <input type="time" id="addStartTime" name="start_time" class="form-control" value="20:00"  required>
+                                </div>
+                                <div class="form-row">
+                                    <label for="addEndTime" class="form-label">종료 시간</label>
+                                    <input type="time" id="addEndTime" name="end_time" class="form-control" value="22:00" required>
+                                </div>
+                                <div class="form-row">
+                                    <label for="addLocation" class="form-label">장소</label>
+                                    <input type="text" id="addLocation" name="location" class="form-control" required>
+                                </div>
+                                <div class="form-row">
+                                    <label for="addBooker" class="form-label">예약자</label>
+                                    <input type="text" id="addBooker" name="booker" class="form-control" list="memberNames" required>
+                                </div>
+                                <div class="form-row">
+                                    <label for="addPrice" class="form-label">코트비</label>
+                                    <input type="number" id="addPrice" name="price" class="form-control" required>
+                                </div>
+                                <div class="form-row">
+                                    <label for="addNotes" class="form-label">설명</label>
+                                    <input type="text" id="addNotes" name="notes" class="form-control">
+                                </div>
+                                <button type="submit" class="btn btn-primary">일정 등록</button>
+                            </form>
+                            <p id="addScheduleMessage" class="mt-3"></p>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="accordion-item">
+                    <h2 class="accordion-header" id="headingManageSchedule">
+                        <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapseManageSchedule" aria-expanded="false" aria-controls="collapseManageSchedule">
+                            일정 관리 (수정, 삭제)
+                        </button>
+                    </h2>
+                    <div id="collapseManageSchedule" class="accordion-collapse collapse" aria-labelledby="headingManageSchedule" data-bs-parent="#adminAccordion">
+                        <div class="accordion-body">
+                            <button id="selectScheduleBtn" class="btn btn-secondary mb-3">일정 선택</button>
+                            <form id="updateScheduleForm">
+                                <div class="form-row">
+                                    <label for="updateId" class="form-label">일정 ID</label>
+                                    <input type="number" id="updateId" name="id" class="form-control" readonly>
+                                </div>
+                                <div class="form-row">
+                                    <label for="updateDate" class="form-label">날짜</label>
+                                    <input type="date" id="updateDate" name="schedule_date" class="form-control" required>
+                                </div>
+                                <div class="form-row">
+                                    <label for="updateStartTime" class="form-label">시작 시간</label>
+                                    <input type="time" id="updateStartTime" name="start_time" class="form-control" required>
+                                </div>
+                                <div class="form-row">
+                                    <label for="updateEndTime" class="form-label">종료 시간</label>
+                                    <input type="time" id="updateEndTime" name="end_time" class="form-control" required>
+                                </div>
+                                <div class="form-row">
+                                    <label for="updateLocation" class="form-label">장소</label>
+                                    <input type="text" id="updateLocation" name="location" class="form-control" required>
+                                </div>
+                                <div class="form-row">
+                                    <label for="updateBooker" class="form-label">예약자</label>
+                                    <input type="text" id="updateBooker" name="booker" class="form-control" list="memberNames" required>
+                                </div>
+                                <div class="form-row">
+                                    <label for="updatePrice" class="form-label">코트비</label>
+                                    <input type="number" id="updatePrice" name="price" class="form-control" required>
+                                </div>
+                                <div class="form-row">
+                                    <label for="updateNotes" class="form-label">설명</label>
+                                    <input type="text" id="updateNotes" name="notes" class="form-control">
+                                </div>
+                                <div class="form-row">
+                                    <label for="updateCalculated" class="form-label">정산 여부</label>
+                                    <select id="updateCalculated" name="calculated" class="form-select">
+                                        <option value="N">미완료</option>
+                                        <option value="Y">완료</option>
+                                    </select>
+                                </div>
+                                <button type="submit" class="btn btn-primary">일정 수정</button>
+                            </form>
+                            <p id="updateScheduleMessage" class="mt-3"></p>
+                            <button id="deleteScheduleBtn" class="btn btn-danger mt-3">일정 삭제</button>
+                            <p id="deleteScheduleMessage" class="mt-3"></p>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="accordion-item">
+                    <h2 class="accordion-header" id="headingDeleteMatchRecord">
+                        <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapseDeleteMatchRecord" aria-expanded="false" aria-controls="collapseDeleteMatchRecord">
+                            경기 기록 삭제
+                        </button>
+                    </h2>
+                    <div id="collapseDeleteMatchRecord" class="accordion-collapse collapse" aria-labelledby="headingDeleteMatchRecord" data-bs-parent="#adminAccordion">
+                        <div class="accordion-body">
+                            <button id="selectMatchRecordBtn" class="btn btn-secondary mb-3">경기 기록 선택</button>
+                            <div id="selectedMatchRecordInfo" class="mb-3 p-3 border rounded bg-light"></div>
+                            <button id="deleteMatchRecordBtn" class="btn btn-danger">선택된 경기 기록 삭제</button>
+                            <p id="deleteMatchRecordMessage" class="mt-3"></p>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="accordion-item">
+                    <h2 class="accordion-header" id="headingAddMember">
+                        <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapseAddMember" aria-expanded="false" aria-controls="collapseAddMember">
+                            멤버 등록
+                        </button>
+                    </h2>
+                    <div id="collapseAddMember" class="accordion-collapse collapse" aria-labelledby="headingAddMember" data-bs-parent="#adminAccordion">
+                        <div class="accordion-body">
+                            <form id="addMemberForm">
+                                <div class="form-row">
+                                    <label for="addMemberName" class="form-label">이름</label>
+                                    <input type="text" id="addMemberName" name="name" class="form-control" required>
+                                </div>
+                                <div class="form-row">
+                                    <label for="addMemberGender" class="form-label">성별</label>
+                                    <select id="addMemberGender" name="gender" class="form-select">
+                                        <option value="남">남</option>
+                                        <option value="여">여</option>
+                                    </select>
+                                </div>
+                                <div class="form-row">
+                                    <label for="addMemberOrder" class="form-label">정렬 순서</label>
+                                    <input type="number" id="addMemberOrder" name="order" class="form-control" placeholder="정회원: 0, 게스트: 2" required>
+                                </div>
+                                <div class="form-row">
+                                    <label for="addMemberEtc" class="form-label">비고</label>
+                                    <input type="text" id="addMemberEtc" name="etc" class="form-control" placeholder="게스트, 교류전 등">
+                                </div>
+                                <button type="submit" class="btn btn-primary">멤버 등록</button>
+                            </form>
+                            <p id="addMemberMessage" class="mt-3"></p>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="accordion-item">
+                    <h2 class="accordion-header" id="headingManageMember">
+                        <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapseManageMember" aria-expanded="false" aria-controls="collapseManageMember">
+                            멤버 관리 (수정, 삭제)
+                        </button>
+                    </h2>
+                    <div id="collapseManageMember" class="accordion-collapse collapse" aria-labelledby="headingManageMember" data-bs-parent="#adminAccordion">
+                        <div class="accordion-body">
+                            <button id="selectMemberBtn" class="btn btn-secondary mb-3">멤버 선택</button>
+                            <form id="updateMemberForm">
+                                <div class="form-row">
+                                    <label for="originalMemberName" class="form-label">기존 이름</label>
+                                    <input type="text" id="originalMemberName" name="originalName" class="form-control" readonly>
+                                </div>
+                                <div class="form-row">
+                                    <label for="updateMemberName" class="form-label">새 이름</label>
+                                    <input type="text" id="updateMemberName" name="name" class="form-control" required>
+                                </div>
+                                <div class="form-row">
+                                    <label for="updateMemberGender" class="form-label">성별</label>
+                                    <select id="updateMemberGender" name="gender" class="form-select">
+                                        <option value="남">남</option>
+                                        <option value="여">여</option>
+                                    </select>
+                                </div>
+                                <div class="form-row">
+                                    <label for="updateMemberOrder" class="form-label">정렬 순서</label>
+                                    <input type="number" id="updateMemberOrder" name="order" class="form-control" placeholder="정회원: 0, 게스트: 2" required>
+                                </div>
+                                <div class="form-row">
+                                    <label for="updateMemberEtc" class="form-label">비고</label>
+                                    <input type="text" id="updateMemberEtc" name="etc" class="form-control" placeholder="게스트, 교류전 등">
+                                </div>
+                                <button type="submit" class="btn btn-primary">멤버 수정</button>
+                            </form>
+                            <p id="updateMemberMessage" class="mt-3"></p>
+                            <button id="resetPasswordBtn" class="btn btn-warning mt-3">비밀번호 초기화</button>
+                            <p id="resetPasswordMessage" class="mt-3"></p>
+                            <button id="deleteMemberBtn" class="btn btn-danger mt-3">멤버 삭제</button>
+                            <p id="deleteMemberMessage" class="mt-3"></p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <a href="/admin/logout" class="btn btn-secondary logout-button">로그아웃</a>
+        </div>
+    </div>
+
+    <!-- Modals -->
+    <div class="modal fade" id="scheduleListModal" tabindex="-1" aria-labelledby="scheduleListModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-scrollable">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="scheduleListModalLabel">일정 선택</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <input type="text" id="scheduleSearchInput" class="form-control mb-3" placeholder="일정 검색...">
+                    <ul id="scheduleList" class="list-group"></ul>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal fade" id="matchRecordListModal" tabindex="-1" aria-labelledby="matchRecordListModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-scrollable">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="matchRecordListModalLabel">경기 기록 선택</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <input type="text" id="matchRecordSearchInput" class="form-control mb-3" placeholder="경기 기록 검색...">
+                    <ul id="matchRecordList" class="list-group"></ul>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal fade" id="memberListModal" tabindex="-1" aria-labelledby="memberListModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-scrollable">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="memberListModalLabel">멤버 선택</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <input type="text" id="memberSearchInput" class="form-control mb-3" placeholder="멤버 검색...">
+                    <ul id="memberList" class="list-group"></ul>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <datalist id="memberNames"></datalist>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', async () => {
+            // Modals (now use Bootstrap's Modal API)
+            const scheduleListModal = new bootstrap.Modal(document.getElementById('scheduleListModal'));
+            const matchRecordListModal = new bootstrap.Modal(document.getElementById('matchRecordListModal'));
+            const memberListModal = new bootstrap.Modal(document.getElementById('memberListModal'));
+
+            // Event listeners for opening modals
+            document.getElementById('selectScheduleBtn').addEventListener('click', () => {
+                fetchSchedules();
+                scheduleListModal.show();
+            });
+            document.getElementById('selectMatchRecordBtn').addEventListener('click', () => {
+                fetchMatchRecords();
+                matchRecordListModal.show();
+            });
+            document.getElementById('selectMemberBtn').addEventListener('click', () => {
+                fetchMembers(); // Re-fetch to ensure latest list
+                memberListModal.show();
+            });
+
+            // Close buttons for modals are handled by data-bs-dismiss="modal"
+
+            // Fetch members for datalist and member management
+            const memberNamesDatalist = document.getElementById('memberNames');
+            let allMembers = [];
+
+            const fetchMembers = async () => {
+                try {
+                    const response = await fetch('/api/admin/members');
+                    const data = await response.json();
+                    if (data.success) {
+                        allMembers = data.members;
+                        memberNamesDatalist.innerHTML = '';
+                        data.members.forEach(member => {
+                            const option = document.createElement('option');
+                            option.value = member.name;
+                            memberNamesDatalist.appendChild(option);
+                        });
+                    }
+                } catch (error) {
+                    console.error('멤버 목록을 가져오는 중 오류 발생:', error);
+                }
+            };
+            fetchMembers();
+
+            // 1. 일정 등록
+            const addScheduleForm = document.getElementById('addScheduleForm');
+            const addScheduleMessage = document.getElementById('addScheduleMessage');
+            const addStartTime = document.getElementById('addStartTime');
+            const addEndTime = document.getElementById('addEndTime');
+
+            addStartTime.addEventListener('change', () => {
+                if (addStartTime.value) {
+                    const [hours, minutes] = addStartTime.value.split(':').map(Number);
+                    const endDate = new Date();
+                    endDate.setHours(hours + 2, minutes);
+                    const endHours = String(endDate.getHours()).padStart(2, '0');
+                    const endMinutes = String(endDate.getMinutes()).padStart(2, '0');
+                    addEndTime.value = `${endHours}:${endMinutes}`;
+                }
+            });
+
+            addScheduleForm.addEventListener('submit', async (e) => {
+                e.preventDefault();
+                const formData = new FormData(e.target);
+                const data = Object.fromEntries(formData.entries());
+
+                try {
+                    const response = await fetch('/admin/add-schedule', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(data),
+                    });
+                    const result = await response.json();
+                    addScheduleMessage.style.color = result.success ? 'green' : 'red';
+                    addScheduleMessage.textContent = result.message;
+                    if (result.success) addScheduleForm.reset();
+                } catch (error) {
+                    addScheduleMessage.style.color = 'red';
+                    addScheduleMessage.textContent = '오류 발생: ' + error.message;
+                }
+            });
+
+            // 2. 일정 관리 (수정, 삭제)
+            const scheduleListElement = document.getElementById('scheduleList'); // Renamed to avoid conflict with modal instance
+            const scheduleSearchInput = document.getElementById('scheduleSearchInput');
+            const updateScheduleForm = document.getElementById('updateScheduleForm');
+            const updateScheduleMessage = document.getElementById('updateScheduleMessage');
+            const deleteScheduleBtn = document.getElementById('deleteScheduleBtn');
+            const deleteScheduleMessage = document.getElementById('deleteScheduleMessage');
+
+            let allSchedules = [];
+
+            const fetchSchedules = async () => {
+                try {
+                    const response = await fetch('/api/admin/schedules');
+                    const data = await response.json();
+                    if (data.success) {
+                        allSchedules = data.schedules;
+                        displaySchedules(allSchedules);
+                    }
+                } catch (error) {
+                    console.error('일정 목록을 가져오는 중 오류 발생:', error);
+                }
+            };
+
+            const displaySchedules = (schedules) => {
+                scheduleListElement.innerHTML = '';
+                schedules.forEach(schedule => {
+                    const li = document.createElement('li');
+                    li.classList.add('list-group-item', 'list-group-item-action');
+                    li.textContent = `${schedule.schedule_date} ${schedule.start_time}-${schedule.end_time} ${schedule.location} (${schedule.notes || ''})`;
+                    li.dataset.schedule = JSON.stringify(schedule);
+                    li.addEventListener('click', () => {
+                        const selectedSchedule = JSON.parse(li.dataset.schedule);
+                        document.getElementById('updateId').value = selectedSchedule.id;
+                        document.getElementById('updateDate').value = selectedSchedule.schedule_date;
+                        document.getElementById('updateStartTime').value = selectedSchedule.start_time;
+                        document.getElementById('updateEndTime').value = selectedSchedule.end_time;
+                        document.getElementById('updateBooker').value = selectedSchedule.booker || '';
+                        document.getElementById('updatePrice').value = selectedSchedule.price || '';
+                        document.getElementById('updateCalculated').value = selectedSchedule.calculated;
+                        document.getElementById('updateLocation').value = selectedSchedule.location;
+                        document.getElementById('updateNotes').value = selectedSchedule.notes || '';
+                        scheduleListModal.hide(); // Hide Bootstrap modal
+                    });
+                    scheduleListElement.appendChild(li);
+                });
+            };
+
+            scheduleSearchInput.addEventListener('keyup', (e) => {
+                const searchTerm = e.target.value.toLowerCase();
+                const filteredSchedules = allSchedules.filter(schedule => 
+                    schedule.schedule_date.toLowerCase().includes(searchTerm) ||
+                    schedule.location.toLowerCase().includes(searchTerm) ||
+                    (schedule.notes && schedule.notes.toLowerCase().includes(searchTerm))
+                );
+                displaySchedules(filteredSchedules);
+            });
+
+            updateScheduleForm.addEventListener('submit', async (e) => {
+                e.preventDefault();
+                const formData = new FormData(e.target);
+                const data = Object.fromEntries(formData.entries());
+
+                try {
+                    const response = await fetch('/admin/update-schedule', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(data),
+                    });
+                    const result = await response.json();
+                    updateScheduleMessage.style.color = result.success ? 'green' : 'red';
+                    updateScheduleMessage.textContent = result.message;
+                } catch (error) {
+                    updateScheduleMessage.style.color = 'red';
+                    updateScheduleMessage.textContent = '오류 발생: ' + error.message;
+                }
+            });
+
+            deleteScheduleBtn.addEventListener('click', async () => {
+                const scheduleId = document.getElementById('updateId').value;
+                if (!scheduleId) {
+                    deleteScheduleMessage.style.color = 'red';
+                    deleteScheduleMessage.textContent = '삭제할 일정을 선택해주세요.';
+                    return;
+                }
+                if (confirm(`정말 일정 (ID: ${scheduleId})을 삭제하시겠습니까?`)) {
+                    try {
+                        const response = await fetch('/admin/delete-schedule', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({ scheduleId: scheduleId }),
+                        });
+                        const result = await response.json();
+                        deleteScheduleMessage.style.color = result.success ? 'green' : 'red';
+                        deleteScheduleMessage.textContent = result.message;
+                        // Clear form after deletion
+                        updateScheduleForm.reset();
+                        document.getElementById('updateId').value = '';
+                    } catch (error) {
+                        deleteScheduleMessage.style.color = 'red';
+                        deleteScheduleMessage.textContent = '오류 발생: ' + error.message;
+                    }
+                }
+            });
+
+            // 3. 경기 기록 삭제
+            const matchRecordListElement = document.getElementById('matchRecordList'); // Renamed
+            const matchRecordSearchInput = document.getElementById('matchRecordSearchInput');
+            const deleteMatchRecordBtn = document.getElementById('deleteMatchRecordBtn');
+            const deleteMatchRecordMessage = document.getElementById('deleteMatchRecordMessage');
+            const selectedMatchRecordInfo = document.getElementById('selectedMatchRecordInfo');
+
+            let allMatchRecords = [];
+
+            const fetchMatchRecords = async () => {
+                try {
+                    const response = await fetch('/api/admin/matchrecords');
+                    const data = await response.json();
+                    if (data.success) {
+                        allMatchRecords = data.matchrecords;
+                        displayMatchRecords(allMatchRecords);
+                    }
+                } catch (error) {
+                    console.error('경기 기록 목록을 가져오는 중 오류:', error);
+                }
+            };
+
+            const displayMatchRecords = (matchrecords) => {
+                matchRecordListElement.innerHTML = '';
+                matchrecords.forEach(record => {
+                    const li = document.createElement('li');
+                    li.classList.add('list-group-item', 'list-group-item-action');
+                    li.textContent = `${record.date} | ${record.court} | ${record.team1_deuce} ${record.team1_ad ? `/${record.team1_ad}` : ''} vs ${record.team2_deuce} ${record.team2_ad ? `/${record.team2_ad}` : ''} | ${record.team1_score}:${record.team2_score}`;
+                    li.dataset.matchRecord = JSON.stringify(record);
+                    li.addEventListener('click', () => {
+                        const selectedRecord = JSON.parse(li.dataset.matchRecord);
+                        selectedMatchRecordInfo.innerHTML = `\n                            <p><strong>ID:</strong> ${selectedRecord.id}</p>\n                            <p><strong>날짜:</strong> ${selectedRecord.date}</p>\n                            <p><strong>장소:</strong> ${selectedRecord.court}</p>\n                            <p><strong>팀1:</strong> ${selectedRecord.team1_deuce} ${selectedRecord.team1_ad ? `/${selectedRecord.team1_ad}` : ''}</p>\n                            <p><strong>팀2:</strong> ${selectedRecord.team2_deuce} ${selectedRecord.team2_ad ? `/${selectedRecord.team2_ad}` : ''}</p>\n                            <p><strong>스코어:</strong> ${selectedRecord.team1_score}:${selectedRecord.team2_score}</p>\n                        `;
+                        deleteMatchRecordBtn.dataset.matchId = selectedRecord.id;
+                        matchRecordListModal.hide(); // Hide Bootstrap modal
+                    });
+                    matchRecordListElement.appendChild(li);
+                });
+            };
+
+            matchRecordSearchInput.addEventListener('keyup', (e) => {
+                const searchTerm = e.target.value.toLowerCase();
+                const filteredRecords = allMatchRecords.filter(record => 
+                    record.date.toLowerCase().includes(searchTerm) ||
+                    record.court.toLowerCase().includes(searchTerm) ||
+                    record.team1_deuce.toLowerCase().includes(searchTerm) ||
+                    (record.team1_ad && record.team1_ad.toLowerCase().includes(searchTerm)) ||
+                    record.team2_deuce.toLowerCase().includes(searchTerm) ||
+                    (record.team2_ad && record.team2_ad.toLowerCase().includes(searchTerm))
+                );
+                displayMatchRecords(filteredRecords);
+            });
+
+            deleteMatchRecordBtn.addEventListener('click', async () => {
+                const matchId = deleteMatchRecordBtn.dataset.matchId;
+                if (!matchId) {
+                    deleteMatchRecordMessage.style.color = 'red';
+                    deleteMatchRecordMessage.textContent = '삭제할 경기 기록을 선택해주세요.';
+                    return;
+                }
+                if (confirm(`정말 경기 기록 (ID: ${matchId})을 삭제하시겠습니까?`)) {
+                    try {
+                        const response = await fetch('/admin/delete-match', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({ matchId: matchId }),
+                        });
+                        const result = await response.json();
+                        deleteMatchRecordMessage.style.color = result.success ? 'green' : 'red';
+                        deleteMatchRecordMessage.textContent = result.message;
+                        selectedMatchRecordInfo.innerHTML = ''; // Clear info after deletion
+                        deleteMatchRecordBtn.dataset.matchId = '';
+                    } catch (error) {
+                        deleteMatchRecordMessage.style.color = 'red';
+                        deleteMatchRecordMessage.textContent = '오류 발생: ' + error.message;
+                    }
+                }
+            });
+
+            // 4. 멤버 등록 (Form is already in place, just need to update script reference)
+            const addMemberForm = document.getElementById('addMemberForm');
+            const addMemberMessage = document.getElementById('addMemberMessage');
+
+            addMemberForm.addEventListener('submit', async (e) => {
+                e.preventDefault();
+                const formData = new FormData(e.target);
+                const data = Object.fromEntries(formData.entries());
+
+                try {
+                    const response = await fetch('/admin/add-member', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(data),
+                    });
+                    const result = await response.json();
+                    addMemberMessage.style.color = result.success ? 'green' : 'red';
+                    addMemberMessage.textContent = result.message;
+                    if (result.success) addMemberForm.reset();
+                } catch (error) {
+                    addMemberMessage.style.color = 'red';
+                    addMemberMessage.textContent = '오류 발생: ' + error.message;
+                }
+            });
+
+            // 5. 멤버 관리 (수정, 삭제)
+            const memberListElement = document.getElementById('memberList'); // Renamed
+            const memberSearchInput = document.getElementById('memberSearchInput');
+            const updateMemberForm = document.getElementById('updateMemberForm');
+            const updateMemberMessage = document.getElementById('updateMemberMessage');
+            const resetPasswordBtn = document.getElementById('resetPasswordBtn');
+            const resetPasswordMessage = document.getElementById('resetPasswordMessage');
+            const deleteMemberBtn = document.getElementById('deleteMemberBtn');
+            const deleteMemberMessage = document.getElementById('deleteMemberMessage');
+
+            const displayMembers = (members) => {
+                memberListElement.innerHTML = '';
+                members.forEach(member => {
+                    const li = document.createElement('li');
+                    li.classList.add('list-group-item', 'list-group-item-action');
+                    li.textContent = `${member.name} (${member.gender}, ${member.etc || ''})`;
+                    li.dataset.member = JSON.stringify(member);
+                    li.addEventListener('click', () => {
+                        const selectedMember = JSON.parse(li.dataset.member);
+                        document.getElementById('originalMemberName').value = selectedMember.name;
+                        document.getElementById('updateMemberName').value = selectedMember.name;
+                        document.getElementById('updateMemberGender').value = selectedMember.gender;
+                        document.getElementById('updateMemberEtc').value = selectedMember.etc || '';
+                        document.getElementById('updateMemberOrder').value = selectedMember.order;
+                        memberListModal.hide(); // Hide Bootstrap modal
+                    });
+                    memberListElement.appendChild(li);
+                });
+            };
+
+            memberSearchInput.addEventListener('keyup', (e) => {
+                const searchTerm = e.target.value.toLowerCase();
+                const filteredMembers = allMembers.filter(member => 
+                    member.name.toLowerCase().includes(searchTerm) ||
+                    member.gender.toLowerCase().includes(searchTerm) ||
+                    (member.etc && member.etc.toLowerCase().includes(searchTerm))
+                );
+                displayMembers(filteredMembers);
+            });
+
+            updateMemberForm.addEventListener('submit', async (e) => {
+                e.preventDefault();
+                const formData = new FormData(e.target);
+                const data = Object.fromEntries(formData.entries());
+
+                try {
+                    const response = await fetch('/admin/update-member', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(data),
+                    });
+                    const result = await response.json();
+                    updateMemberMessage.style.color = result.success ? 'green' : 'red';
+                    updateMemberMessage.textContent = result.message;
+                } catch (error) {
+                    updateMemberMessage.style.color = 'red';
+                    updateMemberMessage.textContent = '오류 발생: ' + error.message;
+                }
+            });
+
+            resetPasswordBtn.addEventListener('click', async () => {
+                const memberName = document.getElementById('originalMemberName').value;
+                if (!memberName) {
+                    resetPasswordMessage.style.color = 'red';
+                    resetPasswordMessage.textContent = '비밀번호를 초기화할 멤버를 선택해주세요.';
+                    return;
+                }
+                if (confirm(`정말 ${memberName} 멤버의 비밀번호를 0000으로 초기화하시겠습니까?`)) {
+                    try {
+                        const response = await fetch('/admin/reset-password', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({ name: memberName }),
+                        });
+                        const result = await response.json();
+                        resetPasswordMessage.style.color = result.success ? 'green' : 'red';
+                        resetPasswordMessage.textContent = result.message;
+                    } catch (error) {
+                        resetPasswordMessage.style.color = 'red';
+                        resetPasswordMessage.textContent = '오류 발생: ' + error.message;
+                    }
+                }
+            });
+
+            deleteMemberBtn.addEventListener('click', async () => {
+                const memberName = document.getElementById('originalMemberName').value;
+                if (!memberName) {
+                    deleteMemberMessage.style.color = 'red';
+                    deleteMemberMessage.textContent = '삭제할 멤버를 선택해주세요.';
+                    return;
+                }
+                if (confirm(`정말 ${memberName} 멤버를 삭제하시겠습니까?`)) {
+                    try {
+                        const response = await fetch('/admin/delete-member', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({ name: memberName }),
+                        });
+                        const result = await response.json();
+                        deleteMemberMessage.style.color = result.success ? 'green' : 'red';
+                        deleteMemberMessage.textContent = result.message;
+                        updateMemberForm.reset();
+                        document.getElementById('originalMemberName').value = '';
+                    } catch (error) {
+                        deleteMemberMessage.style.color = 'red';
+                        deleteMemberMessage.textContent = '오류 발생: ' + error.message;
+                    }
+                }
+            });
+        });
+    </script>
+</body>
+</html>
