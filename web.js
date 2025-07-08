@@ -84,6 +84,15 @@ const applyPeriodFilter = (matches, period) => {
     });
 };
 
+function formatDateTime(datetimeString) {
+    const date = new Date(datetimeString);
+    const yyyy = date.getFullYear();
+    const mm = String(date.getMonth() + 1).padStart(2, '0');
+    const dd = String(date.getDate()).padStart(2, '0');
+    const hh = String(date.getHours()).padStart(2, '0');
+    const min = String(date.getMinutes()).padStart(2, '0');
+    return `${yyyy}-${mm}-${dd} ${hh}:${min}`;
+}
 
 // --- 라우트 핸들러 ---
 
@@ -717,16 +726,6 @@ app.get('/api/member-attendance/:name', async (req, res) => {
         res.status(500).json({ error: '서버 오류가 발생했습니다.' });
     }
 });
-
-function formatDateTime(datetimeString) {
-    const date = new Date(datetimeString);
-    const yyyy = date.getFullYear();
-    const mm = String(date.getMonth() + 1).padStart(2, '0');
-    const dd = String(date.getDate()).padStart(2, '0');
-    const hh = String(date.getHours()).padStart(2, '0');
-    const min = String(date.getMinutes()).padStart(2, '0');
-    return `${yyyy}-${mm}-${dd} ${hh}:${min}`;
-}
 
 // 일정 페이지
 app.get('/schedule', async (req, res) => {
