@@ -8,16 +8,16 @@ const session = require('express-session'); // express-session 추가
 
 // 커넥션 풀 생성
 const pool = mysql.createPool({
-  host: process.env.DB_HOST || 'burntowin.cafe24app.com', // 서버: 10.0.0.1, 로컬: burntowin.cafe24app.com 
-  user: process.env.DB_USER || 'burntowin',
-  password: process.env.DB_PASSWORD || 'qnfRhc1@',
-  database: process.env.DB_NAME || 'burntowin',
-  waitForConnections: true,
-  connectionLimit: 10,
-  queueLimit: 0,
-  // MySQL의 DATETIME 타입을 Javascript Date 객체로 자동 변환하지 않도록 설정
-  // 날짜 필터링 시 문자열로 비교하는 것이 더 간단하고 안전할 수 있습니다.
-  dateStrings: true 
+    host: process.env.DB_HOST || 'burntowin.cafe24app.com', // 서버: 10.0.0.1, 로컬: burntowin.cafe24app.com 
+    user: process.env.DB_USER || 'burntowin',
+    password: process.env.DB_PASSWORD || 'qnfRhc1@',
+    database: process.env.DB_NAME || 'burntowin',
+    waitForConnections: true,
+    connectionLimit: 10,
+    queueLimit: 0,
+    // MySQL의 DATETIME 타입을 Javascript Date 객체로 자동 변환하지 않도록 설정
+    // 날짜 필터링 시 문자열로 비교하는 것이 더 간단하고 안전할 수 있습니다.
+    dateStrings: true
 });
 
 const app = express();
@@ -69,14 +69,14 @@ const applyPeriodFilter = (matches, period) => {
     } else {
         return matches; // 유효하지 않은 기간 값은 무시
     }
-    
+
     // JS Date 객체의 시간 부분을 0으로 설정하여 날짜만 비교
     startDate.setHours(0, 0, 0, 0);
 
     return matches.filter(m => {
         const matchDate = new Date(m.date);
         matchDate.setHours(0, 0, 0, 0); // 경기 날짜의 시간 정보 제거
-        
+
         if (endDate) {
             return matchDate >= startDate && matchDate <= endDate;
         }
@@ -94,30 +94,30 @@ app.get('/', (req, res) => {
 
 // 경기 기록
 app.get('/match-record', async (req, res) => {
-  try {
-    const sql = 'SELECT * FROM matchrecord ORDER BY date DESC, court ASC, id DESC';
-    const [rows] = await pool.query(sql);
-    res.render('match-record', { matches: rows, currentPage: 'match-record' });
-  } catch (err) {
-    console.error('[/] 에러:', err.message);
-    res.status(500).send('서버 오류가 발생했습니다.');
-  }
+    try {
+        const sql = 'SELECT * FROM matchrecord ORDER BY date DESC, court ASC, id DESC';
+        const [rows] = await pool.query(sql);
+        res.render('match-record', { matches: rows, currentPage: 'match-record' });
+    } catch (err) {
+        console.error('[/] 에러:', err.message);
+        res.status(500).send('서버 오류가 발생했습니다.');
+    }
 });
 
 // 경기 기록 입력 페이지 보여주기
 app.get('/new', async (req, res) => {
-  try {
-    const membersPromise = pool.query('SELECT name FROM member ORDER BY `order` ASC, name ASC');
-    const courtsPromise = pool.query("SELECT DISTINCT court AS name FROM matchrecord WHERE court IS NOT NULL AND court != '' ORDER BY name ASC");
+    try {
+        const membersPromise = pool.query('SELECT name FROM member ORDER BY `order` ASC, name ASC');
+        const courtsPromise = pool.query("SELECT DISTINCT court AS name FROM matchrecord WHERE court IS NOT NULL AND court != '' ORDER BY name ASC");
 
-    // 두 쿼리를 병렬로 실행
-    const [[members], [courts]] = await Promise.all([membersPromise, courtsPromise]);
-    
-    res.render('new', { members: members, courts: courts });
-  } catch (err) {
-    console.error('[/new] 에러:', err.message);
-    res.status(500).send('데이터 조회 중 오류가 발생했습니다.');
-  }
+        // 두 쿼리를 병렬로 실행
+        const [[members], [courts]] = await Promise.all([membersPromise, courtsPromise]);
+
+        res.render('new', { members: members, courts: courts });
+    } catch (err) {
+        console.error('[/new] 에러:', err.message);
+        res.status(500).send('데이터 조회 중 오류가 발생했습니다.');
+    }
 });
 
 // 경기 기록 수정 페이지 보여주기
@@ -129,7 +129,7 @@ app.get('/edit/:id', async (req, res) => {
         const courtsPromise = pool.query("SELECT DISTINCT court AS name FROM matchrecord WHERE court IS NOT NULL AND court != '' ORDER BY name ASC");
 
         const [[matchRows], [members], [courts]] = await Promise.all([matchPromise, membersPromise, courtsPromise]);
-        
+
         const match = matchRows[0]; // id로 조회했으므로 결과는 하나 또는 없음
         if (!match) {
             return res.status(404).send('해당 기록을 찾을 수 없습니다.');
@@ -148,12 +148,12 @@ app.get('/edit/:id', async (req, res) => {
 const calculateMatchType = async (players) => {
     const playerNames = players.filter(name => name);
     const uniquePlayerNames = [...new Set(playerNames)];
-    
+
     if (uniquePlayerNames.length === 0) return '기타';
 
     const placeholders = uniquePlayerNames.map(() => '?').join(',');
     const sql = `SELECT name, gender FROM member WHERE name IN (${placeholders})`;
-    
+
     const [rows] = await pool.query(sql, uniquePlayerNames);
     const genderMap = rows.reduce((acc, row) => {
         acc[row.name] = row.gender;
@@ -164,7 +164,7 @@ const calculateMatchType = async (players) => {
     const g1a = genderMap[players[1]] || '';
     const g2d = genderMap[players[2]];
     const g2a = genderMap[players[3]] || '';
-    
+
     const genders = [g1d, g1a, g2d, g2a].filter(g => g);
     const maleCount = genders.filter(g => g === '남').length;
     const femaleCount = genders.filter(g => g === '여').length;
@@ -184,11 +184,11 @@ const calculateMatchType = async (players) => {
             const isTeam1AllMale = [g1d, g1a].every(g => g === '남');
             const isTeam2AllFemale = [g2d, g2a].every(g => g === '여');
             if (isTeam1AllMale && isTeam2AllFemale) return '혼복(남vs여)';
-            
+
             const isTeam1AllFemale = [g1d, g1a].every(g => g === '여');
             const isTeam2AllMale = [g2d, g2a].every(g => g === '남');
             if (isTeam1AllFemale && isTeam2AllMale) return '혼복(남vs여)';
-            
+
             return '혼복';
         }
     }
@@ -220,7 +220,7 @@ app.post('/update/:id', async (req, res) => {
         }
 
         const type = await calculateMatchType([team1_deuce, team1_ad, team2_deuce, team2_ad]);
-        
+
         const sql = `
             UPDATE matchrecord SET
                 date = ?, court = ?,
@@ -241,7 +241,7 @@ app.post('/update/:id', async (req, res) => {
             team1_result, team2_result, type,
             matchId
         ];
-        
+
         await pool.query(sql, params);
         res.redirect('/match-record');
 
@@ -275,7 +275,7 @@ app.post('/matches', async (req, res) => {
         }
 
         const type = await calculateMatchType([team1_deuce, team1_ad, team2_deuce, team2_ad]);
-        
+
         const sql = `
             INSERT INTO matchrecord 
             (date, court, team1_deuce, team1_ad, team2_deuce, team2_ad, team1_score, team2_score, video, etc, team1_result, team2_result, type) 
@@ -289,9 +289,9 @@ app.post('/matches', async (req, res) => {
             video, etc,
             team1_result, team2_result, type
         ];
-        
+
         await pool.query(sql, params);
-        
+
         // ✨ 요청 타입을 확인하여 다르게 응답하는 로직
         if (req.is('json')) {
             // 'Content-Type'이 'application/json'인 경우 (fetch 요청)
@@ -303,9 +303,9 @@ app.post('/matches', async (req, res) => {
 
     } catch (err) {
         console.error('[/matches] 에러:', err.message);
-        
+
         if (req.is('json')) {
-            res.status(500).json({ success: false, message: '데이터 저장 중 오류가 발생했습니다.'});
+            res.status(500).json({ success: false, message: '데이터 저장 중 오류가 발생했습니다.' });
         } else {
             res.status(500).send('데이터 저장 중 오류가 발생했습니다.');
         }
@@ -326,7 +326,7 @@ app.get('/my-score', async (req, res) => {
 
         // 기간 필터 적용
         let filteredMatches = applyPeriodFilter(allMatches, period);
-        
+
         // 분류 필터
         if (types) {
             const typeArr = types.split(',');
@@ -337,7 +337,7 @@ app.get('/my-score', async (req, res) => {
             const courtArr = courtFilter.split(',');
             filteredMatches = filteredMatches.filter(m => courtArr.includes(m.court));
         }
-        
+
         const scores = members.map(member => {
             // [수정] 무승부 및 포지션별 패배, 무승부 기록을 위한 필드 추가
             const stats = {
@@ -356,12 +356,12 @@ app.get('/my-score', async (req, res) => {
                 if (isOnTeam1 || isOnTeam2) {
                     stats.matches++;
                     const result = isOnTeam1 ? match.team1_result : match.team2_result;
-                    
+
                     // [수정] 승/패/무 결과에 따라 해당 기록 증가
                     if (result === '승') stats.wins++;
                     else if (result === '패') stats.losses++;
                     else if (result === '무') stats.draws++;
-                    
+
                     if (position === 'deuce') {
                         stats.deuceMatches++;
                         if (result === '승') stats.deuceWins++;
@@ -377,7 +377,7 @@ app.get('/my-score', async (req, res) => {
             });
 
             const safeRate = (numerator, denominator) => denominator > 0 ? Math.round((numerator / denominator) * 100) : 0;
-            
+
             const winRate = safeRate(stats.wins, stats.matches);
             const deuceRate = safeRate(stats.deuceMatches, stats.matches);
             const deuceWinRate = safeRate(stats.deuceWins, stats.deuceMatches);
@@ -387,7 +387,7 @@ app.get('/my-score', async (req, res) => {
 
             return { ...stats, winRate, deuceRate, deuceWinRate, adRate, adWinRate, weightedDiff };
         });
-        
+
         scores.sort((a, b) => b.matches - a.matches);
 
         res.render('my-score', { scores, courts, currentPage: 'my-score' });
@@ -421,17 +421,17 @@ app.get('/chemistry', async (req, res) => {
             const courtArr = courtFilter.split(',');
             filteredMatches = filteredMatches.filter(m => courtArr.includes(m.court));
         }
-        
+
         let chemistryData = [];
         if (player) {
             chemistryData = members
                 .filter(member => member.name !== player)
                 .map(compareMember => {
                     // [수정] 승/무/패를 모두 기록하도록 필드 확장
-                    const stats = { 
-                        name: compareMember.name, 
+                    const stats = {
+                        name: compareMember.name,
                         sameTeamMatches: 0, sameTeamWins: 0, sameTeamDraws: 0, sameTeamLosses: 0,
-                        opponentMatches: 0, opponentWins: 0, opponentDraws: 0, opponentLosses: 0 
+                        opponentMatches: 0, opponentWins: 0, opponentDraws: 0, opponentLosses: 0
                     };
 
                     filteredMatches.forEach(match => {
@@ -449,12 +449,12 @@ app.get('/chemistry', async (req, res) => {
                             if (result === '승') stats.sameTeamWins++;
                             else if (result === '패') stats.sameTeamLosses++;
                             else if (result === '무') stats.sameTeamDraws++;
-                        } 
+                        }
                         // 상대편일 때 (기준 플레이어 입장에서의 승/무/패)
                         else if ((isBaseOnTeam1 && isCompareOnTeam2) || (isBaseOnTeam2 && isCompareOnTeam1)) {
                             stats.opponentMatches++;
                             const result = isBaseOnTeam1 ? match.team1_result : match.team2_result;
-                             if (result === '승') stats.opponentWins++;
+                            if (result === '승') stats.opponentWins++;
                             else if (result === '패') stats.opponentLosses++;
                             else if (result === '무') stats.opponentDraws++;
                         }
@@ -477,7 +477,7 @@ app.get('/chemistry', async (req, res) => {
                 winRateDiff // 템플릿으로 전달할 객체에 추가
             };
         }).sort((a, b) => b.sameTeamMatches - a.sameTeamMatches);
-        
+
         res.render('chemistry', {
             members,
             courts,
@@ -507,7 +507,7 @@ app.get('/chemistry-score', async (req, res) => {
         const membersPromise = pool.query("SELECT name FROM member WHERE `order` = 0");
 
         const [[allMatches], [courts], [regularMembers]] = await Promise.all([matchesPromise, courtsPromise, membersPromise]);
-        
+
         // 정회원 이름을 Set으로 만들어 빠른 조회를 가능하게 함
         const regularMemberSet = new Set(regularMembers.map(m => m.name));
 
@@ -551,7 +551,7 @@ app.get('/chemistry-score', async (req, res) => {
             const winRate = stats.matches > 0 ? Math.round((stats.wins / stats.matches) * 100) : 0;
             return { pair: key, matches: stats.matches, wins: stats.wins, losses: stats.losses, winRate };
         });
-        
+
         res.render('chemistry-score', { pairData, courts, currentPage: 'chemistry-score' });
 
     } catch (err) {
@@ -572,7 +572,7 @@ app.get('/api/matches/pair', async (req, res) => {
 
         // 2. 전체 경기 기록 가져오기
         const [allMatches] = await pool.query('SELECT * FROM matchrecord WHERE team1_result IS NOT NULL');
-        
+
         // 3. 기간, 분류, 코트 필터 적용
         let filteredMatches = applyPeriodFilter(allMatches, period);
         if (types) {
@@ -593,7 +593,7 @@ app.get('/api/matches/pair', async (req, res) => {
 
         // 5. 최신순으로 정렬
         pairMatches.sort((a, b) => new Date(b.date) - new Date(a.date) || b.id - a.id);
-        
+
         // 6. 결과 전송
         res.json(pairMatches);
 
@@ -702,7 +702,7 @@ app.get('/api/member-attendance/:name', async (req, res) => {
                 attendedDays: Array.from(daysSet).sort((a, b) => a - b).join(', ')
             };
         });
-        
+
         // 년-월 최신순 정렬 (기존 로직과 동일)
         result.sort((a, b) => {
             const dateA = new Date(a.yearMonth.replace('년 ', '-').replace('월', ''));
@@ -717,6 +717,16 @@ app.get('/api/member-attendance/:name', async (req, res) => {
         res.status(500).json({ error: '서버 오류가 발생했습니다.' });
     }
 });
+
+function formatDateTime(datetimeString) {
+    const date = new Date(datetimeString);
+    const yyyy = date.getFullYear();
+    const mm = String(date.getMonth() + 1).padStart(2, '0');
+    const dd = String(date.getDate()).padStart(2, '0');
+    const hh = String(date.getHours()).padStart(2, '0');
+    const min = String(date.getMinutes()).padStart(2, '0');
+    return `${yyyy}-${mm}-${dd} ${hh}:${min}`;
+}
 
 // 일정 페이지
 app.get('/schedule', async (req, res) => {
@@ -753,10 +763,10 @@ app.get('/schedule', async (req, res) => {
             const commentsMap = new Map();
             comments.forEach(comment => {
                 const list = commentsMap.get(comment.schedule_id) || [];
-                // 날짜 포맷 변경
-                comment.created_at = new Date(comment.created_at).toLocaleString('ko-KR', {
-                    year: '2-digit', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit', hour12: false
-                }).replace(/\. /g, '.');
+
+                // 날짜 포맷 변경 (YYYY-MM-DD HH:mm)
+                comment.created_at = formatDateTime(comment.created_at);
+
                 list.push(comment);
                 commentsMap.set(comment.schedule_id, list);
             });
@@ -804,13 +814,13 @@ app.post('/api/schedule/:id/attend', async (req, res) => {
 
         // 모든 쿼리가 성공하면 변경사항을 확정(commit)
         await connection.commit();
-        
+
         res.json({ success: true, message: '참석 처리되었습니다.' });
 
     } catch (err) {
         // 쿼리 중 에러가 발생하면 모든 변경사항을 되돌림(rollback)
         if (connection) await connection.rollback();
-        
+
         console.error(`[/api/schedule/${scheduleId}/attend] 에러:`, err.message);
         res.status(500).json({ success: false, message: '참석 처리에 실패했습니다.' });
     } finally {
@@ -841,7 +851,7 @@ app.post('/api/schedule/:id/cancel', async (req, res) => {
             // 2. 로그 기록
             const logSql = 'INSERT INTO schedule_attendance_log (schedule_id, member_name, action) VALUES (?, ?, ?)';
             await connection.query(logSql, [scheduleId, memberName, 'cancel']);
-            
+
             await connection.commit();
             res.json({ success: true, message: '참석이 취소되었습니다.' });
         } else {
@@ -852,7 +862,7 @@ app.post('/api/schedule/:id/cancel', async (req, res) => {
 
     } catch (err) {
         if (connection) await connection.rollback();
-        
+
         console.error(`[/api/schedule/${scheduleId}/cancel] 에러:`, err.message);
         res.status(500).json({ success: false, message: '참석 취소에 실패했습니다.' });
     } finally {
@@ -907,7 +917,7 @@ app.post('/api/user/login', async (req, res) => {
         if (rows.length === 0) {
             return res.status(404).json({ success: false, message: '존재하지 않는 사용자입니다.' });
         }
-        
+
         const hashedPassword = rows[0].password;
         const match = await bcrypt.compare(password, hashedPassword);
 
@@ -943,7 +953,7 @@ app.post('/api/user/change-password', async (req, res) => {
 
         const newHashedPassword = await bcrypt.hash(newPassword, saltRounds);
         await pool.query('UPDATE member SET password = ? WHERE name = ?', [newHashedPassword, name]);
-        
+
         res.json({ success: true, message: '비밀번호가 성공적으로 변경되었습니다.' });
     } catch (err) {
         console.error('[/api/user/change-password] 에러:', err.message);
@@ -977,10 +987,10 @@ app.post('/api/schedule/:id/toggle-calculation', async (req, res) => {
         await connection.query(updateSql, [newStatus, scheduleId]);
 
         await connection.commit();
-        
+
         // 4. 성공 응답과 함께 새로운 상태를 클라이언트에 전달합니다.
-        res.json({ 
-            success: true, 
+        res.json({
+            success: true,
             message: `정산 상태가 '${newStatus === 'Y' ? '완료' : '미완료'}'로 변경되었습니다.`,
             newStatus: newStatus
         });
