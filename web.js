@@ -804,7 +804,7 @@ app.post('/api/schedule/:id/attend', async (req, res) => {
         // ✨ 트랜잭션 내에서 현재 참석자 수와 최대 인원 수를 가져옵니다. (FOR UPDATE를 사용하여 비관적 잠금)
         const [scheduleRows] = await connection.query('SELECT maximum FROM schedules WHERE id = ? FOR UPDATE', [scheduleId]);
         const [attendeeRows] = await connection.query('SELECT COUNT(*) as count FROM schedule_attendees WHERE schedule_id = ?', [scheduleId]);
-        
+
         if (scheduleRows.length === 0) {
             await connection.rollback();
             return res.status(404).json({ success: false, message: '일정을 찾을 수 없습니다.' });
@@ -1333,6 +1333,78 @@ app.post('/api/admin/schedule/delete-attendees', isAuthenticated, async (req, re
         res.status(500).json({ success: false, message: '참석자 삭제 중 오류가 발생했습니다.' });
     } finally {
         if (connection) connection.release();
+    }
+});
+
+// API: 특정 월의 유예 신청 목록 조회
+app.get('/api/postponements/:year/:month', async (req, res) => {
+    const { year, month } = req.params;
+    try {
+        const sql = `
+            SELECT id, member_name, content, created_at 
+            FROM postpone 
+            WHERE year = ? AND month = ? 
+            ORDER BY created_at ASC
+        `;
+        const [posts] = await pool.query(sql, [year, month]);
+
+        posts.forEach(p => {
+            p.created_at = formatDateTime(p.created_at);
+        });
+
+        res.json({ success: true, posts });
+    } catch (err) {
+        console.error('[/api/postponements/:year/:month] 에러:', err.message);
+        res.status(500).json({ success: false, message: '데이터 조회 중 오류가 발생했습니다.' });
+    }
+});
+
+// API: 유예 신청 글 작성
+app.post('/api/postponements', async (req, res) => {
+    const { year, month, memberName, content } = req.body;
+    if (!year || !month || !memberName || !content) {
+        return res.status(400).json({ success: false, message: '모든 필드를 입력해야 합니다.' });
+    }
+    try {
+        const insertSql = 'INSERT INTO postpone (year, month, member_name, content) VALUES (?, ?, ?, ?)';
+        const [result] = await pool.query(insertSql, [year, month, memberName, content]);
+
+        const selectSql = 'SELECT id, member_name, content, created_at FROM postpone WHERE id = ?';
+        const [[newPost]] = await pool.query(selectSql, [result.insertId]);
+
+        newPost.created_at = formatDateTime(newPost.created_at);
+
+        res.status(201).json({ success: true, post: newPost, message: '유예 신청이 등록되었습니다.' });
+    } catch (err) {
+        console.error('[/api/postponements] 에러:', err.message);
+        res.status(500).json({ success: false, message: '등록 중 오류가 발생했습니다.' });
+    }
+});
+
+// API: 유예 신청 글 삭제
+app.delete('/api/postponements/:id', async (req, res) => {
+    const { id } = req.params;
+    const { memberName } = req.body;
+
+    if (!memberName) {
+        return res.status(401).json({ success: false, message: '로그인이 필요합니다.' });
+    }
+
+    try {
+        const [[post]] = await pool.query('SELECT member_name FROM postpone WHERE id = ?', [id]);
+        if (!post) {
+            return res.status(404).json({ success: false, message: '삭제할 게시글이 없습니다.' });
+        }
+        if (post.member_name !== memberName) {
+            return res.status(403).json({ success: false, message: '본인이 작성한 글만 삭제할 수 있습니다.' });
+        }
+
+        await pool.query('DELETE FROM postpone WHERE id = ?', [id]);
+        res.json({ success: true, message: '게시글을 삭제했습니다.' });
+
+    } catch (err) {
+        console.error(`[/api/postponements/:id] 에러:`, err.message);
+        res.status(500).json({ success: false, message: '삭제 중 오류가 발생했습니다.' });
     }
 });
 
