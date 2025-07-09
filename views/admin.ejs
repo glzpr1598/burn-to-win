@@ -120,7 +120,7 @@
             margin: 20px 5px;
             padding: 5px;
             border: 1px solid #888;
-            width: auto; 
+            width: auto;
             max-width: 600px;
             border-radius: 8px;
             position: relative;
@@ -279,9 +279,8 @@
                                 </div>
                                 <button type="submit" class="btn btn-primary">일정 수정</button>
                             </form>
-                            <p id="updateScheduleMessage" class="mt-3"></p>
                             <button id="deleteScheduleBtn" class="btn btn-danger mt-3">일정 삭제</button>
-                            <p id="deleteScheduleMessage" class="mt-3"></p>
+                            <p id="manageScheduleMessage" class="mt-3"></p>
                         </div>
                     </div>
                 </div>
@@ -356,11 +355,9 @@
                                 </div>
                                 <button type="submit" class="btn btn-primary">멤버 수정</button>
                             </form>
-                            <p id="updateMemberMessage" class="mt-3"></p>
                             <button id="resetPasswordBtn" class="btn btn-warning mt-3">비밀번호 초기화</button>
-                            <p id="resetPasswordMessage" class="mt-3"></p>
                             <button id="deleteMemberBtn" class="btn btn-danger mt-3">멤버 삭제</button>
-                            <p id="deleteMemberMessage" class="mt-3"></p>
+                            <p id="manageMemberMessage" class="mt-3"></p>
                         </div>
                     </div>
                 </div>
@@ -387,7 +384,6 @@
         </div>
     </div>
 
-    <!-- Modals -->
     <div class="modal fade" id="scheduleListModal" tabindex="-1" aria-labelledby="scheduleListModalLabel" aria-hidden="true">
         <div class="modal-dialog modal-dialog-scrollable">
             <div class="modal-content">
@@ -525,9 +521,10 @@
             const scheduleListElement = document.getElementById('scheduleList'); // Renamed to avoid conflict with modal instance
             const scheduleSearchInput = document.getElementById('scheduleSearchInput');
             const updateScheduleForm = document.getElementById('updateScheduleForm');
-            const updateScheduleMessage = document.getElementById('updateScheduleMessage');
             const deleteScheduleBtn = document.getElementById('deleteScheduleBtn');
-            const deleteScheduleMessage = document.getElementById('deleteScheduleMessage');
+            // ✨ 통합된 메시지 P 태그
+            const manageScheduleMessage = document.getElementById('manageScheduleMessage');
+
 
             let allSchedules = [];
 
@@ -550,7 +547,7 @@
                     const li = document.createElement('li');
                     li.classList.add('list-group-item', 'list-group-item-action');
                     const startTime = schedule.start_time?.slice(0, 5); // "HH:MM"
-                    const endTime = schedule.end_time?.slice(0, 5);     // "HH:MM"
+                    const endTime = schedule.end_time?.slice(0, 5);      // "HH:MM"
                     li.textContent = `${schedule.schedule_date} ${startTime}-${endTime} ${schedule.location} ${schedule.notes || ''}`;
                     li.dataset.schedule = JSON.stringify(schedule);
                     li.addEventListener('click', () => {
@@ -563,8 +560,8 @@
                         document.getElementById('updatePrice').value = selectedSchedule.price || '';
                         document.getElementById('updateCalculated').value = selectedSchedule.calculated;
                         document.getElementById('updateLocation').value = selectedSchedule.location;
-                        document.getElementById('updateMaximum').value = selectedSchedule.maximum;
                         document.getElementById('updateNotes').value = selectedSchedule.notes || '';
+                        document.getElementById('updateMaximum').value = selectedSchedule.maximum;
                         scheduleListModal.hide(); // Hide Bootstrap modal
                     });
                     scheduleListElement.appendChild(li);
@@ -592,19 +589,20 @@
                         body: JSON.stringify(data),
                     });
                     const result = await response.json();
-                    updateScheduleMessage.style.color = result.success ? 'green' : 'red';
-                    updateScheduleMessage.textContent = result.message;
+                    // ✨ 통합된 메시지 영역에 결과 표시
+                    manageScheduleMessage.style.color = result.success ? 'green' : 'red';
+                    manageScheduleMessage.textContent = result.message;
                 } catch (error) {
-                    updateScheduleMessage.style.color = 'red';
-                    updateScheduleMessage.textContent = '오류 발생: ' + error.message;
+                    manageScheduleMessage.style.color = 'red';
+                    manageScheduleMessage.textContent = '오류 발생: ' + error.message;
                 }
             });
 
             deleteScheduleBtn.addEventListener('click', async () => {
                 const scheduleId = document.getElementById('updateId').value;
                 if (!scheduleId) {
-                    deleteScheduleMessage.style.color = 'red';
-                    deleteScheduleMessage.textContent = '삭제할 일정을 선택해주세요.';
+                    manageScheduleMessage.style.color = 'red';
+                    manageScheduleMessage.textContent = '삭제할 일정을 선택해주세요.';
                     return;
                 }
                 if (confirm(`일정 (ID: ${scheduleId})을 삭제하시겠습니까?`)) {
@@ -615,14 +613,17 @@
                             body: JSON.stringify({ scheduleId: scheduleId }),
                         });
                         const result = await response.json();
-                        deleteScheduleMessage.style.color = result.success ? 'green' : 'red';
-                        deleteScheduleMessage.textContent = result.message;
+                        // ✨ 통합된 메시지 영역에 결과 표시
+                        manageScheduleMessage.style.color = result.success ? 'green' : 'red';
+                        manageScheduleMessage.textContent = result.message;
                         // Clear form after deletion
-                        updateScheduleForm.reset();
-                        document.getElementById('updateId').value = '';
+                        if (result.success) {
+                            updateScheduleForm.reset();
+                            document.getElementById('updateId').value = '';
+                        }
                     } catch (error) {
-                        deleteScheduleMessage.style.color = 'red';
-                        deleteScheduleMessage.textContent = '오류 발생: ' + error.message;
+                        manageScheduleMessage.style.color = 'red';
+                        manageScheduleMessage.textContent = '오류 발생: ' + error.message;
                     }
                 }
             });
@@ -671,14 +672,14 @@
 
                 const filteredRecords = allMatchRecords.filter(record => {
                     const targetText = `
-                        ${record.date}
-                        ${record.court}
-                        ${record.team1_deuce}
-                        ${record.team1_ad || ''}
-                        ${record.team2_deuce}
-                        ${record.team2_ad || ''}
-                        ${record.etc || ''}
-                    `.toLowerCase();
+                                ${record.date}
+                                ${record.court}
+                                ${record.team1_deuce}
+                                ${record.team1_ad || ''}
+                                ${record.team2_deuce}
+                                ${record.team2_ad || ''}
+                                ${record.etc || ''}
+                            `.toLowerCase();
 
                     return keywords.every(kw => targetText.includes(kw));
                 });
@@ -742,18 +743,18 @@
             const memberListElement = document.getElementById('memberList'); // Renamed
             const memberSearchInput = document.getElementById('memberSearchInput');
             const updateMemberForm = document.getElementById('updateMemberForm');
-            const updateMemberMessage = document.getElementById('updateMemberMessage');
             const resetPasswordBtn = document.getElementById('resetPasswordBtn');
-            const resetPasswordMessage = document.getElementById('resetPasswordMessage');
             const deleteMemberBtn = document.getElementById('deleteMemberBtn');
-            const deleteMemberMessage = document.getElementById('deleteMemberMessage');
+            // ✨ 통합된 메시지 P 태그
+            const manageMemberMessage = document.getElementById('manageMemberMessage');
+
 
             const displayMembers = (members) => {
                 memberListElement.innerHTML = '';
                 members.forEach(member => {
                     const li = document.createElement('li');
                     li.classList.add('list-group-item', 'list-group-item-action');
-                    li.textContent = `${member.order} ${member.name} (${member.gender}) ${member.etc}`;
+                    li.textContent = `${member.order} | ${member.name} | ${member.gender} | ${member.etc}`;
                     li.dataset.member = JSON.stringify(member);
                     li.addEventListener('click', () => {
                         const selectedMember = JSON.parse(li.dataset.member);
@@ -790,19 +791,20 @@
                         body: JSON.stringify(data),
                     });
                     const result = await response.json();
-                    updateMemberMessage.style.color = result.success ? 'green' : 'red';
-                    updateMemberMessage.textContent = result.message;
+                    // ✨ 통합된 메시지 영역에 결과 표시
+                    manageMemberMessage.style.color = result.success ? 'green' : 'red';
+                    manageMemberMessage.textContent = result.message;
                 } catch (error) {
-                    updateMemberMessage.style.color = 'red';
-                    updateMemberMessage.textContent = '오류 발생: ' + error.message;
+                    manageMemberMessage.style.color = 'red';
+                    manageMemberMessage.textContent = '오류 발생: ' + error.message;
                 }
             });
 
             resetPasswordBtn.addEventListener('click', async () => {
                 const memberName = document.getElementById('originalMemberName').value;
                 if (!memberName) {
-                    resetPasswordMessage.style.color = 'red';
-                    resetPasswordMessage.textContent = '비밀번호를 초기화할 멤버를 선택해주세요.';
+                    manageMemberMessage.style.color = 'red';
+                    manageMemberMessage.textContent = '비밀번호를 초기화할 멤버를 선택해주세요.';
                     return;
                 }
                 if (confirm(`${memberName}의 비밀번호를 0000으로 초기화하시겠습니까?`)) {
@@ -813,11 +815,12 @@
                             body: JSON.stringify({ name: memberName }),
                         });
                         const result = await response.json();
-                        resetPasswordMessage.style.color = result.success ? 'green' : 'red';
-                        resetPasswordMessage.textContent = result.message;
+                        // ✨ 통합된 메시지 영역에 결과 표시
+                        manageMemberMessage.style.color = result.success ? 'green' : 'red';
+                        manageMemberMessage.textContent = result.message;
                     } catch (error) {
-                        resetPasswordMessage.style.color = 'red';
-                        resetPasswordMessage.textContent = '오류 발생: ' + error.message;
+                        manageMemberMessage.style.color = 'red';
+                        manageMemberMessage.textContent = '오류 발생: ' + error.message;
                     }
                 }
             });
@@ -825,8 +828,8 @@
             deleteMemberBtn.addEventListener('click', async () => {
                 const memberName = document.getElementById('originalMemberName').value;
                 if (!memberName) {
-                    deleteMemberMessage.style.color = 'red';
-                    deleteMemberMessage.textContent = '삭제할 멤버를 선택해주세요.';
+                    manageMemberMessage.style.color = 'red';
+                    manageMemberMessage.textContent = '삭제할 멤버를 선택해주세요.';
                     return;
                 }
                 if (confirm(`${memberName} 멤버를 삭제하시겠습니까?`)) {
@@ -837,13 +840,16 @@
                             body: JSON.stringify({ name: memberName }),
                         });
                         const result = await response.json();
-                        deleteMemberMessage.style.color = result.success ? 'green' : 'red';
-                        deleteMemberMessage.textContent = result.message;
-                        updateMemberForm.reset();
-                        document.getElementById('originalMemberName').value = '';
+                        // ✨ 통합된 메시지 영역에 결과 표시
+                        manageMemberMessage.style.color = result.success ? 'green' : 'red';
+                        manageMemberMessage.textContent = result.message;
+                        if(result.success) {
+                            updateMemberForm.reset();
+                            document.getElementById('originalMemberName').value = '';
+                        }
                     } catch (error) {
-                        deleteMemberMessage.style.color = 'red';
-                        deleteMemberMessage.textContent = '오류 발생: ' + error.message;
+                        manageMemberMessage.style.color = 'red';
+                        manageMemberMessage.textContent = '오류 발생: ' + error.message;
                     }
                 }
             });

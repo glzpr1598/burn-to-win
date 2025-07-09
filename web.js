@@ -1057,9 +1057,9 @@ app.post('/admin/delete-match', isAuthenticated, async (req, res) => {
     try {
         const [result] = await pool.query('DELETE FROM matchrecord WHERE id = ?', [matchId]);
         if (result.affectedRows > 0) {
-            res.json({ success: true, message: `경기 기록 (ID: ${matchId})이 삭제되었습니다.` });
+            res.json({ success: true, message: `경기 기록(ID: ${matchId})이 삭제되었습니다.` });
         } else {
-            res.status(404).json({ success: false, message: `경기 기록 (ID: ${matchId})을 찾을 수 없습니다.` });
+            res.status(404).json({ success: false, message: `경기 기록(ID: ${matchId})을 찾을 수 없습니다.` });
         }
     } catch (err) {
         console.error('경기 기록 삭제 에러:', err.message);
@@ -1075,7 +1075,7 @@ app.post('/admin/add-schedule', isAuthenticated, async (req, res) => {
             'INSERT INTO schedules (schedule_date, start_time, end_time, location, notes, booker, price, maximum) VALUES (?, ?, ?, ?, ?, ?, ?, ?)',
             [schedule_date, start_time, end_time, location, notes, booker || null, price || null, maximum || 6]
         );
-        res.json({ success: true, message: `일정 (ID: ${result.insertId})이 성공적으로 등록되었습니다.` });
+        res.json({ success: true, message: `일정(ID: ${result.insertId})이 성공적으로 등록되었습니다.` });
     } catch (err) {
         console.error('일정 등록 에러:', err.message);
         res.status(500).json({ success: false, message: '일정 등록 중 오류가 발생했습니다.' });
@@ -1091,9 +1091,9 @@ app.post('/admin/update-schedule', isAuthenticated, async (req, res) => {
             [schedule_date, start_time, end_time, location, notes, booker || null, price || null, calculated, maximum || 6, id]
         );
         if (result.affectedRows > 0) {
-            res.json({ success: true, message: `일정 (ID: ${id})이 성공적으로 수정되었습니다.` });
+            res.json({ success: true, message: `일정(ID: ${id})이 성공적으로 수정되었습니다.` });
         } else {
-            res.status(404).json({ success: false, message: `일정 (ID: ${id})을 찾을 수 없습니다.` });
+            res.status(404).json({ success: false, message: `일정(ID: ${id})을 찾을 수 없습니다.` });
         }
     } catch (err) {
         console.error('일정 수정 에러:', err.message);
@@ -1107,9 +1107,9 @@ app.post('/admin/delete-schedule', isAuthenticated, async (req, res) => {
     try {
         const [result] = await pool.query('DELETE FROM schedules WHERE id = ?', [scheduleId]);
         if (result.affectedRows > 0) {
-            res.json({ success: true, message: `일정 (ID: ${scheduleId})이 삭제되었습니다.` });
+            res.json({ success: true, message: `일정(ID: ${scheduleId})이 삭제되었습니다.` });
         } else {
-            res.status(404).json({ success: false, message: `일정 (ID: ${scheduleId})을 찾을 수 없습니다.` });
+            res.status(404).json({ success: false, message: `일정(ID: ${scheduleId})을 찾을 수 없습니다.` });
         }
     } catch (err) {
         console.error('일정 삭제 에러:', err.message);
@@ -1122,9 +1122,9 @@ app.post('/admin/delete-schedule', isAuthenticated, async (req, res) => {
     try {
         const [result] = await pool.query('DELETE FROM schedules WHERE id = ?', [scheduleId]);
         if (result.affectedRows > 0) {
-            res.json({ success: true, message: `일정 (ID: ${scheduleId})이 삭제되었습니다.` });
+            res.json({ success: true, message: `일정(ID: ${scheduleId})이 삭제되었습니다.` });
         } else {
-            res.status(404).json({ success: false, message: `일정 (ID: ${scheduleId})을 찾을 수 없습니다.` });
+            res.status(404).json({ success: false, message: `일정(ID: ${scheduleId})을 찾을 수 없습니다.` });
         }
     } catch (err) {
         console.error('일정 삭제 에러:', err.message);
@@ -1158,7 +1158,7 @@ app.post('/admin/update-member', isAuthenticated, async (req, res) => {
             [name, gender, etc || '', order || 0, originalName]
         );
         if (result.affectedRows > 0) {
-            res.json({ success: true, message: `멤버 ${originalName}이(가) ${name}으로 성공적으로 수정되었습니다.` });
+            res.json({ success: true, message: `${name}이(가) 성공적으로 수정되었습니다.` });
         } else {
             res.status(404).json({ success: false, message: `멤버 ${originalName}을(를) 찾을 수 없습니다.` });
         }
@@ -1185,22 +1185,6 @@ app.post('/admin/delete-member', isAuthenticated, async (req, res) => {
 });
 
 // 비밀번호 초기화
-app.post('/admin/reset-password', isAuthenticated, async (req, res) => {
-    const { name } = req.body;
-    try {
-        const hashedPassword = await bcrypt.hash('0000', saltRounds);
-        const [result] = await pool.query('UPDATE member SET password = ? WHERE name = ?', [hashedPassword, name]);
-        if (result.affectedRows > 0) {
-            res.json({ success: true, message: `멤버 ${name}의 비밀번호가 0000으로 초기화되었습니다.` });
-        } else {
-            res.status(404).json({ success: false, message: `멤버 ${name}을(를) 찾을 수 없습니다.` });
-        }
-    } catch (err) {
-        console.error('비밀번호 초기화 에러:', err.message);
-        res.status(500).json({ success: false, message: '비밀번호 초기화 중 오류가 발생했습니다.' });
-    }
-});
-
 app.post('/admin/reset-password', isAuthenticated, async (req, res) => {
     const { name } = req.body;
     try {
