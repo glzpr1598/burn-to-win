@@ -210,8 +210,12 @@
                                     <input type="number" id="addPrice" name="price" class="form-control" required>
                                 </div>
                                 <div class="form-row">
+                                    <label for="addMaximum" class="form-label">최대 인원</label>
+                                    <input type="number" id="addMaximum" name="maximum" class="form-control" value="6" required>
+                                </div>
+                                <div class="form-row">
                                     <label for="addNotes" class="form-label">설명</label>
-                                    <input type="text" id="addNotes" name="notes" class="form-control">
+                                    <input type="text" id="addNotes" name="notes" class="form-control" placeholder="여복데이, 정기대관 등">
                                 </div>
                                 <button type="submit" class="btn btn-primary">일정 등록</button>
                             </form>
@@ -257,6 +261,10 @@
                                 <div class="form-row">
                                     <label for="updatePrice" class="form-label">코트비</label>
                                     <input type="number" id="updatePrice" name="price" class="form-control" required>
+                                </div>
+                                <div class="form-row">
+                                    <label for="updateMaximum" class="form-label">최대 인원</label>
+                                    <input type="number" id="updateMaximum" name="maximum" class="form-control" required>
                                 </div>
                                 <div class="form-row">
                                     <label for="updateNotes" class="form-label">설명</label>
@@ -555,6 +563,7 @@
                         document.getElementById('updatePrice').value = selectedSchedule.price || '';
                         document.getElementById('updateCalculated').value = selectedSchedule.calculated;
                         document.getElementById('updateLocation').value = selectedSchedule.location;
+                        document.getElementById('updateMaximum').value = selectedSchedule.maximum;
                         document.getElementById('updateNotes').value = selectedSchedule.notes || '';
                         scheduleListModal.hide(); // Hide Bootstrap modal
                     });

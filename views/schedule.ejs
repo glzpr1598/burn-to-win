@@ -1,20 +1,49 @@
 <!DOCTYPE html>
 <html lang="ko">
+
 <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <link rel="apple-touch-icon" href="/image/btw.png"/>
-    <link rel="icon" type="image/png" href="/image/btw.png"/>
+    <link rel="apple-touch-icon" href="/image/btw.png" />
+    <link rel="icon" type="image/png" href="/image/btw.png" />
     <link rel="stylesheet" href="/css/common.css" />
     <title>불꽃테니스</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet" />
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css" />
     <style>
-        .month-navigator { display: flex; justify-content: center; align-items: center; padding: 10px; background-color: #f8f9fa; border-bottom: 1px solid #eee; flex-shrink: 0; }
-        .month-navigator a { text-decoration: none; color: #212529; }
-        .month-navigator h5 { margin: 0; }
-        .schedule-container { flex-grow: 1; overflow-y: auto; padding: 15px; }
-        .user-selection-bar { flex-shrink: 0; padding: 10px 15px; background-color: #f8f9fa; border-bottom: 1px solid #dee2e6; font-size: 0.9rem; }
+        .month-navigator {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 10px;
+            background-color: #f8f9fa;
+            border-bottom: 1px solid #eee;
+            flex-shrink: 0;
+        }
+
+        .month-navigator a {
+            text-decoration: none;
+            color: #212529;
+        }
+
+        .month-navigator h5 {
+            margin: 0;
+        }
+
+        .schedule-container {
+            flex-grow: 1;
+            overflow-y: auto;
+            padding: 15px;
+        }
+
+        .user-selection-bar {
+            flex-shrink: 0;
+            padding: 10px 15px;
+            background-color: #f8f9fa;
+            border-bottom: 1px solid #dee2e6;
+            font-size: 0.9rem;
+        }
+
         .schedule-card {
             background-color: #fff;
             border: 1px solid #dee2e6;
@@ -24,53 +53,100 @@
             transition: background-color 0.3s ease;
             font-size: 0.8rem;
         }
-        .schedule-card.past-schedule { color: #6c757d; }
-        .schedule-card.past-schedule .fw-bold { color: #6c757d !important; }
-        .schedule-card.attending { background-color: #e7f3ff; border-color: #b3d7ff; }
-        .schedule-card.is-upcoming { border-left: 5px solid #0d6efd; }
-        .attendees-list { word-break: keep-all; }
-        .comments-section { margin-top: 10px; border-top: 1px solid #eee; padding-top: 10px; }
-        .comment-item { display: flex; justify-content: space-between; align-items: center; }
-        .comment-item > .text-muted {
+
+        .schedule-card.past-schedule {
+            color: #6c757d;
+        }
+
+        .schedule-card.past-schedule .fw-bold {
+            color: #6c757d !important;
+        }
+
+        .schedule-card.attending {
+            background-color: #e7f3ff;
+            border-color: #b3d7ff;
+        }
+
+        .schedule-card.is-upcoming {
+            border-left: 5px solid #0d6efd;
+        }
+
+        .attendees-list {
+            word-break: keep-all;
+        }
+
+        .comments-section {
+            margin-top: 10px;
+            border-top: 1px solid #eee;
+            padding-top: 10px;
+        }
+
+        .comment-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .comment-item>.text-muted {
             display: block;
-            min-width: 0;         /* flex 아이템의 너비가 0 이하로 줄어드는 것을 허용 (중요) */
-            overflow: hidden;     /* 넘치는 텍스트 숨기기 */
+            min-width: 0;
+            /* flex 아이템의 너비가 0 이하로 줄어드는 것을 허용 (중요) */
+            overflow: hidden;
+            /* 넘치는 텍스트 숨기기 */
         }
-        .comment-item > div:last-child {
-            flex-shrink: 0;       /* 날짜와 버튼이 포함된 영역이 줄어들지 않도록 설정 */
+
+        .comment-item>div:last-child {
+            flex-shrink: 0;
+            /* 날짜와 버튼이 포함된 영역이 줄어들지 않도록 설정 */
         }
+
         .comment-item.hidden-comment {
             display: none;
         }
-        .comment-item + .comment-item {
-            border-top: 1px solid #f0f0f0; /* 밝은 회색의 구분선 */
-            margin-top: 3px;              /* 구분선 위쪽 여백 */
-            padding-top: 3px;             /* 구분선 아래쪽 여백 */
+
+        .comment-item+.comment-item {
+            border-top: 1px solid #f0f0f0;
+            /* 밝은 회색의 구분선 */
+            margin-top: 3px;
+            /* 구분선 위쪽 여백 */
+            padding-top: 3px;
+            /* 구분선 아래쪽 여백 */
         }
-        .delete-comment-btn { cursor: pointer; color: #dc3545; font-size: 0.7rem;}
+
+        .delete-comment-btn {
+            cursor: pointer;
+            color: #dc3545;
+            font-size: 0.7rem;
+        }
+
         .show-more-comments-btn {
             font-size: 0.75rem;
             color: #0d6efd;
             text-decoration: none;
             cursor: pointer;
         }
+
         /* ✨ 정산 체크박스 스타일 추가 */
         .settlement-status {
             font-size: 0.75rem;
         }
+
         .settlement-status label {
             cursor: pointer;
             font-weight: 500;
         }
+
         .settlement-checkbox {
             vertical-align: middle;
             margin-left: 2px;
         }
+
         .settlement-checkbox:disabled {
             cursor: not-allowed;
         }
     </style>
 </head>
+
 <body>
     <div class="app-container" data-year="<%= year %>" data-month="<%= month %>">
         <div class="d-flex align-items-center sticky-header">
@@ -83,148 +159,177 @@
 
         <%- include('partials/sidemenu') %>
 
-        <div class="user-selection-bar d-flex justify-content-between align-items-center">
-            <span style="display: flex">
-                <i class="bi bi-person-circle"></i>&nbsp;<strong id="currentUser">사용자</strong>&nbsp;&nbsp;
-                <button class="btn btn-outline-secondary btn-sm py-0" data-bs-toggle="modal" data-bs-target="#userSelectModal">변경</button>
-            </span>
-            <span>
-                <button class="btn btn-outline-secondary btn-sm py-0" data-bs-toggle="modal" data-bs-target="#changePasswordModal">비밀번호 변경</button>
-            </span>
-        </div>
-
-        <div class="month-navigator">
-            <div class="d-flex align-items-center" style="gap: 1rem;">
-                <a id="prevMonth" href="#"><i class="bi bi-chevron-left fs-6"></i></a>
-                <h6 id="month-display" style="cursor: pointer; margin: 0;"><b><%= year %>년 <%= month %>월</b></h5>
-                <a id="nextMonth" href="#"><i class="bi bi-chevron-right fs-6"></i></a>
+            <div class="user-selection-bar d-flex justify-content-between align-items-center">
+                <span style="display: flex">
+                    <i class="bi bi-person-circle"></i>&nbsp;<strong id="currentUser">사용자</strong>&nbsp;&nbsp;
+                    <button class="btn btn-outline-secondary btn-sm py-0" data-bs-toggle="modal"
+                        data-bs-target="#userSelectModal">변경</button>
+                </span>
+                <span>
+                    <button class="btn btn-outline-secondary btn-sm py-0" data-bs-toggle="modal"
+                        data-bs-target="#changePasswordModal">비밀번호 변경</button>
+                </span>
             </div>
-        </div>
 
-        <div class="schedule-container" id="scheduleList">
-            <% if (schedules.length > 0) { %>
-                <% 
-                    let currentWeek = 0;
-                    const getWeekOfMonth = (date) => {
+            <div class="month-navigator">
+                <div class="d-flex align-items-center" style="gap: 1rem;">
+                    <a id="prevMonth" href="#"><i class="bi bi-chevron-left fs-6"></i></a>
+                    <h6 id="month-display" style="cursor: pointer; margin: 0;"><b>
+                            <%= year %>년 <%= month %>월
+                        </b></h5>
+                        <a id="nextMonth" href="#"><i class="bi bi-chevron-right fs-6"></i></a>
+                </div>
+            </div>
+
+            <div class="schedule-container" id="scheduleList">
+                <% if (schedules.length> 0) { %>
+                    <% let currentWeek=0; const getWeekOfMonth=(date)=> {
                         const firstDay = new Date(date.getFullYear(), date.getMonth(), 1).getDay();
                         return Math.ceil((date.getDate() + firstDay) / 7);
-                    };
-                %>
-                <% schedules.forEach(schedule => {
-                    const date = new Date(schedule.schedule_date + 'T00:00:00');
-                    const weekOfMonth = getWeekOfMonth(date);
-                    if (weekOfMonth !== currentWeek) {
-                        currentWeek = weekOfMonth;
-                %>
-                    <h6 class="text-muted mb-2 mt-3"><b><%= currentWeek %>주차</b></h6>
-                <% 
-                    }
-                    const weekdays = ['일', '월', '화', '수', '목', '금', '토'];
-                    const dayOfWeek = weekdays[date.getDay()];
-                    const formattedDate = `${date.getDate()} ${dayOfWeek}`;
-                    const startTime = schedule.start_time.substring(0, 5);
-                    const endTime = schedule.end_time.substring(0, 5);
-                %>
-                <div class="schedule-card" id="schedule-<%= schedule.id %>" data-date="<%= schedule.schedule_date %>">
-                    <div class="d-flex justify-content-between align-items-start mb-2">
-                        <div>
-                            <div class="fw-bold">
-                                <%= formattedDate %> | <%= startTime %>~<%= endTime %> | <%= schedule.location %>
-                                <%
-                                    if (schedule.notes && schedule.notes.trim() !== '') {
-                                        const notes = schedule.notes;
-                                        let notesDisplay = `| ${notes}`;
-                                        if (notes.includes('여복데이')) {
-                                            notesDisplay = `| <span style="color: darkred; font-weight: bold;">${notes}</span>`;
-                                        } else if (notes.includes('준도데이')) {
-                                            notesDisplay = `| <span style="color: darkblue; font-weight: bold;">${notes}</span>`;
-                                        } else if (notes.includes('정기대관')) {
-                                            notesDisplay = `| <span style="color: darkgreen; font-weight: bold;">${notes}</span>`;
-                                        }
-                                %>
-                                    <%- notesDisplay %>
-                                <% } %>
-                            </div>
-                            <div class="text-muted mt-1" style="font-size: 0.8rem;">
-                                <span><i class="bi bi-person"></i> <%= schedule.booker || '-' %></span>
-                                <span class="ms-2"><i class="bi bi-coin"></i> <%= new Intl.NumberFormat().format(schedule.price || 0) %>원</span>
-                                <span class="ms-2 settlement-status">
-                                    <label>
-                                        <i class="bi bi-wallet"></i> 정산여부
-                                        <input type="checkbox"
-                                               class="settlement-checkbox"
-                                               data-schedule-id="<%= schedule.id %>"
-                                               data-booker="<%= schedule.booker %>"
-                                               <%= schedule.calculated === 'Y' ? 'checked' : '' %>>
-                                    </label>
-                                </span>
-                            </div>
-                        </div>
-                        <button class="btn btn-sm btn-success py-0 px-2 record-btn" data-schedule-id="<%= schedule.id %>">기록</button>
-                    </div>
-
-                    <div class="mb-2">
-                        <span class="fw-bold">참석(<span class="attendee-count"><%= schedule.attendees.length %></span>):</span>
-                        <span class="text-muted attendees-list"><%= schedule.attendees.sort().join(', ') || '없음' %></span>
-                    </div>
-
-                    <div>
-                        <div class="d-flex justify-content-between align-items-center">
-                            <button class="btn btn-sm btn-primary py-0 px-2 attend-btn" data-schedule-id="<%= schedule.id %>">참석</button>
-                            <button class="btn btn-sm btn-secondary py-0 px-2 comment-btn" data-schedule-id="<%= schedule.id %>">댓글</button>
-                        </div>
-                        <div class="comment-container">
-                            <% if (schedule.comments.length > 0) { %>
-                                <div class="comments-section">
-                                    <div class="comment-list">
-                                    <%# ✨ 댓글 반복문에 index 변수 추가 %>
-                                    <% schedule.comments.forEach((comment, index) => { %>
-                                        <%# ✨ 4번째 댓글부터는 hidden-comment 클래스 추가 %>
-                                        <div class="comment-item <%= index >= 3 ? 'hidden-comment' : '' %>" id="comment-<%= comment.id %>">
-                                            <div class="text-muted">
-                                                <div class="fw-bold"><%= comment.member_name %></div>
-                                                <div><%= comment.comment %></div>
+                        };
+                        %>
+                        <% schedules.forEach(schedule=> {
+                            const date = new Date(schedule.schedule_date + 'T00:00:00');
+                            const weekOfMonth = getWeekOfMonth(date);
+                            if (weekOfMonth !== currentWeek) {
+                            currentWeek = weekOfMonth;
+                            %>
+                            <h6 class="text-muted mb-2 mt-3"><b>
+                                    <%= currentWeek %>주차
+                                </b></h6>
+                            <% } const weekdays=['일', '월' , '화' , '수' , '목' , '금' , '토' ]; const
+                                dayOfWeek=weekdays[date.getDay()]; const formattedDate=`${date.getDate()} ${dayOfWeek}`;
+                                const startTime=schedule.start_time.substring(0, 5); const
+                                endTime=schedule.end_time.substring(0, 5); %>
+                                <div class="schedule-card" id="schedule-<%= schedule.id %>"
+                                    data-date="<%= schedule.schedule_date %>" data-maximum="<%= schedule.maximum %>">
+                                    <div class="d-flex justify-content-between align-items-start mb-2">
+                                        <div>
+                                            <div class="fw-bold">
+                                                <%= formattedDate %> | <%= startTime %>~<%= endTime %> | <%=
+                                                                schedule.location %>
+                                                                <% if (schedule.notes && schedule.notes.trim() !=='' ) {
+                                                                    const notes=schedule.notes; let notesDisplay=`|
+                                                                    ${notes}`; if (notes.includes('여복데이')) {
+                                                                    notesDisplay=`| <span
+                                                                    style="color: darkred; font-weight: bold;">
+                                                                    ${notes}</span>`;
+                                                                    } else if (notes.includes('준도데이')) {
+                                                                    notesDisplay = `| <span
+                                                                        style="color: darkblue; font-weight: bold;">${notes}</span>`;
+                                                                    } else if (notes.includes('정기대관')) {
+                                                                    notesDisplay = `| <span
+                                                                        style="color: darkgreen; font-weight: bold;">${notes}</span>`;
+                                                                    }
+                                                                    %>
+                                                                    <%- notesDisplay %>
+                                                                        <% } %>
                                             </div>
-                                            <div>
-                                                <span class="text-black-50" style="font-size: 0.7rem;"><%= comment.created_at %></span>
-                                                <i class="bi bi-x-lg delete-comment-btn" data-comment-id="<%= comment.id %>" data-author="<%= comment.member_name %>" style="display:none;"></i>
+                                            <div class="text-muted mt-1" style="font-size: 0.8rem;">
+                                                <span><i class="bi bi-person"></i>
+                                                    <%= schedule.booker || '-' %>
+                                                </span>
+                                                <span class="ms-2"><i class="bi bi-coin"></i>
+                                                    <%= new Intl.NumberFormat().format(schedule.price || 0) %>원
+                                                </span>
+                                                <span class="ms-2 settlement-status">
+                                                    <label>
+                                                        <i class="bi bi-wallet"></i> 정산여부
+                                                        <input type="checkbox" class="settlement-checkbox"
+                                                            data-schedule-id="<%= schedule.id %>"
+                                                            data-booker="<%= schedule.booker %>"
+                                                            <%=schedule.calculated==='Y' ? 'checked' : '' %>>
+                                                    </label>
+                                                </span>
                                             </div>
                                         </div>
-                                    <% }) %>
+                                        <button class="btn btn-sm btn-success py-0 px-2 record-btn"
+                                            data-schedule-id="<%= schedule.id %>">기록</button>
                                     </div>
-                                    <%# ✨ 댓글이 3개 초과일 때만 '더보기' 버튼 표시 %>
-                                    <% if (schedule.comments.length > 3) { %>
-                                        <div class="text-center mt-1">
-                                            <span class="show-more-comments-btn" data-schedule-id="<%= schedule.id %>">더보기...</span>
+
+                                    <div class="mb-2">
+                                        <span class="fw-bold">참석(<span class="attendee-count"><%= schedule.attendees.length %></span>):</span>
+                                        <span class="text-muted attendees-list">
+                                            <%= schedule.attendees.sort().join(', ') || ' 없음' %>
+                                        </span>
+                                    </div>
+
+                                    <div>
+                                        <div class="d-flex justify-content-between align-items-center">
+                                            <button class="btn btn-sm btn-primary py-0 px-2 attend-btn"
+                                                data-schedule-id="<%= schedule.id %>">참석</button>
+                                            <button class="btn btn-sm btn-secondary py-0 px-2 comment-btn"
+                                                data-schedule-id="<%= schedule.id %>">댓글</button>
                                         </div>
-                                    <% } %>
+                                        <div class="comment-container">
+                                            <% if (schedule.comments.length> 0) { %>
+                                                <div class="comments-section">
+                                                    <div class="comment-list">
+                                                        <%# ✨ 댓글 반복문에 index 변수 추가 %>
+                                                            <% schedule.comments.forEach((comment, index)=> { %>
+                                                                <%# ✨ 4번째 댓글부터는 hidden-comment 클래스 추가 %>
+                                                                    <div class="comment-item <%= index >= 3 ? 'hidden-comment' : '' %>"
+                                                                        id="comment-<%= comment.id %>">
+                                                                        <div class="text-muted">
+                                                                            <div class="fw-bold">
+                                                                                <%= comment.member_name %>
+                                                                            </div>
+                                                                            <div>
+                                                                                <%= comment.comment %>
+                                                                            </div>
+                                                                        </div>
+                                                                        <div>
+                                                                            <span class="text-black-50"
+                                                                                style="font-size: 0.7rem;">
+                                                                                <%= comment.created_at %>
+                                                                            </span>
+                                                                            <i class="bi bi-x-lg delete-comment-btn"
+                                                                                data-comment-id="<%= comment.id %>"
+                                                                                data-author="<%= comment.member_name %>"
+                                                                                style="display:none;"></i>
+                                                                        </div>
+                                                                    </div>
+                                                                    <% }) %>
+                                                    </div>
+                                                    <%# ✨ 댓글이 3개 초과일 때만 '더보기' 버튼 표시 %>
+                                                        <% if (schedule.comments.length> 3) { %>
+                                                            <div class="text-center mt-1">
+                                                                <span class="show-more-comments-btn"
+                                                                    data-schedule-id="<%= schedule.id %>">더보기...</span>
+                                                            </div>
+                                                            <% } %>
+                                                </div>
+                                                <% } %>
+                                        </div>
+                                    </div>
                                 </div>
-                            <% } %>
-                        </div>
-                    </div>
-                </div>
-                <% }) %>
-            <% } else { %>
-                <p class="text-center p-5 text-muted">해당 월의 일정이 없습니다.</p>
-            <% } %>
-        </div>
+                                <% }) %>
+                                    <% } else { %>
+                                        <p class="text-center p-5 text-muted">해당 월의 일정이 없습니다.</p>
+                                        <% } %>
+            </div>
 
 
-        <%- include('partials/navbar', { currentPage: 'schedule' }) %>
+            <%- include('partials/navbar', { currentPage: 'schedule' }) %>
     </div>
 
     <div class="modal fade" id="userSelectModal" tabindex="-1">
         <div class="modal-dialog modal-dialog-centered">
             <div class="modal-content">
-                <div class="modal-header"><h5 class="modal-title">사용자 선택</h5><button type="button" class="btn-close" data-bs-dismiss="modal"></button></div>
+                <div class="modal-header">
+                    <h5 class="modal-title">사용자 선택</h5><button type="button" class="btn-close"
+                        data-bs-dismiss="modal"></button>
+                </div>
                 <div class="modal-body">
                     <div class="mb-3">
                         <label for="loginName" class="form-label">이름</label>
                         <select id="loginName" class="form-select">
                             <option value="">-- 선택 --</option>
-                            <% members.forEach(member => { %>
-                                <option value="<%= member.name %>"><%= member.name %></option>
-                            <% }); %>
+                            <% members.forEach(member=> { %>
+                                <option value="<%= member.name %>">
+                                    <%= member.name %>
+                                </option>
+                                <% }); %>
                         </select>
                     </div>
                     <div class="mb-3">
@@ -242,7 +347,10 @@
     <div class="modal fade" id="changePasswordModal" tabindex="-1">
         <div class="modal-dialog modal-dialog-centered">
             <div class="modal-content">
-                <div class="modal-header"><h5 class="modal-title">비밀번호 변경</h5><button type="button" class="btn-close" data-bs-dismiss="modal"></button></div>
+                <div class="modal-header">
+                    <h5 class="modal-title">비밀번호 변경</h5><button type="button" class="btn-close"
+                        data-bs-dismiss="modal"></button>
+                </div>
                 <div class="modal-body">
                     <div class="mb-2">
                         <label for="currentPassword" class="form-label small">현재 비밀번호</label>
@@ -274,16 +382,16 @@
                 <div class="modal-body d-flex justify-content-center">
                     <div class="px-2">
                         <select id="yearSelect" class="form-select">
-                            <% for(let i = new Date().getFullYear() + 1; i >= 2023; i--) { %>
-                                <option value="<%= i %>" <%= i == year ? 'selected' : '' %>><%= i %>년</option>
-                            <% } %>
+                            <% for(let i=new Date().getFullYear() + 1; i>= 2023; i--) { %>
+                                <option value="<%= i %>" <%=i==year ? 'selected' : '' %>><%= i %>년</option>
+                                <% } %>
                         </select>
                     </div>
                     <div class="px-2">
                         <select id="monthSelect" class="form-select">
-                        <% for(let i = 1; i <= 12; i++) { %>
-                            <option value="<%= i %>" <%= i == month ? 'selected' : '' %>><%= i %>월</option>
-                        <% } %>
+                            <% for(let i=1; i <=12; i++) { %>
+                                <option value="<%= i %>" <%=i==month ? 'selected' : '' %>><%= i %>월</option>
+                                <% } %>
                         </select>
                     </div>
                 </div>
@@ -302,7 +410,8 @@
                     <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
                 </div>
                 <div class="modal-body">
-                    <textarea class="form-control" id="commentText" rows="3" placeholder="댓글을 입력하세요.(참석 취소, 양도, 게스트 등)"></textarea>
+                    <textarea class="form-control" id="commentText" rows="3"
+                        placeholder="댓글을 입력하세요.(참석 취소, 양도, 게스트 등)"></textarea>
                 </div>
                 <div class="modal-footer">
                     <button type="button" class="btn btn-primary" id="submitCommentBtn">작성</button>
@@ -323,12 +432,13 @@
                         <datalist id="modal-player-list"></datalist>
                         <input type="hidden" name="date">
                         <input type="hidden" name="court">
-                        
+
                         <div class="border p-3 rounded mb-3">
                             <div class="row">
                                 <div class="col text-center">
                                     <label class="form-label small">듀스 코트(포)</label>
-                                    <input type="text" class="form-control" name="team1_deuce" list="modal-player-list" required>
+                                    <input type="text" class="form-control" name="team1_deuce" list="modal-player-list"
+                                        required>
                                 </div>
                                 <div class="col text-center">
                                     <label class="form-label small">애드 코트(백)</label>
@@ -337,7 +447,11 @@
                                 <div class="col-auto text-center">
                                     <label class="form-label small">스코어</label>
                                     <select class="form-select text-center" name="team1_score" required>
-                                        <% for(let i = 0; i <= 7; i++) { %><option value="<%= i %>"><%= i %></option><% } %>
+                                        <% for(let i=0; i <=7; i++) { %>
+                                            <option value="<%= i %>">
+                                                <%= i %>
+                                            </option>
+                                            <% } %>
                                     </select>
                                 </div>
                             </div>
@@ -349,7 +463,8 @@
                             <div class="row">
                                 <div class="col text-center">
                                     <label class="form-label small">듀스 코트(포)</label>
-                                    <input type="text" class="form-control" name="team2_deuce" list="modal-player-list" required>
+                                    <input type="text" class="form-control" name="team2_deuce" list="modal-player-list"
+                                        required>
                                 </div>
                                 <div class="col text-center">
                                     <label class="form-label small">애드 코트(백)</label>
@@ -358,7 +473,11 @@
                                 <div class="col-auto text-center">
                                     <label class="form-label small">스코어</label>
                                     <select class="form-select text-center" name="team2_score" required>
-                                        <% for(let i = 0; i <= 7; i++) { %><option value="<%= i %>"><%= i %></option><% } %>
+                                        <% for(let i=0; i <=7; i++) { %>
+                                            <option value="<%= i %>">
+                                                <%= i %>
+                                            </option>
+                                            <% } %>
                                     </select>
                                 </div>
                             </div>
@@ -454,7 +573,7 @@
                 alert('오류가 발생했습니다.');
             }
         }
-        
+
         // ✨ '더보기' 클릭을 처리할 새로운 함수
         function handleShowMoreComments(event) {
             event.preventDefault(); // a 태그의 기본 동작 방지
@@ -486,16 +605,16 @@
             checkbox.disabled = true;
 
             try {
-                const response = await fetch(`/api/schedule/${scheduleId}/toggle-calculation`, { 
-                    method: 'POST' 
+                const response = await fetch(`/api/schedule/${scheduleId}/toggle-calculation`, {
+                    method: 'POST'
                 });
-                
+
                 const result = await response.json();
 
                 if (!response.ok || !result.success) {
                     // API 호출이 실패하면 사용자에게 알리고 체크박스를 원래 상태로 되돌림
                     alert(result.message || '상태 변경에 실패했습니다.');
-                    checkbox.checked = !isChecked; 
+                    checkbox.checked = !isChecked;
                 }
                 // 성공하면 UI는 이미 변경된 상태이므로 아무것도 하지 않음
             } catch (error) {
@@ -507,15 +626,15 @@
                 checkbox.disabled = false;
             }
         }
-        
+
         function initializeNavigators() {
             const prevDate = new Date(currentYear, currentMonth - 2, 1);
             document.getElementById('prevMonth').href = `/schedule?year=${prevDate.getFullYear()}&month=${prevDate.getMonth() + 1}`;
-            
+
             const nextDate = new Date(currentYear, currentMonth, 1);
             document.getElementById('nextMonth').href = `/schedule?year=${nextDate.getFullYear()}&month=${nextDate.getMonth() + 1}`;
         }
-        
+
         function initializeUser() {
             const savedUser = localStorage.getItem('tennis-schedule-user');
             if (savedUser) {
@@ -581,7 +700,7 @@
             if (newPassword !== confirmNewPassword) {
                 return alert('새 비밀번호가 일치하지 않습니다.');
             }
-            
+
             try {
                 const response = await fetch('/api/user/change-password', {
                     method: 'POST',
@@ -634,8 +753,11 @@
                 attendBtn.classList.add('btn-primary'); // 활성 참석 버튼
             }
 
+            // ✨ data-maximum 속성에서 최대 인원 값을 가져옴
+            const maxAttendees = parseInt(card.dataset.maximum, 10);
+
             // 참석 인원에 따른 UI 변경
-            if (attendees.length >= 6) {
+            if (attendees.length >= maxAttendees) {
                 attendeeCountSpan.style.color = 'red';
                 if (!isAttending) {
                     attendBtn.disabled = true;
@@ -652,7 +774,7 @@
 
             // 최종적으로 비활성화된 버튼 스타일 처리
             if (attendBtn.disabled) {
-                if(isAttending) {
+                if (isAttending) {
                     attendBtn.classList.remove('btn-danger');
                     attendBtn.classList.add('btn-outline-danger');
                 } else {
@@ -687,7 +809,7 @@
                 }
             });
         }
-        
+
         function scrollToUpcoming() {
             const today = new Date();
             const pageDate = new Date(currentYear, currentMonth - 1, 1);
@@ -724,7 +846,7 @@
 
         async function handleAttendClick(event) {
             if (!selectedUser) return userSelectModal.show();
-            
+
             const button = event.target;
             const card = button.closest('.schedule-card');
             const scheduleId = button.dataset.scheduleId;
@@ -748,35 +870,35 @@
                     }
                 }
             }
-            
+
             button.disabled = true;
             const url = isAttending ? `/api/schedule/${scheduleId}/cancel` : `/api/schedule/${scheduleId}/attend`;
 
             try {
                 const response = await fetch(url, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ memberName: selectedUser }) });
                 if (!response.ok) throw new Error('서버 응답 오류');
-                
+
                 const result = await response.json();
                 if (result.success) {
                     const attendeesListEl = card.querySelector('.attendees-list');
                     let attendees = getAttendees(attendeesListEl);
                     attendees = isAttending ? attendees.filter(n => n !== selectedUser) : [...attendees, selectedUser];
-                    
+
                     attendees.sort();
                     card.querySelector('.attendee-count').textContent = attendees.length;
                     attendeesListEl.textContent = attendees.length > 0 ? attendees.join(', ') : '없음';
                     updateSingleCardUI(card);
-                    
+
                     // 참석자 목록이 변경되었으므로, 경기 기록 모달의 선수 목록도 갱신하기 위해 schedulesData 업데이트
                     const scheduleInJS = schedulesData.find(s => s.id == scheduleId);
-                    if(scheduleInJS) scheduleInJS.attendees = attendees;
+                    if (scheduleInJS) scheduleInJS.attendees = attendees;
 
                 } else {
                     // 서버에서 요청이 실패한 경우 (e.g. 이미 마감) UI를 다시 동기화
                     alert(result.message); // 실패 원인 알려주기
                     updateSingleCardUI(card);
                 }
-            } catch (error) { 
+            } catch (error) {
                 console.error('Error:', error);
                 // 네트워크 오류 등이 발생한 경우 UI를 다시 동기화
                 updateSingleCardUI(card);
@@ -800,19 +922,19 @@
             const modal = document.getElementById('matchRecordModal');
             const datalist = modal.querySelector('#modal-player-list');
             const form = modal.querySelector('form');
-            
+
             form.reset();
 
             // ✨ 참석자 및 게스트 목록으로 datalist 동적 생성
             datalist.innerHTML = '';
-            
+
             // 1. 참석자 추가
             schedule.attendees.forEach(attendee => {
                 const option = document.createElement('option');
                 option.value = attendee;
                 datalist.appendChild(option);
             });
-            
+
             // 2. 게스트 옵션 추가
             datalist.insertAdjacentHTML('beforeend', '<option value="게스트남"></option>');
             datalist.insertAdjacentHTML('beforeend', '<option value="게스트여"></option>');
@@ -854,7 +976,7 @@
                     </div>`;
                 commentsSection = scheduleCard.querySelector('.comments-section');
             }
-            
+
             const commentList = commentsSection.querySelector('.comment-list');
             const newCommentHTML = `
                 <div class="comment-item" id="comment-${comment.id}">
@@ -886,7 +1008,7 @@
                         const commentItem = document.getElementById(`comment-${commentId}`);
                         const commentList = commentItem.closest('.comment-list');
                         const commentsSection = commentItem.closest('.comments-section');
-                        
+
                         commentItem.remove(); // 댓글 DOM 요소 삭제
 
                         // 마지막 댓글이 삭제되면 댓글 영역 전체를 삭제
@@ -905,4 +1027,5 @@
         }
     </script>
 </body>
+
 </html>

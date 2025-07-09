@@ -798,10 +798,26 @@ app.post('/api/schedule/:id/attend', async (req, res) => {
 
     let connection;
     try {
-        // 커넥션 풀에서 커넥션을 가져옵니다.
         connection = await pool.getConnection();
-        // 트랜잭션 시작
         await connection.beginTransaction();
+
+        // ✨ 트랜잭션 내에서 현재 참석자 수와 최대 인원 수를 가져옵니다. (FOR UPDATE를 사용하여 비관적 잠금)
+        const [scheduleRows] = await connection.query('SELECT maximum FROM schedules WHERE id = ? FOR UPDATE', [scheduleId]);
+        const [attendeeRows] = await connection.query('SELECT COUNT(*) as count FROM schedule_attendees WHERE schedule_id = ?', [scheduleId]);
+        
+        if (scheduleRows.length === 0) {
+            await connection.rollback();
+            return res.status(404).json({ success: false, message: '일정을 찾을 수 없습니다.' });
+        }
+
+        const maximumAttendees = scheduleRows[0].maximum;
+        const currentAttendees = attendeeRows[0].count;
+
+        // ✨ 최대 인원 수 체크
+        if (currentAttendees >= maximumAttendees) {
+            await connection.rollback();
+            return res.status(400).json({ success: false, message: '이미 마감된 일정입니다.' });
+        }
 
         // 1. 참석자 명단에 추가
         const attendSql = 'INSERT INTO schedule_attendees (schedule_id, member_name) VALUES (?, ?)';
@@ -811,19 +827,18 @@ app.post('/api/schedule/:id/attend', async (req, res) => {
         const logSql = 'INSERT INTO schedule_attendance_log (schedule_id, member_name, action) VALUES (?, ?, ?)';
         await connection.query(logSql, [scheduleId, memberName, 'attend']);
 
-        // 모든 쿼리가 성공하면 변경사항을 확정(commit)
         await connection.commit();
-
         res.json({ success: true, message: '참석 처리되었습니다.' });
 
     } catch (err) {
-        // 쿼리 중 에러가 발생하면 모든 변경사항을 되돌림(rollback)
         if (connection) await connection.rollback();
-
         console.error(`[/api/schedule/${scheduleId}/attend] 에러:`, err.message);
+        // 중복 참석 시 발생하는 에러 처리
+        if (err.code === 'ER_DUP_ENTRY') {
+            return res.status(400).json({ success: false, message: '이미 참석한 일정입니다.' });
+        }
         res.status(500).json({ success: false, message: '참석 처리에 실패했습니다.' });
     } finally {
-        // 사용한 커넥션을 풀에 반환
         if (connection) connection.release();
     }
 });
@@ -1054,11 +1069,11 @@ app.post('/admin/delete-match', isAuthenticated, async (req, res) => {
 
 // 일정 등록
 app.post('/admin/add-schedule', isAuthenticated, async (req, res) => {
-    const { schedule_date, start_time, end_time, location, notes, booker, price } = req.body;
+    const { schedule_date, start_time, end_time, location, notes, booker, price, maximum } = req.body;
     try {
         const [result] = await pool.query(
-            'INSERT INTO schedules (schedule_date, start_time, end_time, location, notes, booker, price) VALUES (?, ?, ?, ?, ?, ?, ?)',
-            [schedule_date, start_time, end_time, location, notes, booker || null, price || null]
+            'INSERT INTO schedules (schedule_date, start_time, end_time, location, notes, booker, price, maximum) VALUES (?, ?, ?, ?, ?, ?, ?, ?)',
+            [schedule_date, start_time, end_time, location, notes, booker || null, price || null, maximum || 6]
         );
         res.json({ success: true, message: `일정 (ID: ${result.insertId})이 성공적으로 등록되었습니다.` });
     } catch (err) {
@@ -1069,11 +1084,11 @@ app.post('/admin/add-schedule', isAuthenticated, async (req, res) => {
 
 // 일정 수정
 app.post('/admin/update-schedule', isAuthenticated, async (req, res) => {
-    const { id, schedule_date, start_time, end_time, location, notes, booker, price, calculated } = req.body;
+    const { id, schedule_date, start_time, end_time, location, notes, booker, price, calculated, maximum } = req.body;
     try {
         const [result] = await pool.query(
-            'UPDATE schedules SET schedule_date = ?, start_time = ?, end_time = ?, location = ?, notes = ?, booker = ?, price = ?, calculated = ? WHERE id = ?',
-            [schedule_date, start_time, end_time, location, notes, booker || null, price || null, calculated, id]
+            'UPDATE schedules SET schedule_date = ?, start_time = ?, end_time = ?, location = ?, notes = ?, booker = ?, price = ?, calculated = ?, maximum = ? WHERE id = ?',
+            [schedule_date, start_time, end_time, location, notes, booker || null, price || null, calculated, maximum || 6, id]
         );
         if (result.affectedRows > 0) {
             res.json({ success: true, message: `일정 (ID: ${id})이 성공적으로 수정되었습니다.` });
@@ -1205,7 +1220,7 @@ app.post('/admin/reset-password', isAuthenticated, async (req, res) => {
 // API: 모든 일정 가져오기
 app.get('/api/admin/schedules', isAuthenticated, async (req, res) => {
     try {
-        const [schedules] = await pool.query('SELECT id, schedule_date, start_time, end_time, location, notes, booker, price, calculated FROM schedules ORDER BY schedule_date DESC, start_time DESC');
+        const [schedules] = await pool.query('SELECT id, schedule_date, start_time, end_time, location, notes, booker, price, calculated, maximum FROM schedules ORDER BY schedule_date DESC, start_time DESC');
         res.json({ success: true, schedules });
     } catch (err) {
         console.error('모든 일정 가져오기 에러:', err.message);
