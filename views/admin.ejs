@@ -723,7 +723,7 @@
                     manageScheduleMessage.textContent = '삭제할 일정을 선택해주세요.';
                     return;
                 }
-                if (confirm(`일정 (ID: ${scheduleId})을 삭제하시겠습니까?`)) {
+                if (confirm(`일정(ID: ${scheduleId})을 삭제하시겠습니까?`)) {
                     try {
                         const response = await fetch('/admin/delete-schedule', {
                             method: 'POST',
@@ -910,7 +910,7 @@
                     deleteMatchRecordMessage.textContent = '삭제할 경기 기록을 선택해주세요.';
                     return;
                 }
-                if (confirm(`경기 기록 (ID: ${matchId})을 삭제하시겠습니까?`)) {
+                if (confirm(`경기 기록(ID: ${matchId})을 삭제하시겠습니까?`)) {
                     try {
                         const response = await fetch('/admin/delete-match', {
                             method: 'POST',
