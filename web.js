@@ -1250,6 +1250,92 @@ app.get('/api/admin/member/:name', isAuthenticated, async (req, res) => {
     }
 });
 
+// ✨ [추가] API: 특정 일정의 참석자 목록 가져오기
+app.get('/api/admin/schedule/:id/attendees', isAuthenticated, async (req, res) => {
+    const { id } = req.params;
+    try {
+        const [attendees] = await pool.query(
+            'SELECT member_name FROM schedule_attendees WHERE schedule_id = ? ORDER BY member_name ASC',
+            [id]
+        );
+        res.json({ success: true, attendees: attendees.map(a => a.member_name) });
+    } catch (err) {
+        console.error('[/api/admin/schedule/:id/attendees] 에러:', err.message);
+        res.status(500).json({ success: false, message: '참석자 정보를 가져오는 중 오류가 발생했습니다.' });
+    }
+});
+
+// ✨ [추가] API: 일정에 참석자 추가 (관리자용)
+app.post('/api/admin/schedule/add-attendee', isAuthenticated, async (req, res) => {
+    const { scheduleId, memberName } = req.body;
+    let connection;
+    try {
+        connection = await pool.getConnection();
+        await connection.beginTransaction();
+
+        // 참석자 추가
+        await connection.query(
+            'INSERT INTO schedule_attendees (schedule_id, member_name) VALUES (?, ?)',
+            [scheduleId, memberName]
+        );
+        // 로그 기록
+        await connection.query(
+            'INSERT INTO schedule_attendance_log (schedule_id, member_name, action) VALUES (?, ?, ?)',
+            [scheduleId, memberName, 'attend(admin)']
+        );
+
+        await connection.commit();
+        res.json({ success: true, message: `${memberName} 님을 참석 처리했습니다.` });
+    } catch (err) {
+        if (connection) await connection.rollback();
+        console.error('[/api/admin/schedule/add-attendee] 에러:', err.message);
+        if (err.code === 'ER_DUP_ENTRY') {
+            return res.status(400).json({ success: false, message: '이미 참석자 명단에 있습니다.' });
+        }
+        res.status(500).json({ success: false, message: '참석자 추가 중 오류가 발생했습니다.' });
+    } finally {
+        if (connection) connection.release();
+    }
+});
+
+// ✨ [추가] API: 일정에서 참석자 삭제 (관리자용)
+app.post('/api/admin/schedule/delete-attendees', isAuthenticated, async (req, res) => {
+    const { scheduleId, memberNames } = req.body;
+    if (!memberNames || memberNames.length === 0) {
+        return res.status(400).json({ success: false, message: '삭제할 참석자를 선택하세요.' });
+    }
+
+    let connection;
+    try {
+        connection = await pool.getConnection();
+        await connection.beginTransaction();
+
+        const placeholders = memberNames.map(() => '?').join(',');
+        const params = [scheduleId, ...memberNames];
+
+        // 참석자 삭제
+        await connection.query(
+            `DELETE FROM schedule_attendees WHERE schedule_id = ? AND member_name IN (${placeholders})`,
+            params
+        );
+        // 로그 기록
+        for (const memberName of memberNames) {
+            await connection.query(
+                'INSERT INTO schedule_attendance_log (schedule_id, member_name, action) VALUES (?, ?, ?)',
+                [scheduleId, memberName, 'cancel(admin)']
+            );
+        }
+        await connection.commit();
+        res.json({ success: true, message: `${memberNames.join(', ')} 님을 참석 취소했습니다.` });
+    } catch (err) {
+        if (connection) await connection.rollback();
+        console.error('[/api/admin/schedule/delete-attendees] 에러:', err.message);
+        res.status(500).json({ success: false, message: '참석자 삭제 중 오류가 발생했습니다.' });
+    } finally {
+        if (connection) connection.release();
+    }
+});
+
 const PORT = 8001;
 app.listen(PORT, () => {
     console.log(`http://localhost:${PORT} 에서 서버 실행 중`);
