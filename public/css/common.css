@@ -3,6 +3,7 @@ html, body {
   overflow: hidden;
   margin: 0 auto;
   max-width: 500px;
+  position: relative;
 }
 
 .app-container {
