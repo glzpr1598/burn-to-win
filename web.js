@@ -612,6 +612,45 @@ app.get('/api/matches/pair', async (req, res) => {
     }
 });
 
+// ✨ [추가] API: 케미 분석용 경기 기록 조회
+app.get('/api/matches/chemistry', async (req, res) => {
+    try {
+        // 1. 요청에서 플레이어 및 필터 정보 가져오기
+        let { player1, player2, period, types, courts: courtFilter } = req.query;
+        if (!player1 || !player2) {
+            return res.status(400).json({ message: '두 명의 플레이어 정보가 필요합니다.' });
+        }
+
+        // 2. 전체 경기 기록 가져오기
+        const [allMatches] = await pool.query('SELECT * FROM matchrecord WHERE team1_result IS NOT NULL');
+        
+        // 3. 기간, 분류, 코트 필터 적용
+        let filteredMatches = applyPeriodFilter(allMatches, period);
+        if (types) {
+            filteredMatches = filteredMatches.filter(m => types.split(',').includes(m.type));
+        }
+        if (courtFilter) {
+            filteredMatches = filteredMatches.filter(m => courtFilter.split(',').includes(m.court));
+        }
+
+        // 4. 두 플레이어가 모두 참여한 경기만 필터링
+        const chemistryMatches = filteredMatches.filter(match => {
+            const playersInMatch = [match.team1_deuce, match.team1_ad, match.team2_deuce, match.team2_ad].filter(p => p);
+            return playersInMatch.includes(player1) && playersInMatch.includes(player2);
+        });
+        
+        // 5. 최신순으로 정렬
+        chemistryMatches.sort((a, b) => new Date(b.date) - new Date(a.date) || b.id - a.id);
+
+        // 6. 결과 전송
+        res.json(chemistryMatches);
+
+    } catch (err) {
+        console.error('[/api/matches/chemistry] 에러:', err.message);
+        res.status(500).json({ error: '서버 오류가 발생했습니다.' });
+    }
+});
+
 // 출석부 페이지
 app.get('/attendance', async (req, res) => {
     try {
@@ -1102,21 +1141,6 @@ app.post('/admin/update-schedule', isAuthenticated, async (req, res) => {
 });
 
 // 일정 삭제
-app.post('/admin/delete-schedule', isAuthenticated, async (req, res) => {
-    const { scheduleId } = req.body;
-    try {
-        const [result] = await pool.query('DELETE FROM schedules WHERE id = ?', [scheduleId]);
-        if (result.affectedRows > 0) {
-            res.json({ success: true, message: `일정(ID: ${scheduleId})이 삭제되었습니다.` });
-        } else {
-            res.status(404).json({ success: false, message: `일정(ID: ${scheduleId})을 찾을 수 없습니다.` });
-        }
-    } catch (err) {
-        console.error('일정 삭제 에러:', err.message);
-        res.status(500).json({ success: false, message: '일정 삭제 중 오류가 발생했습니다.' });
-    }
-});
-
 app.post('/admin/delete-schedule', isAuthenticated, async (req, res) => {
     const { scheduleId } = req.body;
     try {

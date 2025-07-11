@@ -23,6 +23,21 @@
         #searchContainer { display: none; width: 150px; }
         #searchInput { min-width: 100px; }
         #searchToggle .bi-search { font-size: 1.2rem; color: black; }
+        /* 모달 스타일 추가 */
+        .modal-body .stat-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 8px 0;
+            border-bottom: 1px solid #eee;
+        }
+        .modal-body .stat-item:last-child {
+            border-bottom: none;
+        }
+        .modal-body .stat-value {
+            text-align: right;
+            font-size: 0.9rem;
+        }
     </style>
 </head>
 <body>
@@ -30,7 +45,7 @@
         <div class="modal-dialog modal-dialog-centered modal-lg">
             <div class="modal-content">
                 <div class="modal-header">
-                    <h5 class="modal-title" id="matchDetailModalLabel">경기 기록</h5>
+                    <h5 class="modal-title" id="matchDetailModalLabel" style="font-weight: bold;">경기 기록</h5>
                     <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                 </div>
                 <div class="modal-body" id="matchDetailModalBody" style="padding: 0;">
@@ -55,7 +70,6 @@
             </div>
         </div>
 
-        <!-- 사이드 메뉴 -->
         <%- include('partials/sidemenu') %>
 
         <div class="filter-section">
@@ -77,7 +91,7 @@
                         <div class="dropdown-menu" aria-labelledby="typeDropdownButton">
                             <div class="filter-control-links"><a href="#" onclick="selectAll('typeFilter'); return false;">전체선택</a><a href="#" onclick="deselectAll('typeFilter'); return false;">전체해제</a></div>
                             <div id="typeFilter" class="checkbox-group">
-                                <% const types = ['남복', '여복', '혼복', '혼복(남3)', '혼복(여3)', '혼복(남vs여)']; %>
+                                 <% const types = ['남복', '여복', '혼복', '혼복(남3)', '혼복(여3)', '혼복(남vs여)']; %>
                                 <% types.forEach(type => { %>
                                     <div class="form-check"><input class="form-check-input" type="checkbox" value="<%= type %>" id="type-<%= type %>"><label class="form-check-label" for="type-<%= type %>"><%= type %></label></div>
                                 <% }) %>
@@ -92,9 +106,9 @@
                         <div class="dropdown-menu" aria-labelledby="courtDropdownButton">
                             <div class="filter-control-links"><a href="#" onclick="selectAll('courtFilter'); return false;">전체선택</a><a href="#" onclick="deselectAll('courtFilter'); return false;">전체해제</a></div>
                             <div id="courtFilter" class="checkbox-group">
-                                <% courts.forEach(court => { %>
+                                 <% courts.forEach(court => { %>
                                     <div class="form-check"><input class="form-check-input" type="checkbox" value="<%= court.name %>" id="court-<%= court.name %>"><label class="form-check-label" for="court-<%= court.name %>"><%= court.name %></label></div>
-                                <% }) %>
+                                 <% }) %>
                             </div>
                             <button class="btn btn-primary btn-sm w-100" onclick="applyFilters()">확인</button>
                         </div>
@@ -116,13 +130,13 @@
                 </thead>
                 <tbody id="scoreTbody">
                     <% if (pairData && pairData.length > 0) { %>
-                        <% pairData.forEach(item => { %>
+                         <% pairData.forEach(item => { %>
                             <tr data-pair="<%= item.pair %>" style="cursor: pointer;" onclick="showMatchDetails(this)">
                                 <td><%= item.pair %></td>
                                 <td><%= item.matches %></td>
                                 <td><%= item.wins %></td>
                                 <td><%= item.losses %></td>
-                                <% if (item.winRate > 50) { %>
+                                 <% if (item.winRate > 50) { %>
                                     <td><strong><%= item.winRate %>%</strong></td>
                                 <% } else { %>
                                     <td><%= item.winRate %>%</td>
@@ -131,12 +145,11 @@
                         <% }) %>
                     <% } else { %>
                         <tr><td colspan="6" class="text-center p-5">표시할 데이터가 없습니다.<br><small>필터 조건을 변경하거나 경기 기록을 추가해주세요.</small></td></tr>
-                    <% } %>
+                     <% } %>
                 </tbody>
             </table>
         </div>
 
-        <!-- 하단 네비게이션 -->
         <%- include('partials/navbar', { currentPage: 'chemistry-score' }) %>
     </div>
 
@@ -145,7 +158,6 @@
     <script>
         function applyFilters(options = {}) {
             let filters = filterStorage.load();
-            
             const singleTypes = filters.types.filter(t => t.includes('단'));
             const newDoubleTypes = Array.from(document.querySelectorAll('#typeFilter input:checked')).map(cb => cb.value);
             filters.types = [...new Set([...singleTypes, ...newDoubleTypes])];
@@ -161,9 +173,8 @@
             window.location.href = `/chemistry-score?${params.toString()}`;
         }
 
-        // --- 정렬 및 검색 로직 (기존과 동일) ---
+        // --- 정렬 및 검색 로직 ---
         let sortState = { col: 4, asc: false };
-
         function sortTable(colIndex, type) {
             const tbody = document.getElementById("scoreTbody");
             const rows = Array.from(tbody.querySelectorAll("tr"));
@@ -176,8 +187,7 @@
                 let valB = b.children[colIndex].innerText.trim().replace('%', '');
                 return (parseFloat(valA) - parseFloat(valB)) * direction;
             });
-
-            sortedRows = rows; // 정렬된 결과를 sortedRows에 저장
+            sortedRows = rows;
 
             tbody.innerHTML = "";
             rows.forEach(row => tbody.appendChild(row));
@@ -203,17 +213,15 @@
                 const winRateB = parseFloat(b.children[4].innerText.trim().replace('%', ''));
                 return winRateB - winRateA;
             });
-
-            sortedRows = rows; // 정렬된 결과를 sortedRows에 저장
+            sortedRows = rows;
 
             tbody.innerHTML = "";
             rows.forEach(row => tbody.appendChild(row));
             document.querySelectorAll('#scoreTable th i')[0].className = 'bi bi-sort-down';
         }
         
-        // 검색 기능을 위한 변수 (DOMContentLoaded 밖으로 이동)
         let originalRows = [];
-        let sortedRows = []; // 정렬된 행을 저장할 배열 추가
+        let sortedRows = [];
 
         function filterTable() {
             const searchInput = document.getElementById('searchInput');
@@ -221,13 +229,15 @@
             const keywords = searchText.split(' ').filter(k => k);
             const tbody = document.getElementById('scoreTbody');
             tbody.innerHTML = '';
-
-            sortedRows.forEach(row => { // 정렬된 행(sortedRows)을 순회하도록 변경
+            sortedRows.forEach(row => {
                 const pairText = row.querySelector('td:first-child').innerText.toLowerCase();
                 const isMatch = keywords.every(keyword => pairText.includes(keyword));
 
                 if (isMatch || keywords.length === 0) {
                     const newRow = row.cloneNode(true);
+                    // Re-attach event listener
+                    newRow.addEventListener('click', () => showMatchDetails(newRow));
+                    
                     if (keywords.length > 0) {
                         const searchRegex = new RegExp(keywords.join('|'), 'gi');
                         const cell = newRow.querySelector('td:first-child');
@@ -238,13 +248,18 @@
             });
         }
 
-                // ✨ 모달 관련 전역 변수 및 함수 추가
         const matchDetailModal = new bootstrap.Modal(document.getElementById('matchDetailModal'));
         
         async function showMatchDetails(rowElement) {
             const pair = rowElement.dataset.pair;
+            const stats = {
+                matches: rowElement.cells[1].innerText,
+                wins: rowElement.cells[2].innerText,
+                losses: rowElement.cells[3].innerText,
+                winRate: parseFloat(rowElement.cells[4].innerText.replace('%', ''))
+            };
+
             const currentFilters = new URLSearchParams(window.location.search);
-            
             const period = currentFilters.get('period') || '6m';
             const types = currentFilters.get('types') || '남복,여복,혼복';
             const courts = currentFilters.get('courts') || '';
@@ -255,16 +270,10 @@
                     throw new Error('경기 기록을 불러오는데 실패했습니다.');
                 }
                 const matches = await response.json();
-                
-                document.getElementById('matchDetailModalLabel').innerText = `${pair} 페어 경기 기록`;
+                document.getElementById('matchDetailModalLabel').innerText = `${pair} 페어`;
                 const modalBody = document.getElementById('matchDetailModalBody');
                 
-                if (matches.length > 0) {
-                    // ✨ buildMatchTableHtml 함수에 pair 정보를 넘겨줍니다.
-                    modalBody.innerHTML = buildMatchTableHtml(matches, pair);
-                } else {
-                    modalBody.innerHTML = '<p class="text-center p-4">해당 조건의 경기 기록이 없습니다.</p>';
-                }
+                modalBody.innerHTML = buildMatchTableHtml(matches, pair, stats);
 
                 matchDetailModal.show();
             } catch (error) {
@@ -273,68 +282,94 @@
             }
         }
         
-        // ✨ 함수 로직 전체 수정
-        function buildMatchTableHtml(matches, pair) {
-            const [player1, player2] = pair.split('/');
+        function buildMatchTableHtml(matches, pair, stats) {
+            const pairTags = [];
+            if (stats.matches > 0) {
+                if (stats.winRate >= 90) { pairTags.push('#환상의케미'); } 
+                else if (stats.winRate >= 80) { pairTags.push('#우린그냥운명이야'); } 
+                else if (stats.winRate >= 70) { pairTags.push('#시너지폭발'); } 
+                else if (stats.winRate >= 60) { pairTags.push('#꿀케미'); } 
+                else if (stats.winRate >= 50) { pairTags.push('#믿고가는조합'); } 
+                else if (stats.winRate >= 40) { pairTags.push('#흔들리는케미'); } 
+                else if (stats.winRate >= 30) { pairTags.push('#분발하자'); } 
+                else if (stats.winRate >= 20) { pairTags.push('#눈물의듀오'); } 
+                else if (stats.winRate >= 10) { pairTags.push('#승률도망'); } 
+                else { pairTags.push('#케미실종'); }
+            }
+            const pairTagsText = pairTags.join(' ');
 
-            let tableHtml = `
-                <div class="table-responsive">
-                    <table class="table table-sm table-striped text-center align-middle text-nowrap" style="font-size: 0.8rem;">
-                        <colgroup>
-                            <col style="width: 15%;"><col style="width: 13%;"><col style="width: 25%;"><col style="width: 13%;"><col style="width: 12%;"><col style="width: 12%;"><col style="width: 10%;">
-                        </colgroup>
-                        <thead class="table-light">
-                            <tr><th>날짜</th><th>코트</th><th>상대팀</th><th>스코어</th><th>결과</th><th>분류</th><th>영상</th></tr>
-                        </thead>
-                        <tbody>
+            const winRateHtml = stats.winRate > 50 
+                ? `<strong>(${stats.winRate}%)</strong>` 
+                : `(${stats.winRate}%)`;
+
+            const summaryHtml = `
+                <div style="padding: 1rem; border-bottom: 1px solid #dee2e6;">
+                    <div class="stat-item">
+                        <span><strong>📊 전적</strong></span>
+                        <span class="stat-value">${stats.matches}전 ${stats.wins}승 ${stats.losses}패 ${winRateHtml}</span>
+                    </div>
+                    ${pairTagsText ? `
+                    <div class="stat-item">
+                        <span></span>
+                        <span class="stat-value">${pairTagsText}</span>
+                    </div>` : ''}
+                </div>
             `;
-            
-            matches.forEach(match => {
-                const team1Players = [match.team1_deuce, match.team1_ad];
-                const isPairOnTeam1 = team1Players.includes(player1) && team1Players.includes(player2);
 
-                let opponentPair, result, selectedScore, opponentScore;
-
-                if (isPairOnTeam1) {
-                    opponentPair = `${match.team2_deuce}${match.team2_ad ? '/' + match.team2_ad : ''}`;
-                    result = match.team1_result;
-                    selectedScore = match.team1_score;
-                    opponentScore = match.team2_score;
-                } else {
-                    opponentPair = `${match.team1_deuce}${match.team1_ad ? '/' + match.team1_ad : ''}`;
-                    result = match.team2_result;
-                    selectedScore = match.team2_score;
-                    opponentScore = match.team1_score;
-                }
-
-                let resultDisplay;
-                if (result === '승') {
-                    resultDisplay = '<span style="color: darkblue;">승</span>';
-                } else if (result === '패') {
-                    resultDisplay = '<span style="color: darkred;">패</span>';
-                } else {
-                    resultDisplay = '<span>무</span>';
-                }
-                
-                const videoLink = match.video 
-                    ? `<a href="${match.video}" target="_blank" rel="noopener" onclick="event.stopPropagation();"><i class="bi bi-youtube text-danger fs-6"></i></a>`
-                    : '';
-
-                tableHtml += `
-                    <tr>
-                        <td>${match.date ? match.date.substring(2) : ''}</td>
-                        <td>${match.court}</td>
-                        <td>${opponentPair}</td>
-                        <td>${selectedScore}:${opponentScore}</td>
-                        <td>${resultDisplay}</td>
-                        <td>${match.type}</td>
-                        <td>${videoLink}</td>
-                    </tr>
+            let tableHtml = '';
+            if (matches.length > 0) {
+                const [player1, player2] = pair.split('/');
+                tableHtml = `
+                    <div class="table-responsive">
+                        <table class="table table-sm table-striped text-center align-middle text-nowrap" style="font-size: 0.8rem;">
+                            <thead class="table-light">
+                                <tr><th>날짜</th><th>코트</th><th>상대팀</th><th>스코어</th><th>결과</th><th>분류</th><th>영상</th></tr>
+                            </thead>
+                            <tbody>
                 `;
-            });
+                matches.forEach(match => {
+                    const team1Players = [match.team1_deuce, match.team1_ad];
+                    const isPairOnTeam1 = team1Players.includes(player1) && team1Players.includes(player2);
 
-            tableHtml += `</tbody></table></div>`;
-            return tableHtml;
+                    let opponentPair, result, selectedScore, opponentScore;
+
+                    if (isPairOnTeam1) {
+                        opponentPair = `${match.team2_deuce}${match.team2_ad ? '/' + match.team2_ad : ''}`;
+                        result = match.team1_result;
+                        selectedScore = match.team1_score;
+                        opponentScore = match.team2_score;
+                    } else {
+                        opponentPair = `${match.team1_deuce}${match.team1_ad ? '/' + match.team1_ad : ''}`;
+                        result = match.team2_result;
+                        selectedScore = match.team2_score;
+                        opponentScore = match.team1_score;
+                    }
+
+                    let resultDisplay;
+                    if (result === '승') { resultDisplay = '<span style="color: darkblue;">승</span>'; } 
+                    else if (result === '패') { resultDisplay = '<span style="color: darkred;">패</span>'; }
+                    else { resultDisplay = '<span>무</span>'; }
+                    
+                    const videoLink = match.video ? `<a href="${match.video}" target="_blank" rel="noopener" onclick="event.stopPropagation();"><i class="bi bi-youtube text-danger fs-6"></i></a>` : '';
+                    
+                    tableHtml += `
+                        <tr>
+                            <td>${match.date ? match.date.substring(2) : ''}</td>
+                            <td>${match.court}</td>
+                            <td>${opponentPair}</td>
+                            <td>${selectedScore}:${opponentScore}</td>
+                            <td>${resultDisplay}</td>
+                            <td>${match.type}</td>
+                            <td>${videoLink}</td>
+                        </tr>
+                    `;
+                });
+                tableHtml += `</tbody></table></div>`;
+            } else {
+                tableHtml = '<p class="text-center p-4">해당 조건의 경기 기록이 없습니다.</p>';
+            }
+
+            return summaryHtml + tableHtml;
         }
 
         document.addEventListener('DOMContentLoaded', () => {
@@ -357,7 +392,6 @@
             const periods = [ { value: 'all', text: '전체' }, { value: '1m', text: '최근 1개월' }, { value: '3m', text: '최근 3개월' }, { value: '6m', text: '최근 6개월' }, { value: '1y', text: '최근 1년' }, { value: '2025', text: '2025년' }, { value: '2024', text: '2024년' } ];
             const selectedPeriod = periods.find(p => p.value === savedFilters.period) || periods[3];
             document.getElementById('periodDropdownButton').textContent = `기간: ${selectedPeriod.text}`;
-            
             document.querySelectorAll('#typeFilter input').forEach(cb => { if (savedFilters.types.includes(cb.value)) cb.checked = true; });
             if (savedFilters.courts) document.querySelectorAll('#courtFilter input').forEach(cb => { if (savedFilters.courts.includes(cb.value)) cb.checked = true; });
             
@@ -365,7 +399,6 @@
             updateCheckboxDropdownText('courtDropdownButton', 'courtFilter', '코트');
             
             defaultSort();
-            
             // 검색 이벤트 리스너
             const searchToggle = document.getElementById('searchToggle');
             const searchContainer = document.getElementById('searchContainer');
