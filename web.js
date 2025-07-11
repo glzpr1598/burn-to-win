@@ -1463,6 +1463,84 @@ app.delete('/api/postponements/:id', async (req, res) => {
     }
 });
 
+// --- 회원 명단 관련 라우트 ---
+
+// 회원 명단 페이지 렌더링
+app.get('/member-list', async (req, res) => {
+    try {
+        // 로그인 드롭다운에 필요한 전체 회원 이름과, 명단 테이블에 필요한 상세 정보를 각각 조회
+        const [allMemberNames] = await pool.query('SELECT name FROM member WHERE `order` = 0 ORDER BY name ASC');
+        const [fullMemberList] = await pool.query('SELECT id, name, gender, birth, phone FROM member WHERE `order` = 0 ORDER BY name ASC');
+
+        res.render('member-list', {
+            members: allMemberNames,      // 로그인 드롭다운 목록용
+            memberList: fullMemberList,   // 명단 테이블 표시용
+            currentPage: 'member-list'
+        });
+    } catch (err) {
+        console.error('[/member-list] GET 에러:', err.message);
+        res.status(500).send('회원 명단 페이지를 불러오는 중 오류가 발생했습니다.');
+    }
+});
+
+// API: 회원 명단 로그인 처리
+app.post('/api/member/login', async (req, res) => {
+    const { name, password } = req.body;
+    if (!name || !password) {
+        return res.status(400).json({ success: false, message: '이름과 비밀번호를 입력하세요.' });
+    }
+    try {
+        const [rows] = await pool.query('SELECT id, name, password FROM member WHERE name = ?', [name]);
+        if (rows.length === 0) {
+            return res.status(401).json({ success: false, message: '존재하지 않는 회원입니다.' });
+        }
+        const member = rows[0];
+        // bcrypt.compare로 암호화된 비밀번호 비교
+        const match = await bcrypt.compare(password, member.password);
+
+        if (match) {
+            // 로그인 성공 시, 클라이언트에 필요한 최소한의 정보(id, name) 전송
+            res.json({ success: true, member: { id: member.id, name: member.name } });
+        } else {
+            res.status(401).json({ success: false, message: '비밀번호가 일치하지 않습니다.' });
+        }
+    } catch (err) {
+        console.error('[/api/member/login] POST 에러:', err.message);
+        res.status(500).json({ success: false, message: '로그인 처리 중 오류가 발생했습니다.' });
+    }
+});
+
+// API: 회원 정보 수정
+app.post('/api/member/update', async (req, res) => {
+    // 클라이언트에서 보낸 수정할 정보
+    const { id, name, gender, birth, phone } = req.body;
+
+    if (!id || !name) {
+         return res.status(400).json({ success: false, message: '사용자 정보가 올바르지 않습니다.' });
+    }
+
+    try {
+        // 보안 강화: 정보를 수정하려는 사용자의 id와 이름이 DB와 일치하는지 확인
+        const [verifyRows] = await pool.query('SELECT name FROM member WHERE id = ?', [id]);
+        if (verifyRows.length === 0 || verifyRows[0].name !== name) {
+             return res.status(403).json({ success: false, message: '정보를 수정할 권한이 없습니다.' });
+        }
+
+        // DB 업데이트 쿼리 실행
+        const sql = 'UPDATE member SET gender = ?, birth = ?, phone = ? WHERE id = ?';
+        const [result] = await pool.query(sql, [gender, birth, phone, id]);
+
+        if (result.affectedRows > 0) {
+            res.json({ success: true, message: '정보가 성공적으로 수정되었습니다.' });
+        } else {
+            res.status(404).json({ success: false, message: '회원 정보를 찾을 수 없습니다.' });
+        }
+    } catch (err) {
+        console.error('[/api/member/update] POST 에러:', err.message);
+        res.status(500).json({ success: false, message: '정보 수정 중 오류가 발생했습니다.' });
+    }
+});
+
 const PORT = 8001;
 app.listen(PORT, () => {
     console.log(`http://localhost:${PORT} 에서 서버 실행 중`);

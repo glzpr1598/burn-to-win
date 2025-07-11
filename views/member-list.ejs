@@ -1,0 +1,362 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <link rel="apple-touch-icon" href="/image/btw.png"/> 
+    <link rel="icon" type="image/png" href="/image/btw.png"/> 
+    <link rel="stylesheet" href="/css/common.css" />
+    <title>불꽃테니스</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet" />
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css" />
+    <style>
+        .table-responsive { flex-grow: 1; overflow-y: auto; }
+        #memberTable { font-size: 0.8rem; }
+        #memberTable th { position: sticky; top: 0; background-color: #f8f9fa; z-index: 90; }
+        .user-selection-bar {
+            display: none; /* Initially hidden */
+            flex-shrink: 0;
+            padding: 10px 15px;
+            background-color: #f8f9fa;
+            border-bottom: 1px solid #dee2e6;
+            font-size: 0.9rem;
+        }
+        #mainContent { display: none; } /* Initially hidden */
+        .sortable-th { cursor: pointer; }
+        .sortable-th .bi { margin-left: 5px; }
+    </style>
+</head>
+<body>
+    <!-- Data container for passing server data to client-side JS -->
+    <div id="member-data-container" data-member-list='<%- JSON.stringify(memberList || []) %>'></div>
+
+    <div class="app-container">
+        <!-- Header -->
+        <div class="d-flex align-items-center justify-content-between sticky-header">
+            <div class="d-flex align-items-center">
+                <img src="/image/btw-tran-180x180.png" alt="로고" style="height: 40px; margin-right: 5px;">
+                <h5 style="margin-bottom: 0;"><b>불꽃s</b></h5>
+            </div>
+            <i class="bi bi-list hamburger-icon"></i>
+        </div>
+
+        <!-- Side Menu -->
+        <%- include('partials/sidemenu') %>
+
+        <!-- User Selection Bar (shown after login) -->
+        <div class="user-selection-bar justify-content-between align-items-center" id="userBar">
+            <span class="d-flex align-items-center">
+                <i class="bi bi-person-circle me-2"></i><strong id="currentUser"></strong>
+            </span>
+            <button class="btn btn-outline-secondary btn-sm py-0" id="logoutBtn">로그아웃</button>
+        </div>
+
+        <!-- Main Content (Member List) -->
+        <div id="mainContent" class="table-responsive">
+            <table id="memberTable" class="table table-sm table-striped text-center align-middle">
+                <thead class="table-light">
+                    <tr>
+                        <th class="sortable-th" data-sort-col="0">이름<i class="bi bi-arrow-down-up"></i></th>
+                        <th class="sortable-th" data-sort-col="1">성별<i class="bi bi-arrow-down-up"></i></th>
+                        <th class="sortable-th" data-sort-col="2">생년월일<i class="bi bi-arrow-down-up"></i></th>
+                        <th class="sortable-th" data-sort-col="3">연락처<i class="bi bi-arrow-down-up"></i></th>
+                        <th></th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <% if (memberList && memberList.length > 0) { %>
+                        <% memberList.forEach(member => { %>
+                            <tr id="member-row-<%= member.id %>">
+                                <td><%= member.name %></td>
+                                <td data-field="gender"><%= member.gender || '-' %></td>
+                                <td data-field="birth"><%= member.birth || '-' %></td>
+                                <td data-field="phone"><%= member.phone || '-' %></td>
+                                <td data-field="edit-btn-cell">
+                                    <!-- Edit button is dynamically inserted here by JS -->
+                                </td>
+                            </tr>
+                        <% }) %>
+                    <% } else { %>
+                        <tr><td colspan="5" class="text-center p-5">회원 정보가 없습니다.</td></tr>
+                    <% } %>
+                </tbody>
+            </table>
+        </div>
+
+        <!-- Bottom Navigation -->
+        <%- include('partials/navbar', { currentPage: 'member-list' }) %>
+    </div>
+
+    <!-- Login Modal -->
+    <div class="modal fade" id="userSelectModal" tabindex="-1">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">사용자 선택</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label for="loginName" class="form-label">이름</label>
+                        <select id="loginName" class="form-select">
+                            <option value="">-- 선택 --</option>
+                            <% members.forEach(member => { %>
+                                <option value="<%= member.name %>"><%= member.name %></option>
+                            <% }); %>
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label for="loginPassword" class="form-label">비밀번호</label>
+                        <input type="password" class="form-control" id="loginPassword" placeholder="초기 비밀번호: 0000">
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-primary w-100" id="loginBtn">로그인</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Edit Info Modal -->
+    <div class="modal fade" id="editModal" tabindex="-1">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">내 정보 수정</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <form id="editForm">
+                        <input type="hidden" id="edit-id" name="id">
+                        <input type="hidden" id="edit-name-hidden" name="name">
+                        <div class="mb-3">
+                            <label class="form-label">이름</label>
+                            <input type="text" class="form-control" id="edit-name-display" readonly>
+                        </div>
+                        <div class="mb-3">
+                            <label for="edit-gender" class="form-label">성별</label>
+                            <select class="form-select" id="edit-gender" name="gender">
+                                <option value="남">남</option>
+                                <option value="여">여</option>
+                            </select>
+                        </div>
+                        <div class="mb-3">
+                            <label for="edit-birth" class="form-label">생년월일</label>
+                            <input type="text" class="form-control" id="edit-birth" name="birth" placeholder="YYYY-MM-DD">
+                        </div>
+                        <div class="mb-3">
+                            <label for="edit-phone" class="form-label">연락처</label>
+                            <input type="text" class="form-control" id="edit-phone" name="phone" placeholder="010-1234-5678">
+                        </div>
+                    </form>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">닫기</button>
+                    <button type="button" class="btn btn-primary" id="submitEditBtn">저장</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="/js/common-filter.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            let userSelectModal, editModal;
+            let loggedInUser = null;
+            
+            const memberDataContainer = document.getElementById('member-data-container');
+            const memberData = JSON.parse(memberDataContainer.dataset.memberList);
+            const sortState = { column: 0, ascending: true };
+
+            function initializeModals() {
+                userSelectModal = new bootstrap.Modal(document.getElementById('userSelectModal'));
+                editModal = new bootstrap.Modal(document.getElementById('editModal'));
+            }
+
+            function checkLoginStatus() {
+                const storedUserName = localStorage.getItem('tennis-schedule-user');
+                if (storedUserName) {
+                    const userFromFile = memberData.find(m => m.name === storedUserName);
+                    if (userFromFile) {
+                        loggedInUser = { id: userFromFile.id, name: userFromFile.name };
+                        showMainContent();
+                    } else {
+                        handleLogout();
+                    }
+                } else {
+                    userSelectModal.show();
+                }
+            }
+
+            async function handleLogin() {
+                const name = document.getElementById('loginName').value;
+                const password = document.getElementById('loginPassword').value;
+                if (!name || !password) return alert('이름과 비밀번호를 입력하세요.');
+
+                try {
+                    const response = await fetch('/api/member/login', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ name, password })
+                    });
+                    const result = await response.json();
+                    if (result.success) {
+                        loggedInUser = result.member;
+                        localStorage.setItem('tennis-schedule-user', loggedInUser.name);
+                        document.getElementById('loginPassword').value = '';
+                        userSelectModal.hide();
+                        showMainContent();
+                    } else {
+                        alert(result.message);
+                    }
+                } catch (err) {
+                    console.error('Login error:', err);
+                    alert('로그인 중 오류가 발생했습니다.');
+                }
+            }
+
+            function handleLogout() {
+                loggedInUser = null;
+                localStorage.removeItem('tennis-schedule-user');
+                document.getElementById('mainContent').style.display = 'none';
+                document.getElementById('userBar').style.display = 'none';
+                
+                const editIconWrapper = document.querySelector('.edit-icon-wrapper');
+                if(editIconWrapper) editIconWrapper.remove();
+                
+                userSelectModal.show();
+            }
+
+            function showMainContent() {
+                if (!loggedInUser) return;
+                document.getElementById('currentUser').textContent = loggedInUser.name;
+                document.getElementById('userBar').style.display = 'flex';
+                document.getElementById('mainContent').style.display = 'block';
+                addEditButtonForCurrentUser();
+                sortTable(0, true);
+            }
+            
+            function addEditButtonForCurrentUser() {
+                const existingIcon = document.querySelector('.edit-icon-wrapper');
+                if (existingIcon) existingIcon.remove();
+                
+                if (!loggedInUser) return;
+                const userRow = document.getElementById(`member-row-${loggedInUser.id}`);
+                if (userRow) {
+                    const cell = userRow.querySelector('[data-field="edit-btn-cell"]');
+                    const member = memberData.find(m => m.id === loggedInUser.id);
+                    if (cell && member) {
+                        const icon = document.createElement('i');
+                        icon.className = 'bi bi-pencil-square edit-icon-wrapper';
+                        icon.style.cursor = 'pointer';
+                        icon.style.color = '#0d6efd';
+                        icon.style.marginRight = "5px";
+                        icon.onclick = () => openEditModal(member.id);
+                        cell.appendChild(icon);
+                    }
+                }
+            }
+
+            function openEditModal(memberId) {
+                const member = memberData.find(m => m.id === memberId);
+                if (!member) return;
+
+                document.getElementById('edit-id').value = member.id;
+                document.getElementById('edit-name-hidden').value = member.name;
+                document.getElementById('edit-name-display').value = member.name;
+                document.getElementById('edit-gender').value = member.gender || '남';
+                document.getElementById('edit-birth').value = member.birth || '';
+                document.getElementById('edit-phone').value = member.phone || '';
+                editModal.show();
+            }
+
+            async function submitEditForm() {
+                const form = document.getElementById('editForm');
+                const formData = new FormData(form);
+                const data = Object.fromEntries(formData.entries());
+
+                try {
+                    const response = await fetch('/api/member/update', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(data)
+                    });
+                    const result = await response.json();
+                    if (result.success) {
+                        const row = document.getElementById(`member-row-${data.id}`);
+                        if (row) {
+                            row.querySelector('[data-field="gender"]').textContent = data.gender || '-';
+                            row.querySelector('[data-field="birth"]').textContent = data.birth || '-';
+                            row.querySelector('[data-field="phone"]').textContent = data.phone || '-';
+                        }
+                        
+                        const memberInJs = memberData.find(m => m.id == data.id);
+                        if(memberInJs) {
+                            memberInJs.gender = data.gender;
+                            memberInJs.birth = data.birth;
+                            memberInJs.phone = data.phone;
+                        }
+                        editModal.hide();
+                        alert('정보가 성공적으로 수정되었습니다.');
+                    } else {
+                        alert('오류: ' + result.message);
+                    }
+                } catch (error) {
+                    console.error('정보 수정 오류:', error);
+                    alert('정보 수정 중 오류가 발생했습니다.');
+                }
+            }
+
+            function sortTable(columnIndex, isDefaultSort = false) {
+                const tbody = document.getElementById('memberTable').querySelector('tbody');
+                const rows = Array.from(tbody.querySelectorAll('tr'));
+                
+                if (!isDefaultSort) {
+                    if (sortState.column === columnIndex) {
+                        sortState.ascending = !sortState.ascending;
+                    } else {
+                        sortState.column = columnIndex;
+                        sortState.ascending = true;
+                    }
+                }
+
+                const direction = sortState.ascending ? 1 : -1;
+
+                rows.sort((rowA, rowB) => {
+                    const valA = rowA.cells[columnIndex].textContent.trim();
+                    const valB = rowB.cells[columnIndex].textContent.trim();
+                    return valA.localeCompare(valB, undefined, { numeric: true }) * direction;
+                });
+
+                tbody.innerHTML = '';
+                rows.forEach(row => tbody.appendChild(row));
+
+                updateSortIcons();
+            }
+
+            function updateSortIcons() {
+                document.querySelectorAll('.sortable-th i').forEach((icon, index) => {
+                    if (index === sortState.column) {
+                        icon.className = sortState.ascending ? 'bi bi-sort-down' : 'bi bi-sort-up';
+                    } else {
+                        icon.className = 'bi bi-arrow-down-up';
+                    }
+                });
+            }
+            
+            // Initial setup calls
+            initializeModals();
+            checkLoginStatus();
+            document.getElementById('loginBtn').addEventListener('click', handleLogin);
+            document.getElementById('logoutBtn').addEventListener('click', handleLogout);
+            document.getElementById('submitEditBtn').addEventListener('click', submitEditForm);
+            document.querySelectorAll('.sortable-th').forEach(th => {
+                th.addEventListener('click', () => {
+                    sortTable(parseInt(th.dataset.sortCol));
+                });
+            });
+        });
+    </script>
+</body>
+</html>
