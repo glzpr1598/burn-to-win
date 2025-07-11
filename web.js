@@ -1541,6 +1541,165 @@ app.post('/api/member/update', async (req, res) => {
     }
 });
 
+// --- 공지사항 관련 라우트 ---
+
+// 공지사항 페이지 렌더링
+app.get('/notice', async (req, res) => {
+    try {
+        // 로그인 드롭다운에 필요한 전체 회원 이름 조회
+        const [members] = await pool.query('SELECT name FROM member ORDER BY `order` ASC, name ASC');
+        
+        // 모든 공지사항과 각 공지사항에 달린 댓글 수를 함께 조회
+        const noticeSql = `
+            SELECT 
+                n.id, n.title, n.content, n.author, n.created_at,
+                (SELECT COUNT(*) FROM notice_comments nc WHERE nc.notice_id = n.id) as comment_count
+            FROM notices n 
+            ORDER BY n.created_at DESC
+        `;
+        const [notices] = await pool.query(noticeSql);
+
+        // 날짜 포맷팅
+        notices.forEach(n => {
+            n.created_at = formatDateTime(n.created_at);
+        });
+
+        res.render('notice', {
+            members: members,
+            notices: notices,
+            currentPage: 'notice'
+        });
+    } catch (err) {
+        console.error('[/notice] GET 에러:', err.message);
+        res.status(500).send('공지사항 페이지를 불러오는 중 오류가 발생했습니다.');
+    }
+});
+
+// API: 특정 공지사항의 상세 정보 (내용 + 댓글) 조회
+app.get('/api/notices/:id', async (req, res) => {
+    try {
+        const { id } = req.params;
+        const noticeSql = 'SELECT * FROM notices WHERE id = ?';
+        const commentSql = 'SELECT * FROM notice_comments WHERE notice_id = ? ORDER BY created_at ASC';
+
+        const [[notice]] = await pool.query(noticeSql, [id]);
+        const [comments] = await pool.query(commentSql, [id]);
+
+        if (!notice) {
+            return res.status(404).json({ success: false, message: '게시글을 찾을 수 없습니다.' });
+        }
+
+        // 날짜 포맷팅
+        notice.created_at = formatDateTime(notice.created_at);
+        comments.forEach(c => {
+            c.created_at = formatDateTime(c.created_at);
+        });
+
+        res.json({ success: true, notice, comments });
+    } catch (err) {
+        console.error(`[/api/notices/:id] GET 에러:`, err.message);
+        res.status(500).json({ success: false, message: '데이터 조회 중 오류 발생' });
+    }
+});
+
+
+// API: 새 공지사항 작성
+app.post('/api/notices', async (req, res) => {
+    const { title, content, author } = req.body;
+    if (!title || !content || !author) {
+        return res.status(400).json({ success: false, message: '제목, 내용, 작성자 정보가 필요합니다.' });
+    }
+    try {
+        // created_at에 NOW()를 사용하여 현재 시간을 명시적으로 삽입
+        const sql = 'INSERT INTO notices (title, content, author, created_at) VALUES (?, ?, ?, NOW())';
+        const [result] = await pool.query(sql, [title, content, author]);
+        res.status(201).json({ success: true, message: '공지사항이 등록되었습니다.', insertId: result.insertId });
+    } catch (err) {
+        console.error('[/api/notices] POST 에러:', err.message);
+        res.status(500).json({ success: false, message: '공지사항 등록 중 오류가 발생했습니다.' });
+    }
+});
+
+// API: 공지사항 수정
+app.put('/api/notices/:id', async (req, res) => {
+    const { id } = req.params;
+    const { title, content, author } = req.body;
+    if (!title || !content || !author) {
+        return res.status(400).json({ success: false, message: '필수 정보가 누락되었습니다.' });
+    }
+    try {
+        const [[notice]] = await pool.query('SELECT author FROM notices WHERE id = ?', [id]);
+        if (!notice) return res.status(404).json({ success: false, message: '수정할 게시글이 없습니다.' });
+        if (notice.author !== author) return res.status(403).json({ success: false, message: '본인이 작성한 글만 수정할 수 있습니다.' });
+
+        const sql = 'UPDATE notices SET title = ?, content = ? WHERE id = ?';
+        await pool.query(sql, [title, content, id]);
+        res.json({ success: true, message: '공지사항이 수정되었습니다.' });
+    } catch (err) {
+        console.error(`[/api/notices/:id] PUT 에러:`, err.message);
+        res.status(500).json({ success: false, message: '공지사항 수정 중 오류가 발생했습니다.' });
+    }
+});
+
+
+// API: 공지사항 삭제
+app.delete('/api/notices/:id', async (req, res) => {
+    const { id } = req.params;
+    const { author } = req.body; // 본인 확인용 작성자 이름
+    try {
+        const [[notice]] = await pool.query('SELECT author FROM notices WHERE id = ?', [id]);
+        if (!notice) {
+            return res.status(404).json({ success: false, message: '삭제할 게시글이 없습니다.' });
+        }
+        if (notice.author !== author) {
+            return res.status(403).json({ success: false, message: '본인이 작성한 글만 삭제할 수 있습니다.' });
+        }
+        await pool.query('DELETE FROM notices WHERE id = ?', [id]);
+        res.json({ success: true, message: '공지사항이 삭제되었습니다.' });
+    } catch (err) {
+        console.error(`[/api/notices/:id] DELETE 에러:`, err.message);
+        res.status(500).json({ success: false, message: '공지사항 삭제 중 오류가 발생했습니다.' });
+    }
+});
+
+// API: 새 댓글 작성
+app.post('/api/notice-comments', async (req, res) => {
+    const { notice_id, author, comment } = req.body;
+    if (!notice_id || !author || !comment) {
+        return res.status(400).json({ success: false, message: '필수 정보가 누락되었습니다.' });
+    }
+    try {
+        const sql = 'INSERT INTO notice_comments (notice_id, author, comment) VALUES (?, ?, ?)';
+        const [result] = await pool.query(sql, [notice_id, author, comment]);
+        const [[newComment]] = await pool.query('SELECT * FROM notice_comments WHERE id = ?', [result.insertId]);
+        newComment.created_at = formatDateTime(newComment.created_at);
+        res.status(201).json({ success: true, comment: newComment });
+    } catch (err) {
+        console.error('[/api/notice-comments] POST 에러:', err.message);
+        res.status(500).json({ success: false, message: '댓글 작성 중 오류가 발생했습니다.' });
+    }
+});
+
+// API: 댓글 삭제
+app.delete('/api/notice-comments/:id', async (req, res) => {
+    const { id } = req.params;
+    const { author } = req.body; // 본인 확인용 작성자 이름
+    try {
+        const [[comment]] = await pool.query('SELECT author FROM notice_comments WHERE id = ?', [id]);
+        if (!comment) {
+            return res.status(404).json({ success: false, message: '삭제할 댓글이 없습니다.' });
+        }
+        if (comment.author !== author) {
+            return res.status(403).json({ success: false, message: '본인이 작성한 댓글만 삭제할 수 있습니다.' });
+        }
+        await pool.query('DELETE FROM notice_comments WHERE id = ?', [id]);
+        res.json({ success: true, message: '댓글이 삭제되었습니다.' });
+    } catch (err) {
+        console.error(`[/api/notice-comments/:id] DELETE 에러:`, err.message);
+        res.status(500).json({ success: false, message: '댓글 삭제 중 오류가 발생했습니다.' });
+    }
+});
+
 const PORT = 8001;
 app.listen(PORT, () => {
     console.log(`http://localhost:${PORT} 에서 서버 실행 중`);

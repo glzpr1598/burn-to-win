@@ -102,3 +102,6 @@ html, body {
 .overlay.active {
   display: block;
 }
+.btn-sm {
+  font-size: 0.8rem !important; 
+}
