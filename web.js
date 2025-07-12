@@ -989,6 +989,7 @@ app.post('/api/comments', async (req, res) => {
         const [rows] = await pool.query('SELECT * FROM schedule_comments WHERE id = ?', [result.insertId]);
         const newComment = rows[0];
         // 날짜 포맷 변경
+        newComment.comment = decodeBase64(newComment.comment);
         newComment.created_at = new Date(newComment.created_at).toLocaleString('ko-KR', {
             year: '2-digit', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit', hour12: false
         }).replace(/\. /g, '.');
@@ -1709,6 +1710,7 @@ app.post('/api/notice-comments', async (req, res) => {
         const sql = 'INSERT INTO notice_comments (notice_id, author, comment) VALUES (?, ?, ?)';
         const [result] = await pool.query(sql, [notice_id, author, encodedComment]);
         const [[newComment]] = await pool.query('SELECT * FROM notice_comments WHERE id = ?', [result.insertId]);
+        newComment.comment = decodeBase64(newComment.comment); // ✨ 댓글 내용 디코딩
         newComment.created_at = formatDateTime(newComment.created_at);
         res.status(201).json({ success: true, comment: newComment });
     } catch (err) {
