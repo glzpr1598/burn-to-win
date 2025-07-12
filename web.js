@@ -94,6 +94,27 @@ function formatDateTime(datetimeString) {
     return `${yyyy}-${mm}-${dd} ${hh}:${min}`;
 }
 
+// Base64 인코딩/디코딩 함수 추가(mysql 5.1 버전에서 utf8mb4를 지원하지 않아 db에 저장할 때 base64로 인코딩, 읽을 때 디코딩)
+const encodeBase64 = (str) => {
+    if (!str) return str; // null, undefined, 빈 문자열은 그대로 반환
+    return Buffer.from(str, 'utf8').toString('base64');
+};
+
+const decodeBase64 = (str) => {
+    if (!str) return str; // null, undefined, 빈 문자열은 그대로 반환
+    try {
+        // Base64 형식인지 간단히 확인하고, 아니면 원본 반환 (선택적)
+        const isBase64 = /^(?:[A-Za-z0-9+/]{4})*(?:[A-Za-z0-9+/]{2}==|[A-Za-z0-9+/]{3}=)?$/.test(str);
+        if (!isBase64) return str;
+
+        return Buffer.from(str, 'base64').toString('utf8');
+    } catch (e) {
+        // 디코딩 실패 시 (예: 이미 일반 텍스트인 경우) 원본 문자열 반환
+        console.warn('Base64 decoding failed for:', str, 'Returning original string.');
+        return str;
+    }
+};
+
 // --- 라우트 핸들러 ---
 
 // 홈화면 -> 일정 페이지로 리디렉션
@@ -835,6 +856,7 @@ app.get('/schedule', async (req, res) => {
 
                 // 날짜 포맷 변경 (YYYY-MM-DD HH:mm)
                 comment.created_at = formatDateTime(comment.created_at);
+                comment.comment = decodeBase64(comment.comment);
 
                 list.push(comment);
                 commentsMap.set(comment.schedule_id, list);
@@ -961,8 +983,9 @@ app.post('/api/comments', async (req, res) => {
         return res.status(400).json({ success: false, message: '모든 필드를 입력해야 합니다.' });
     }
     try {
+        const encodedComment = encodeBase64(comment);
         const sql = 'INSERT INTO schedule_comments (schedule_id, member_name, comment) VALUES (?, ?, ?)';
-        const [result] = await pool.query(sql, [schedule_id, member_name, comment]);
+        const [result] = await pool.query(sql, [schedule_id, member_name, encodedComment]);
         const [rows] = await pool.query('SELECT * FROM schedule_comments WHERE id = ?', [result.insertId]);
         const newComment = rows[0];
         // 날짜 포맷 변경
@@ -1404,6 +1427,7 @@ app.get('/api/postponements/:year/:month', async (req, res) => {
         const [posts] = await pool.query(sql, [year, month]);
 
         posts.forEach(p => {
+            p.content = decodeBase64(p.content);
             p.created_at = formatDateTime(p.created_at);
         });
 
@@ -1421,12 +1445,14 @@ app.post('/api/postponements', async (req, res) => {
         return res.status(400).json({ success: false, message: '모든 필드를 입력해야 합니다.' });
     }
     try {
+        const encodedContent = encodeBase64(content);
+
         const insertSql = 'INSERT INTO postpone (year, month, member_name, content) VALUES (?, ?, ?, ?)';
-        const [result] = await pool.query(insertSql, [year, month, memberName, content]);
+        const [result] = await pool.query(insertSql, [year, month, memberName, encodedContent]);
 
         const selectSql = 'SELECT id, member_name, content, created_at FROM postpone WHERE id = ?';
         const [[newPost]] = await pool.query(selectSql, [result.insertId]);
-
+        newPost.content = decodeBase64(newPost.content);
         newPost.created_at = formatDateTime(newPost.created_at);
 
         res.status(201).json({ success: true, post: newPost, message: '유예 신청이 등록되었습니다.' });
@@ -1559,8 +1585,9 @@ app.get('/notice', async (req, res) => {
         `;
         const [notices] = await pool.query(noticeSql);
 
-        // 날짜 포맷팅
         notices.forEach(n => {
+            n.title = decodeBase64(n.title);
+            n.content = decodeBase64(n.content);
             n.created_at = formatDateTime(n.created_at);
         });
 
@@ -1589,9 +1616,12 @@ app.get('/api/notices/:id', async (req, res) => {
             return res.status(404).json({ success: false, message: '게시글을 찾을 수 없습니다.' });
         }
 
-        // 날짜 포맷팅
+        // Base64 디코딩 적용
+        notice.title = decodeBase64(notice.title);
+        notice.content = decodeBase64(notice.content);
         notice.created_at = formatDateTime(notice.created_at);
         comments.forEach(c => {
+            c.comment = decodeBase64(c.comment); // 댓글 내용 디코딩
             c.created_at = formatDateTime(c.created_at);
         });
 
@@ -1611,8 +1641,11 @@ app.post('/api/notices', async (req, res) => {
     }
     try {
         // created_at에 NOW()를 사용하여 현재 시간을 명시적으로 삽입
+        const encodedTitle = encodeBase64(title);
+        const encodedContent = encodeBase64(content);
+
         const sql = 'INSERT INTO notices (title, content, author, created_at) VALUES (?, ?, ?, NOW())';
-        const [result] = await pool.query(sql, [title, content, author]);
+        const [result] = await pool.query(sql, [encodedTitle, encodedContent, author]);
         res.status(201).json({ success: true, message: '공지사항이 등록되었습니다.', insertId: result.insertId });
     } catch (err) {
         console.error('[/api/notices] POST 에러:', err.message);
@@ -1632,8 +1665,11 @@ app.put('/api/notices/:id', async (req, res) => {
         if (!notice) return res.status(404).json({ success: false, message: '수정할 게시글이 없습니다.' });
         if (notice.author !== author) return res.status(403).json({ success: false, message: '본인이 작성한 글만 수정할 수 있습니다.' });
 
+        const encodedTitle = encodeBase64(title);
+        const encodedContent = encodeBase64(content);
+
         const sql = 'UPDATE notices SET title = ?, content = ? WHERE id = ?';
-        await pool.query(sql, [title, content, id]);
+        await pool.query(sql, [encodedTitle, encodedContent, id]);
         res.json({ success: true, message: '공지사항이 수정되었습니다.' });
     } catch (err) {
         console.error(`[/api/notices/:id] PUT 에러:`, err.message);
@@ -1669,8 +1705,9 @@ app.post('/api/notice-comments', async (req, res) => {
         return res.status(400).json({ success: false, message: '필수 정보가 누락되었습니다.' });
     }
     try {
+        const encodedComment = encodeBase64(comment);
         const sql = 'INSERT INTO notice_comments (notice_id, author, comment) VALUES (?, ?, ?)';
-        const [result] = await pool.query(sql, [notice_id, author, comment]);
+        const [result] = await pool.query(sql, [notice_id, author, encodedComment]);
         const [[newComment]] = await pool.query('SELECT * FROM notice_comments WHERE id = ?', [result.insertId]);
         newComment.created_at = formatDateTime(newComment.created_at);
         res.status(201).json({ success: true, comment: newComment });
