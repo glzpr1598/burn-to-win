@@ -829,7 +829,11 @@ app.get('/schedule', async (req, res) => {
 
         const membersPromise = pool.query('SELECT name FROM member WHERE etc = "" ORDER BY name ASC');
         const schedulesPromise = pool.query(
-            `SELECT * FROM schedules WHERE schedule_date BETWEEN ? AND ? ORDER BY schedule_date ASC, start_time ASC, location ASC`,
+            `SELECT s.*, g.group_name 
+             FROM schedules s
+             LEFT JOIN group_list g ON s.group_id = g.id
+             WHERE s.schedule_date BETWEEN ? AND ? 
+             ORDER BY s.schedule_date ASC, s.start_time ASC, s.location ASC`,
             [startDate, endDate]
         );
 
@@ -841,7 +845,11 @@ app.get('/schedule', async (req, res) => {
             // 각 일정의 참석자와 댓글을 병렬로 가져옵니다.
             const attendeesPromise = pool.query(`SELECT schedule_id, member_name FROM schedule_attendees WHERE schedule_id IN (?)`, [scheduleIds]);
             const commentsPromise = pool.query(`SELECT * FROM schedule_comments WHERE schedule_id IN (?) ORDER BY created_at ASC`, [scheduleIds]);
-            const [[attendees], [comments]] = await Promise.all([attendeesPromise, commentsPromise]);
+            const groupMembersPromise = pool.query(`
+                SELECT gm.group_id, m.name 
+                FROM group_member gm 
+                JOIN member m ON gm.member_id = m.id`);
+            const [[attendees], [comments], [allGroupMembers]] = await Promise.all([attendeesPromise, commentsPromise, groupMembersPromise]);
 
             const attendeesMap = new Map();
             attendees.forEach(att => {
@@ -862,10 +870,18 @@ app.get('/schedule', async (req, res) => {
                 commentsMap.set(comment.schedule_id, list);
             });
 
+            const groupMembersMap = new Map();
+            allGroupMembers.forEach(gm => {
+                const list = groupMembersMap.get(gm.group_id) || [];
+                list.push(gm.name);
+                groupMembersMap.set(gm.group_id, list);
+            });
+
             const scheduleData = schedules.map(schedule => ({
                 ...schedule,
                 attendees: attendeesMap.get(schedule.id) || [],
-                comments: commentsMap.get(schedule.id) || []
+                comments: commentsMap.get(schedule.id) || [],
+                allowed_members: schedule.group_id ? (groupMembersMap.get(schedule.group_id) || []) : []
             }));
 
             res.render('schedule', { year, month, members, schedules: scheduleData, currentPage: 'schedule' });
@@ -1163,11 +1179,11 @@ app.post('/admin/delete-match', isAuthenticated, async (req, res) => {
 
 // 일정 등록
 app.post('/admin/add-schedule', isAuthenticated, async (req, res) => {
-    const { schedule_date, start_time, end_time, location, notes, booker, price, maximum } = req.body;
+    const { schedule_date, start_time, end_time, location, notes, booker, price, maximum, group_id } = req.body;
     try {
         const [result] = await pool.query(
-            'INSERT INTO schedules (schedule_date, start_time, end_time, location, notes, booker, price, maximum) VALUES (?, ?, ?, ?, ?, ?, ?, ?)',
-            [schedule_date, start_time, end_time, location, notes, booker || null, price || null, maximum || 6]
+            'INSERT INTO schedules (schedule_date, start_time, end_time, location, notes, booker, price, maximum, group_id) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)',
+            [schedule_date, start_time, end_time, location, notes, booker || null, price || null, maximum || 6, group_id || null]
         );
         res.json({ success: true, message: `일정(ID: ${result.insertId})이 성공적으로 등록되었습니다.` });
     } catch (err) {
@@ -1178,11 +1194,11 @@ app.post('/admin/add-schedule', isAuthenticated, async (req, res) => {
 
 // 일정 수정
 app.post('/admin/update-schedule', isAuthenticated, async (req, res) => {
-    const { id, schedule_date, start_time, end_time, location, notes, booker, price, calculated, maximum } = req.body;
+    const { id, schedule_date, start_time, end_time, location, notes, booker, price, calculated, maximum, group_id } = req.body;
     try {
         const [result] = await pool.query(
-            'UPDATE schedules SET schedule_date = ?, start_time = ?, end_time = ?, location = ?, notes = ?, booker = ?, price = ?, calculated = ?, maximum = ? WHERE id = ?',
-            [schedule_date, start_time, end_time, location, notes, booker || null, price || null, calculated, maximum || 6, id]
+            'UPDATE schedules SET schedule_date = ?, start_time = ?, end_time = ?, location = ?, notes = ?, booker = ?, price = ?, calculated = ?, maximum = ?, group_id = ? WHERE id = ?',
+            [schedule_date, start_time, end_time, location, notes, booker || null, price || null, calculated, maximum || 6, group_id || null, id]
         );
         if (result.affectedRows > 0) {
             res.json({ success: true, message: `일정(ID: ${id})이 성공적으로 수정되었습니다.` });
@@ -1280,6 +1296,97 @@ app.post('/admin/reset-password', isAuthenticated, async (req, res) => {
     }
 });
 
+// [신규] 그룹 관리 API
+app.get('/api/admin/groups', isAuthenticated, async (req, res) => {
+    try {
+        const [groups] = await pool.query('SELECT * FROM group_list ORDER BY group_name ASC');
+        res.json({ success: true, groups });
+    } catch (err) {
+        res.status(500).json({ success: false, message: '그룹 목록 조회 실패' });
+    }
+});
+
+app.post('/api/admin/groups', isAuthenticated, async (req, res) => {
+    const { groupName } = req.body;
+    try {
+        const [result] = await pool.query('INSERT INTO group_list (group_name) VALUES (?)', [groupName]);
+        res.json({ success: true, message: '그룹이 추가되었습니다.', insertId: result.insertId });
+    } catch (err) {
+        if (err.code === 'ER_DUP_ENTRY') {
+            return res.status(400).json({ success: false, message: '이미 존재하는 그룹 이름입니다.' });
+        }
+        res.status(500).json({ success: false, message: '그룹 추가 실패' });
+    }
+});
+
+app.get('/api/admin/groups/:id/members', isAuthenticated, async (req, res) => {
+    try {
+        const [members] = await pool.query(
+            'SELECT m.id, m.name FROM member m JOIN group_member gm ON m.id = gm.member_id WHERE gm.group_id = ? ORDER BY m.name ASC',
+            [req.params.id]
+        );
+        res.json({ success: true, members });
+    } catch (err) {
+        res.status(500).json({ success: false, message: '그룹 멤버 조회 실패' });
+    }
+});
+
+app.post('/api/admin/groups/members', isAuthenticated, async (req, res) => {
+    const { groupId, memberId } = req.body;
+    try {
+        await pool.query('INSERT INTO group_member (group_id, member_id) VALUES (?, ?)', [groupId, memberId]);
+        res.json({ success: true, message: '그룹에 멤버가 추가되었습니다.' });
+    } catch (err) {
+        if (err.code === 'ER_DUP_ENTRY') {
+            return res.status(400).json({ success: false, message: '이미 그룹에 속한 멤버입니다.' });
+        }
+        res.status(500).json({ success: false, message: '멤버 추가 실패' });
+    }
+});
+
+app.post('/api/admin/groups/members/delete', isAuthenticated, async (req, res) => {
+    const { groupId, memberIds } = req.body;
+    if (!memberIds || memberIds.length === 0) {
+        return res.status(400).json({ success: false, message: '삭제할 멤버를 선택하세요.' });
+    }
+    try {
+        const placeholders = memberIds.map(() => '?').join(',');
+        await pool.query(`DELETE FROM group_member WHERE group_id = ? AND member_id IN (${placeholders})`, [groupId, ...memberIds]);
+        res.json({ success: true, message: '선택한 멤버가 그룹에서 삭제되었습니다.' });
+    } catch (err) {
+        res.status(500).json({ success: false, message: '멤버 삭제 실패' });
+    }
+});
+
+app.post('/api/admin/groups/delete', isAuthenticated, async (req, res) => {
+    const { groupId } = req.body;
+    if (!groupId) {
+        return res.status(400).json({ success: false, message: '그룹 ID가 필요합니다.' });
+    }
+
+    let connection;
+    try {
+        connection = await pool.getConnection();
+        await connection.beginTransaction(); // 트랜잭션 시작
+
+        // 1. 그룹에 속한 멤버들을 먼저 삭제합니다.
+        await connection.query('DELETE FROM group_member WHERE group_id = ?', [groupId]);
+
+        // 2. 그룹 자체를 삭제합니다.
+        await connection.query('DELETE FROM group_list WHERE id = ?', [groupId]);
+
+        await connection.commit(); // 트랜잭션 커밋
+
+        res.json({ success: true, message: '그룹이 성공적으로 삭제되었습니다.' });
+    } catch (err) {
+        if (connection) await connection.rollback(); // 오류 발생 시 롤백
+        console.error('그룹 삭제 에러:', err.message);
+        res.status(500).json({ success: false, message: '그룹 삭제 중 오류가 발생했습니다.' });
+    } finally {
+        if (connection) connection.release();
+    }
+});
+
 // API: 모든 일정 가져오기
 app.get('/api/admin/schedules', isAuthenticated, async (req, res) => {
     try {
@@ -1305,7 +1412,7 @@ app.get('/api/admin/matchrecords', isAuthenticated, async (req, res) => {
 // API: 모든 멤버 가져오기
 app.get('/api/admin/members', isAuthenticated, async (req, res) => {
     try {
-        const [members] = await pool.query('SELECT name, gender, etc, `order` FROM member ORDER BY `order` ASC, name ASC');
+        const [members] = await pool.query('SELECT id, name, gender, etc, `order` FROM member ORDER BY `order` ASC, name ASC');
         res.json({ success: true, members });
     } catch (err) {
         console.error('모든 멤버 가져오기 에러:', err.message);

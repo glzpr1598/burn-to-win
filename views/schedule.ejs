@@ -785,6 +785,14 @@
             const isFull = attendees.length >= maxAttendees;
             const isPast = card.classList.contains('past-schedule');
 
+            const scheduleId = card.id.split('-')[1];
+            const schedule = schedulesData.find(s => s.id == scheduleId);
+            let isGroupRestricted = false;
+            if (schedule && schedule.allowed_members && schedule.allowed_members.length > 0) {
+                if (!isAttending && !schedule.allowed_members.includes(selectedUser)) {
+                    isGroupRestricted = true;
+                }
+            }
             // [수정됨] 버튼을 항상 활성화하고, 모든 관련 스타일 클래스를 먼저 제거
             attendBtn.disabled = false;
             attendBtn.classList.remove('btn-primary', 'btn-outline-primary', 'btn-danger', 'btn-outline-danger');
@@ -797,7 +805,11 @@
             } else {
                 attendBtn.textContent = '참석';
                 // 지난 일정이거나 인원이 가득 찼으면 outline, 아니면 일반 버튼
-                attendBtn.classList.add((isPast || isFull) ? 'btn-outline-primary' : 'btn-primary');
+                if (isPast || isFull || isGroupRestricted) {
+                    attendBtn.classList.add('btn-outline-primary');
+                } else {
+                    attendBtn.classList.add('btn-primary');
+                }
             }
 
             attendeeCountSpan.style.color = isFull ? 'red' : '';
@@ -861,6 +873,8 @@
 
             const button = event.target;
             const card = button.closest('.schedule-card');
+            const scheduleId = button.dataset.scheduleId;
+            const schedule = schedulesData.find(s => s.id == scheduleId);
             const isAttending = button.textContent === '취소';
 
             const resetbuttonState = () => {
@@ -878,7 +892,16 @@
                 return;
             }
 
-            // 2. 인원이 가득 찼는지 확인 (참석을 시도할 때만)
+            // 2. 그룹 제한 확인
+            if (schedule && schedule.allowed_members && schedule.allowed_members.length > 0) {
+                if (!isAttending && !schedule.allowed_members.includes(selectedUser)) {
+                    alert(`'${schedule.group_name}' 그룹의 멤버만 참석할 수 있습니다.`);
+                    resetbuttonState();
+                    return;
+                }
+            }
+
+            // 3. 인원이 가득 찼는지 확인 (참석을 시도할 때만)
             const attendees = getAttendees(card.querySelector('.attendees-list'));
             const maxAttendees = parseInt(card.dataset.maximum, 10);
             if (attendees.length >= maxAttendees && !isAttending) {
@@ -886,8 +909,6 @@
                 resetbuttonState();
                 return;
             }
-
-            const scheduleId = button.dataset.scheduleId;
 
             // ✨ 취소할 때만 날짜 확인 로직 실행 (기존 로직 유지)
             if (isAttending) {
