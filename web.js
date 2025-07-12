@@ -1390,7 +1390,12 @@ app.post('/api/admin/groups/delete', isAuthenticated, async (req, res) => {
 // API: 모든 일정 가져오기
 app.get('/api/admin/schedules', isAuthenticated, async (req, res) => {
     try {
-        const [schedules] = await pool.query('SELECT id, schedule_date, start_time, end_time, location, notes, booker, price, calculated, maximum FROM schedules ORDER BY schedule_date DESC, start_time DESC');
+        const [schedules] = await pool.query(`
+            SELECT s.*, g.group_name 
+            FROM schedules s 
+            LEFT JOIN group_list g ON s.group_id = g.id 
+            ORDER BY s.schedule_date DESC, s.start_time DESC
+        `);
         res.json({ success: true, schedules });
     } catch (err) {
         console.error('모든 일정 가져오기 에러:', err.message);
