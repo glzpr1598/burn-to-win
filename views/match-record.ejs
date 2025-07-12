@@ -29,7 +29,7 @@
     
     /* --- 플로팅 버튼 --- */
     .floating-button {
-        position: fixed;
+        position: absolute;
         bottom: 100px; /* 하단 네비게이션 높이를 고려하여 조정 */
         right: 20px;
         font-size: 2rem;
@@ -71,8 +71,12 @@
   <div class="app-container">
     <div class="d-flex align-items-center sticky-header">
       <div class="d-flex align-items-center flex-grow-1">
-        <img src="/image/btw-tran-180x180.png" alt="로고" style="height: 40px; margin-right: 5px;">
-        <h5 style="margin-bottom: 0;"><b>경기 기록</b></h5>
+        <a href="/match-record">
+          <img src="/image/btw-tran-180x180.png" alt="로고" style="height: 40px; margin-right: 5px;">
+        </a>
+        <a href="/match-record" style="color: black; text-decoration: none;">
+          <h5 style="margin-bottom: 0;"><b>경기 기록</b></h5>
+        </a>
       </div>
       <div class="d-flex align-items-center">
         <div id="searchContainer" class="input-group input-group-sm me-2">
