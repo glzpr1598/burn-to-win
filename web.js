@@ -1143,7 +1143,7 @@ app.post('/admin/login', (req, res) => {
         req.session.isAdmin = true;
         res.redirect('/admin/dashboard');
     } else {
-        res.redirect('/admin?message=Invalid Password');
+        res.redirect('/admin?message=비밀번호가 일치하지 않습니다.');
     }
 });
 
