@@ -19,6 +19,8 @@
         #attendanceTable tbody tr { cursor: pointer; }
         #attendanceTable td { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; } /* 셀 내용이 길어질 경우 대비 */
         .sortable-th { cursor: pointer; }
+        .modal-body * { font-size: 0.9rem; }
+        .modal-body .table * { font-size: 0.8rem; }
     </style>
 </head>
 <body>
@@ -101,7 +103,7 @@
       <div class="modal-dialog modal-dialog-centered modal-lg modal-dialog-scrollable">
         <div class="modal-content">
           <div class="modal-header">
-            <h5 class="modal-title" id="modalMemberName"></h5>
+            <h6 class="modal-title" id="modalMemberName" style="font-weight: bolder;"></h6>
             <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
           </div>
           <div class="modal-body" style="font-size: 0.8rem;">
@@ -123,12 +125,11 @@
       </div>
     </div>
 
-
     <div class="modal fade" id="monthSelectModal" tabindex="-1">
       <div class="modal-dialog modal-sm modal-dialog-centered">
         <div class="modal-content">
           <div class="modal-header">
-            <h5 class="modal-title">날짜 선택</h5>
+            <h6 class="modal-title"><b>날짜 선택</b></h6>
             <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
           </div>
           <div class="modal-body d-flex justify-content-center">
@@ -148,7 +149,7 @@
               </div>
           </div>
           <div class="modal-footer">
-            <button type="button" class="btn btn-primary w-100" id="monthSelectConfirm">확인</button>
+            <button type="button" class="btn btn-sm btn-primary w-100" id="monthSelectConfirm">확인</button>
           </div>
         </div>
       </div>
