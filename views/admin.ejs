@@ -485,8 +485,15 @@
                  const listBody = document.getElementById('listModalBody');
                 listBody.innerHTML = '';
                 members.forEach(m => {
-                    const text = `${m.order} | ${m.name} | ${m.gender}`;
+                    // 표시할 텍스트들을 배열에 담습니다.
+                    const parts = [
+                        `${m.order} | ${m.name} | ${m.gender}`,
+                        m.etc
+                    ];
+                    // 배열에서 빈 값(null, undefined, '')을 걸러낸 후 ' | ' 기호로 합칩니다.
+                    const text = parts.filter(Boolean).join(' | ');
                     const highlightedHTML = highlightText(text, keywords);
+
                     listBody.appendChild(createListItem(m, highlightedHTML, modalContext, handleMemberSelection));
                 });
             };
