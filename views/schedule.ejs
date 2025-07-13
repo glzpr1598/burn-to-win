@@ -119,24 +119,20 @@
 		.delete-postpone-btn {
 			color: red;;
 		}
-		#postponeModalTitle {
-			font-size: 1rem;
-			font-weight: bold;
-		}
-		#postponeListContainer {
-			font-size: 0.8rem;
-		}
-        /* 파란색 outline 버튼에 대한 포커스 및 활성 스타일 재정의 */
         .btn-outline-primary:focus, .btn-outline-primary:hover, .btn-outline-primary:active {
             color: #0d6efd; /* 원래 글자색 유지 */
             background-color: transparent; /* 배경색 투명하게 유지 */
-            /* box-shadow 포커스링은 Bootstrap 기본값으로 유지됩니다. */
         }
-        /* 빨간색 outline 버튼에 대한 포커스 및 활성 스타일 재정의 */
         .btn-outline-danger:focus, .btn-outline-danger:hover, .btn-outline-danger:active {
             color: #dc3545; /* 원래 글자색 유지 */
             background-color: transparent; /* 배경색 투명하게 유지 */
         }
+		.modal-body * {
+			font-size: 0.9rem;
+		}
+		.app-container .btn-sm {
+			font-size: 0.8rem;
+		}
 	</style>
 </head>
 
@@ -177,7 +173,7 @@
 					</h6>
 					<a id="nextMonth" href="#"><i class="bi bi-chevron-right fs-6"></i></a>
 				</div>
-				<button class="btn btn-outline-secondary btn-sm py-0 ms-3" data-bs-toggle="modal"
+				<button class="btn btn-outline-danger btn-sm py-0 ms-3" data-bs-toggle="modal"
 					data-bs-target="#postponeModal">유예 신청</button>
 			</div>
 
@@ -310,7 +306,7 @@
 		<div class="modal-dialog modal-dialog-centered">
 			<div class="modal-content">
 				<div class="modal-header">
-					<h5 class="modal-title">사용자 선택</h5><button type="button" class="btn-close"
+					<h6 class="modal-title">사용자 선택</h6><button type="button" class="btn-close"
 						data-bs-dismiss="modal"></button>
 				</div>
 				<div class="modal-body">
@@ -331,7 +327,7 @@
 					</div>
 				</div>
 				<div class="modal-footer">
-					<button type="button" class="btn btn-primary w-100" id="loginBtn">로그인</button>
+					<button type="button" class="btn btn-primary btn-sm w-100" id="loginBtn">로그인</button>
 				</div>
 			</div>
 		</div>
@@ -341,7 +337,7 @@
 		<div class="modal-dialog modal-dialog-centered">
 			<div class="modal-content">
 				<div class="modal-header">
-					<h5 class="modal-title">비밀번호 변경</h5><button type="button" class="btn-close"
+					<h6 class="modal-title">비밀번호 변경</h6><button type="button" class="btn-close"
 						data-bs-dismiss="modal"></button>
 				</div>
 				<div class="modal-body">
@@ -359,7 +355,7 @@
 					</div>
 				</div>
 				<div class="modal-footer">
-					<button type="button" class="btn btn-primary" id="changePasswordBtn">변경하기</button>
+					<button type="button" class="btn btn-sm btn-primary" id="changePasswordBtn">변경하기</button>
 				</div>
 			</div>
 		</div>
@@ -369,7 +365,7 @@
 		<div class="modal-dialog modal-sm modal-dialog-centered">
 			<div class="modal-content">
 				<div class="modal-header">
-					<h5 class="modal-title">날짜 선택</h5>
+					<h6 class="modal-title">날짜 선택</h6>
 					<button type="button" class="btn-close" data-bs-dismiss="modal"></button>
 				</div>
 				<div class="modal-body d-flex justify-content-center">
@@ -389,7 +385,7 @@
 					</div>
 				</div>
 				<div class="modal-footer">
-					<button type="button" class="btn btn-primary w-100" id="monthSelectConfirm">확인</button>
+					<button type="button" class="btn btn-primary btn-sm w-100" id="monthSelectConfirm">확인</button>
 				</div>
 			</div>
 		</div>
@@ -399,7 +395,7 @@
 		<div class="modal-dialog modal-dialog-centered">
 			<div class="modal-content">
 				<div class="modal-header">
-					<h5 class="modal-title">댓글 작성</h5>
+					<h6 class="modal-title">댓글 작성</h6>
 					<button type="button" class="btn-close" data-bs-dismiss="modal"></button>
 				</div>
 				<div class="modal-body">
@@ -407,7 +403,7 @@
 						placeholder="댓글을 입력하세요.(참석 취소, 양도, 게스트 등)"></textarea>
 				</div>
 				<div class="modal-footer">
-					<button type="button" class="btn btn-primary" id="submitCommentBtn">작성</button>
+					<button type="button" class="btn btn-sm btn-primary" id="submitCommentBtn">등록</button>
 				</div>
 			</div>
 		</div>
@@ -418,7 +414,7 @@
 			<div class="modal-content" style="margin-top: 50px;">
 				<form id="matchRecordForm">
 					<div class="modal-header">
-						<h5 class="modal-title">경기 기록 입력</h5>
+						<h6 class="modal-title">경기 기록 입력</h6>
 						<button type="button" class="btn-close" data-bs-dismiss="modal"></button>
 					</div>
 					<div class="modal-body">
@@ -426,7 +422,7 @@
 						<input type="hidden" name="date">
 						<input type="hidden" name="court">
 
-						<div class="border p-3 rounded mb-3">
+						<div class="border p-3 rounded">
 							<div class="row">
 								<div class="col text-center">
 									<label class="form-label small">듀스코트(포)</label>
@@ -477,8 +473,8 @@
 						</div>
 					</div>
 					<div class="modal-footer">
-						<button type="button" class="btn btn-secondary" data-bs-dismiss="modal">취소</button>
-						<button type="button" class="btn btn-primary" id="submitMatchRecordBtn">저장하기</button>
+						<button type="button" class="btn btn-sm btn-secondary" data-bs-dismiss="modal">취소</button>
+						<button type="button" class="btn btn-sm btn-primary" id="submitMatchRecordBtn">저장하기</button>
 					</div>
 				</form>
 			</div>
@@ -489,9 +485,9 @@
 		<div class="modal-dialog modal-dialog-centered modal-dialog-scrollable">
 			<div class="modal-content">
 				<div class="modal-header">
-					<h5 class="modal-title" id="postponeModalTitle">
+					<h6 class="modal-title">
 						<%= year %>년 <%= month %>월 유예 신청
-					</h5>
+					</h6>
 					<button type="button" class="btn-close" data-bs-dismiss="modal"></button>
 				</div>
 				<div class="modal-body">
@@ -506,8 +502,8 @@
 					</div>
 
 					<div class="input-group">
-						<textarea id="postponeContent" class="form-control" style="font-size: 0.8rem;" rows="2" placeholder="유예 사유를 작성하세요."></textarea>
-						<button class="btn btn-primary" type="button" id="submitPostponeBtn" style="font-size: 0.8rem;">작성</button>
+						<textarea id="postponeContent" class="form-control" rows="2" placeholder="유예 사유를 작성하세요."></textarea>
+						<button class="btn btn-primary" type="button" id="submitPostponeBtn" >등록</button>
 					</div>
 				</div>
 			</div>
@@ -1094,7 +1090,7 @@
 
 			const isAuthor = post.member_name === selectedUser;
 			const deleteBtnHTML = isAuthor
-				? `<i class="bi bi-x-lg delete-postpone-btn" data-id="${post.id}" style="cursor: pointer; color: #dc3545;"></i>`
+				? `<i class="bi bi-x-lg delete-postpone-btn" data-id="${post.id}" style="cursor: pointer; color: #dc3545; font-size: 0.8rem;"></i>`
 				: '';
 
 			div.innerHTML = `
@@ -1103,7 +1099,7 @@
 					<div style="word-break: break-word;">${post.content.replace(/\n/g, '<br>')}</div>
 				</div>
 				<div class="text-nowrap ps-3">
-					<span class="text-black-50 me-2" style="font-size: 0.7rem;">${post.created_at}</span>
+					<span class="text-black-50 me-2" style="font-size: 0.8rem;">${post.created_at}</span>
 					${deleteBtnHTML}
 				</div>
 			`;
