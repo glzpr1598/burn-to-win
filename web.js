@@ -1229,13 +1229,15 @@ app.post('/admin/delete-schedule', isAuthenticated, async (req, res) => {
 
 // 멤버 등록
 app.post('/admin/add-member', isAuthenticated, async (req, res) => {
-    const { name, gender, etc, order } = req.body;
+    // birth와 phone을 req.body에서 받아옴
+    const { name, gender, birth, phone, etc, order } = req.body;
     try {
         // 기본 비밀번호 '0000'을 해싱하여 저장
         const hashedPassword = await bcrypt.hash('0000', saltRounds);
+        // INSERT 쿼리에 birth, phone 추가
         const [result] = await pool.query(
-            'INSERT INTO member (name, gender, etc, `order`, password) VALUES (?, ?, ?, ?, ?)',
-            [name, gender, etc || '', order || 0, hashedPassword]
+            'INSERT INTO member (name, gender, birth, phone, etc, `order`, password) VALUES (?, ?, ?, ?, ?, ?, ?)',
+            [name, gender, birth || null, phone || null, etc || '', order || 0, hashedPassword]
         );
         res.json({ success: true, message: `멤버 ${name}이(가) 성공적으로 등록되었습니다.` });
     } catch (err) {
@@ -1246,11 +1248,13 @@ app.post('/admin/add-member', isAuthenticated, async (req, res) => {
 
 // 멤버 수정
 app.post('/admin/update-member', isAuthenticated, async (req, res) => {
-    const { originalName, name, gender, etc, order } = req.body;
+    // birth와 phone을 req.body에서 받아옴
+    const { originalName, name, gender, birth, phone, etc, order } = req.body;
     try {
+        // UPDATE 쿼리에 birth, phone 추가
         const [result] = await pool.query(
-            'UPDATE member SET name = ?, gender = ?, etc = ?, `order` = ? WHERE name = ?',
-            [name, gender, etc || '', order || 0, originalName]
+            'UPDATE member SET name = ?, gender = ?, birth = ?, phone = ?, etc = ?, `order` = ? WHERE name = ?',
+            [name, gender, birth || null, phone || null, etc || '', order || 0, originalName]
         );
         if (result.affectedRows > 0) {
             res.json({ success: true, message: `${name}이(가) 성공적으로 수정되었습니다.` });
@@ -1417,7 +1421,7 @@ app.get('/api/admin/matchrecords', isAuthenticated, async (req, res) => {
 // API: 모든 멤버 가져오기
 app.get('/api/admin/members', isAuthenticated, async (req, res) => {
     try {
-        const [members] = await pool.query('SELECT id, name, gender, etc, `order` FROM member ORDER BY `order` ASC, name ASC');
+        const [members] = await pool.query('SELECT id, name, gender, birth, phone, etc, `order` FROM member ORDER BY `order` ASC, name ASC');
         res.json({ success: true, members });
     } catch (err) {
         console.error('모든 멤버 가져오기 에러:', err.message);
@@ -1429,7 +1433,7 @@ app.get('/api/admin/members', isAuthenticated, async (req, res) => {
 app.get('/api/admin/member/:name', isAuthenticated, async (req, res) => {
     const memberName = req.params.name;
     try {
-        const [member] = await pool.query('SELECT name, gender, etc, `order` FROM member WHERE name = ?', [memberName]);
+        const [member] = await pool.query('SELECT name, gender, birth, phone, etc, `order` FROM member WHERE name = ?', [memberName]);
         if (member.length > 0) {
             res.json({ success: true, member: member[0] });
         } else {

@@ -114,6 +114,8 @@
                             <form id="addMemberForm">
                                 <div class="form-row"><label for="addMemberName">이름</label><input type="text" id="addMemberName" name="name" class="form-control" required></div>
                                 <div class="form-row"><label for="addMemberGender">성별</label><select id="addMemberGender" name="gender" class="form-select"><option value="남">남</option><option value="여">여</option></select></div>
+                                <div class="form-row"><label for="addMemberBirth">생년월일</label><input type="date" id="addMemberBirth" name="birth" class="form-control"></div>
+                                <div class="form-row"><label for="addMemberPhone">연락처</label><input type="tel" id="addMemberPhone" name="phone" class="form-control" placeholder="010-1234-5678"></div>
                                 <div class="form-row"><label for="addMemberOrder">정렬 순서</label><input type="number" id="addMemberOrder" name="order" class="form-control" placeholder="정회원: 0, 게스트: 2" required></div>
                                 <div class="form-row"><label for="addMemberEtc">비고</label><input type="text" id="addMemberEtc" name="etc" class="form-control" placeholder="게스트, 교류전 등"></div>
                                 <button type="submit" class="btn btn-sm btn-primary">멤버 등록</button>
@@ -129,9 +131,11 @@
                         <div class="accordion-body">
                             <button id="selectMemberBtn" class="btn btn-sm btn-secondary mb-3">멤버 선택</button>
                             <form id="updateMemberForm" style="display:none;">
-                                <div class="form-row"><label for="originalMemberName">기존 이름</label><input type="text" id="originalMemberName" name="originalName" class="form-control" readonly></div>
-                                <div class="form-row"><label for="updateMemberName">새 이름</label><input type="text" id="updateMemberName" name="name" class="form-control" required></div>
+                                <div class="form-row"><label for="originalMemberName">이름</label><input type="text" id="originalMemberName" name="originalName" class="form-control" readonly></div>
+                                <div class="form-row" style="display: none;"><label for="updateMemberName">새 이름</label><input type="text" id="updateMemberName" name="name" class="form-control" required></div>
                                 <div class="form-row"><label for="updateMemberGender">성별</label><select id="updateMemberGender" name="gender" class="form-select"><option value="남">남</option><option value="여">여</option></select></div>
+                                <div class="form-row"><label for="updateMemberBirth">생년월일</label><input type="date" id="updateMemberBirth" name="birth" class="form-control"></div>
+                                <div class="form-row"><label for="updateMemberPhone">연락처</label><input type="tel" id="updateMemberPhone" name="phone" class="form-control" placeholder="010-1234-5678"></div>
                                 <div class="form-row"><label for="updateMemberOrder">정렬 순서</label><input type="number" id="updateMemberOrder" name="order" class="form-control" placeholder="정회원: 0, 게스트: 2" required></div>
                                 <div class="form-row"><label for="updateMemberEtc">비고</label><input type="text" id="updateMemberEtc" name="etc" class="form-control" placeholder="게스트, 교류전 등"></div>
                                 <button type="submit" class="btn btn-sm btn-success">멤버 수정</button>
@@ -184,8 +188,7 @@
         <div class="modal-dialog modal-dialog-scrollable">
             <div class="modal-content">
                 <div class="modal-header">
-                    <h6 class="modal-title" id="listModalLabel"></h6><button type="button" class="btn-close"
-                        data-bs-dismiss="modal"></button>
+                    <h6 class="modal-title" id="listModalLabel"></h6><button type="button" class="btn-close" data-bs-dismiss="modal"></button>
                 </div>
                 <div class="modal-body"><input type="text" id="listSearchInput" class="form-control mb-3" placeholder="검색">
                     <ul id="listModalBody" class="list-group"></ul>
@@ -254,12 +257,10 @@
                 setTimeout(() => el.textContent = '', 3000);
             };
 
-            // 텍스트에서 키워드를 찾아 굵게 만드는 함수
             const highlightText = (text, keywords) => {
                 if (!keywords || !keywords.length) {
-                    return text; // 검색어가 없으면 원본 텍스트 반환
+                    return text;
                 }
-                // 정규식을 사용하여 모든 키워드를 대소문자 구분 없이 찾아냅니다.
                 const regex = new RegExp(keywords.join('|'), 'gi');
                 return text.replace(regex, (match) => `<strong>${match}</strong>`);
             };
@@ -292,7 +293,7 @@
             const handleDelete = async (url, body, msgElementId, callback) => {
                  try {
                     const response = await fetch(url, {
-                        method: 'POST', // DELETE 대신 POST 사용
+                        method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
                         body: JSON.stringify(body),
                     });
@@ -301,7 +302,7 @@
                     if (result.success) {
                          if (callback) callback();
                          loadInitialData();
-                     }
+                   }
                 } catch (error) {
                      showMessage(`오류: ${error.message}`, msgElementId, 'red');
                 }
@@ -317,33 +318,32 @@
             };
 
             document.getElementById('listSearchInput').addEventListener('keyup', (e) => {
-                // 공백으로 키워드를 나누고, 빈 문자열은 제거합니다.
                 const keywords = e.target.value.toLowerCase().trim().split(/\s+/).filter(Boolean);
 
                 if (modalContext === 'manageSchedule' || modalContext === 'manageAttendance') {
                     const filtered = allSchedules.filter(s => {
                         const targetText = `${s.schedule_date} | ${s.start_time.slice(0,5)}-${s.end_time.slice(0,5)} | ${s.location} | ${s.notes || ''} | ${s.group_name || ''}`.toLowerCase();
-                        return keywords.every(kw => targetText.includes(kw)); // ✅ OR(some)을 AND(every)로 수정
+                        return keywords.every(kw => targetText.includes(kw));
                     });
-                    displaySchedules(filtered, keywords); // ✅ keywords 전달
+                    displaySchedules(filtered, keywords);
                 } else if (modalContext === 'manageMember' || modalContext === 'addAttendee' || modalContext === 'addGroupMember') {
                     const filtered = allMembers.filter(m => {
                         const targetText = `${m.name} | ${m.gender}`.toLowerCase();
-                        return keywords.every(kw => targetText.includes(kw)); // ✅ OR(some)을 AND(every)로 수정
+                        return keywords.every(kw => targetText.includes(kw));
                     });
-                    displayMembers(filtered, keywords); // ✅ keywords 전달
+                    displayMembers(filtered, keywords);
                 } else if (modalContext === 'manageMatchRecord') {
                     const filtered = allMatchRecords.filter(r => {
                         const targetText = `${r.date} | ${r.court} | ${r.team1_deuce}/${r.team1_ad || ''} vs ${r.team2_deuce}/${r.team2_ad || ''}`.toLowerCase();
-                        return keywords.every(kw => targetText.includes(kw)); // ✅ OR(some)을 AND(every)로 수정
+                        return keywords.every(kw => targetText.includes(kw));
                     });
-                    displayMatchRecords(filtered, keywords); // ✅ keywords 전달
+                    displayMatchRecords(filtered, keywords);
                 } else if (modalContext === 'manageGroup') {
                     const filtered = allGroups.filter(g => {
                         const targetText = g.group_name.toLowerCase();
-                        return keywords.every(kw => targetText.includes(kw)); // ✅ OR(some)을 AND(every)로 수정
+                        return keywords.every(kw => targetText.includes(kw));
                     });
-                    displayGroups(filtered, keywords); // ✅ keywords 전달
+                    displayGroups(filtered, keywords);
                 }
             });
 
@@ -379,7 +379,7 @@
             document.getElementById('resetPasswordBtn').addEventListener('click', () => {
                  const name = document.getElementById('originalMemberName').value;
                 if(confirm(`${name}의 비밀번호를 0000으로 초기화하시겠습니까?`)) {
-                     handleFormSubmit('/admin/reset-password', 'manageMemberMessage', null, { name: name })();
+                      handleFormSubmit('/admin/reset-password', 'manageMemberMessage', null, { name: name })();
                 }
             });
             
@@ -398,13 +398,13 @@
             // 경기 기록
             document.getElementById('selectMatchRecordBtn').addEventListener('click', () => openModal('경기 기록 선택', allMatchRecords, displayMatchRecords, 'manageMatchRecord'));
             document.getElementById('deleteMatchRecordBtn').addEventListener('click', () => {
-                 const id = document.getElementById('deleteMatchRecordBtn').dataset.matchId;
-                 if(confirm(`경기 기록(ID: ${id})을 삭제하시겠습니까?`)) {
+                const id = document.getElementById('deleteMatchRecordBtn').dataset.matchId;
+                if(confirm(`경기 기록(ID: ${id})을 삭제하시겠습니까?`)) {
                     handleDelete('/admin/delete-match', { matchId: id }, 'deleteMatchRecordMessage', () => {
                         document.getElementById('selectedMatchRecordInfo').style.display = 'none';
                         document.getElementById('deleteMatchRecordBtn').style.display = 'none';
                     });
-                 }
+                }
             });
             
             // 그룹
@@ -417,7 +417,6 @@
             });
             document.getElementById('selectGroupBtn').addEventListener('click', () => openModal('그룹 선택', allGroups, displayGroups, 'manageGroup'));
             document.getElementById('addGroupMemberBtn').addEventListener('click', () => {
-                // ✅ 먼저 관리할 그룹이 선택되었는지 확인합니다.
                 if (!currentGroupId) {
                     showMessage('먼저 관리할 그룹을 선택해주세요.', 'manageGroupMessage', 'red');
                     return;
@@ -441,7 +440,6 @@
                 const groupName = document.getElementById('selectedGroupName').textContent;
                 if (confirm(`'${groupName}' 그룹을 정말로 삭제하시겠습니까?\n그룹에 속한 모든 멤버 정보도 함께 삭제됩니다.`)) {
                     handleDelete('/api/admin/groups/delete', { groupId: currentGroupId }, 'manageGroupMessage', () => {
-                        // 삭제 성공 시 UI 초기화
                         document.getElementById('groupInfoContainer').style.display = 'none';
                         currentGroupId = null;
                     });
@@ -452,10 +450,7 @@
             const createListItem = (item, text, context, handler) => {
                 const li = document.createElement('li');
                 li.className = 'list-group-item list-group-item-action';
-                
-                // [수정] textContent를 innerHTML로 변경
                 li.innerHTML = text; 
-
                 li.addEventListener('click', () => {
                     handler(item);
                     listModal.hide();
@@ -467,17 +462,14 @@
                 const listBody = document.getElementById('listModalBody');
                 listBody.innerHTML = '';
                 schedules.forEach(s => {
-                    // 표시할 텍스트들을 배열에 담습니다.
                     const parts = [
                         `${s.schedule_date} | ${s.start_time.slice(0, 5)}-${s.end_time.slice(0, 5)}`,
                         s.location,
                         s.notes,
                         s.group_name
                     ];
-                    // 배열에서 빈 값(null, undefined, '')을 걸러낸 후 ' | ' 기호로 합칩니다.
                     const text = parts.filter(Boolean).join(' | ');
                     const highlightedHTML = highlightText(text, keywords);
-
                     listBody.appendChild(createListItem(s, highlightedHTML, modalContext, handleScheduleSelection));
                 });
             };
@@ -486,15 +478,12 @@
                  const listBody = document.getElementById('listModalBody');
                 listBody.innerHTML = '';
                 members.forEach(m => {
-                    // 표시할 텍스트들을 배열에 담습니다.
                     const parts = [
                         `${m.order} | ${m.name} | ${m.gender}`,
                         m.etc
                     ];
-                    // 배열에서 빈 값(null, undefined, '')을 걸러낸 후 ' | ' 기호로 합칩니다.
                     const text = parts.filter(Boolean).join(' | ');
                     const highlightedHTML = highlightText(text, keywords);
-
                     listBody.appendChild(createListItem(m, highlightedHTML, modalContext, handleMemberSelection));
                 });
             };
@@ -538,7 +527,7 @@
                 } catch (error) { showMessage('참석자 로딩 오류', 'manageAttendanceMessage', 'red'); }
             };
             
-             const fetchAndDisplayGroupMembers = async (groupId) => {
+              const fetchAndDisplayGroupMembers = async (groupId) => {
                 currentGroupId = groupId;
                 try {
                     const response = await fetch(`/api/admin/groups/${groupId}/members`);
@@ -579,6 +568,9 @@
                     document.getElementById('originalMemberName').value = member.name;
                     document.getElementById('updateMemberName').value = member.name;
                     document.getElementById('updateMemberGender').value = member.gender;
+                    // [수정] birth와 phone 필드 값 설정
+                    document.getElementById('updateMemberBirth').value = member.birth || '';
+                    document.getElementById('updateMemberPhone').value = member.phone || '';
                     document.getElementById('updateMemberEtc').value = member.etc || '';
                     document.getElementById('updateMemberOrder').value = member.order;
                 } else if (modalContext === 'addAttendee') {
