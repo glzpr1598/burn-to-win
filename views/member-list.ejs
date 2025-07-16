@@ -71,7 +71,11 @@
                     <% if (memberList && memberList.length > 0) { %>
                         <% memberList.forEach(member => { %>
                             <tr id="member-row-<%= member.id %>">
-                                <td><%= member.name %></td>
+                                <td>
+                                    <span style="--bg: <%= member.gender === '남' ? '#ddffff' : (member.gender === '여' ? '#ffffdd' : 'transparent') %>; background-color: var(--bg);">
+                                        <%= member.name %>
+                                    </span>
+                                </td>
                                 <td data-field="gender"><%= member.gender || '-' %></td>
                                 <td data-field="birth"><%= member.birth || '-' %></td>
                                 <td data-field="phone"><%= member.phone || '-' %></td>

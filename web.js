@@ -360,11 +360,18 @@ app.post('/matches', async (req, res) => {
 // 개인 스코어 페이지
 app.get('/my-score', async (req, res) => {
     try {
-        const membersPromise = pool.query('SELECT name FROM member WHERE etc = "" ORDER BY name ASC');
+        // ✨ 수정: 회원의 이름과 성별을 함께 조회하도록 변경
+        const membersPromise = pool.query('SELECT name, gender FROM member WHERE etc = "" ORDER BY name ASC');
         const matchesPromise = pool.query('SELECT * FROM matchrecord WHERE team1_result IS NOT NULL');
         const courtsPromise = pool.query("SELECT DISTINCT court AS name FROM matchrecord WHERE court IS NOT NULL AND court != '' ORDER BY name ASC");
 
         const [[members], [allMatches], [courts]] = await Promise.all([membersPromise, matchesPromise, courtsPromise]);
+
+        // ✨ 추가: 이름으로 성별을 쉽게 찾기 위한 genderMap 객체 생성
+        const genderMap = members.reduce((acc, member) => {
+            acc[member.name] = member.gender;
+            return acc;
+        }, {});
 
         let { period = '6m', types = '남단,여단,남복,여복,혼복', courts: courtFilter } = req.query;
 
@@ -434,7 +441,8 @@ app.get('/my-score', async (req, res) => {
 
         scores.sort((a, b) => b.matches - a.matches);
 
-        res.render('my-score', { scores, courts, currentPage: 'my-score' });
+        // ✨ 수정: 렌더링 시 genderMap을 함께 전달
+        res.render('my-score', { scores, courts, genderMap, currentPage: 'my-score' });
 
     } catch (err) {
         console.error('[/my-score] 에러:', err.message);
@@ -448,10 +456,8 @@ app.get('/api/matches/player/:name', async (req, res) => {
         const { name } = req.params;
         let { period, types, courts: courtFilter } = req.query;
 
-        // 1. 모든 경기 기록 가져오기
         const [allMatches] = await pool.query('SELECT * FROM matchrecord WHERE team1_result IS NOT NULL ORDER BY date DESC, id DESC');
 
-        // 2. 기간, 분류, 코트 필터 적용
         let filteredMatches = applyPeriodFilter(allMatches, period);
         if (types && types !== '전체') {
             filteredMatches = filteredMatches.filter(m => types.split(',').includes(m.type));
@@ -460,12 +466,33 @@ app.get('/api/matches/player/:name', async (req, res) => {
             filteredMatches = filteredMatches.filter(m => courtFilter.split(',').includes(m.court));
         }
 
-        // 3. 특정 선수가 참여한 경기만 최종 필터링
         const playerMatches = filteredMatches.filter(match => {
             return [match.team1_deuce, match.team1_ad, match.team2_deuce, match.team2_ad].includes(name);
         });
         
-        res.json(playerMatches);
+        // ✨ 추가: 경기 참여 선수들의 성별 정보 가져오기
+        const playerNames = new Set();
+        playerMatches.forEach(m => {
+            if (m.team1_deuce) playerNames.add(m.team1_deuce);
+            if (m.team1_ad) playerNames.add(m.team1_ad);
+            if (m.team2_deuce) playerNames.add(m.team2_deuce);
+            if (m.team2_ad) playerNames.add(m.team2_ad);
+        });
+
+        let genderMap = {};
+        if (playerNames.size > 0) {
+            const [genderRows] = await pool.query(
+                `SELECT name, gender FROM member WHERE name IN (?)`,
+                [[...playerNames]]
+            );
+            genderMap = genderRows.reduce((acc, member) => {
+                acc[member.name] = member.gender;
+                return acc;
+            }, {});
+        }
+
+        // ✨ 수정: 경기 기록과 성별 맵을 함께 전송
+        res.json({ matches: playerMatches, genderMap });
 
     } catch (err) {
         console.error(`[/api/matches/player/${req.params.name}] 에러:`, err.message);
@@ -476,7 +503,8 @@ app.get('/api/matches/player/:name', async (req, res) => {
 // 상대와 케미 페이지
 app.get('/chemistry', async (req, res) => {
     try {
-        const membersPromise = pool.query('SELECT name FROM member WHERE etc = "" ORDER BY name ASC');
+        // ✨ 수정: 회원의 이름과 성별을 함께 조회
+        const membersPromise = pool.query('SELECT name, gender FROM member WHERE etc = "" ORDER BY name ASC');
         const matchesPromise = pool.query('SELECT * FROM matchrecord WHERE team1_result IS NOT NULL');
         const courtsPromise = pool.query("SELECT DISTINCT court AS name FROM matchrecord WHERE court IS NOT NULL AND court != '' ORDER BY name ASC");
 
@@ -502,9 +530,10 @@ app.get('/chemistry', async (req, res) => {
             chemistryData = members
                 .filter(member => member.name !== player)
                 .map(compareMember => {
-                    // [수정] 승/무/패를 모두 기록하도록 필드 확장
                     const stats = {
+                        // ✨ 수정: 비교 대상의 이름과 성별을 함께 저장
                         name: compareMember.name,
+                        gender: compareMember.gender,
                         sameTeamMatches: 0, sameTeamWins: 0, sameTeamDraws: 0, sameTeamLosses: 0,
                         opponentMatches: 0, opponentWins: 0, opponentDraws: 0, opponentLosses: 0
                     };
@@ -517,7 +546,6 @@ app.get('/chemistry', async (req, res) => {
                         const isCompareOnTeam1 = team1.includes(compareMember.name);
                         const isCompareOnTeam2 = team2.includes(compareMember.name);
 
-                        // 같은 팀일 때
                         if ((isBaseOnTeam1 && isCompareOnTeam1) || (isBaseOnTeam2 && isCompareOnTeam2)) {
                             stats.sameTeamMatches++;
                             const result = isBaseOnTeam1 ? match.team1_result : match.team2_result;
@@ -525,7 +553,6 @@ app.get('/chemistry', async (req, res) => {
                             else if (result === '패') stats.sameTeamLosses++;
                             else if (result === '무') stats.sameTeamDraws++;
                         }
-                        // 상대 팀일 때 (기준 플레이어 입장에서의 승/무/패)
                         else if ((isBaseOnTeam1 && isCompareOnTeam2) || (isBaseOnTeam2 && isCompareOnTeam1)) {
                             stats.opponentMatches++;
                             const result = isBaseOnTeam1 ? match.team1_result : match.team2_result;
@@ -542,14 +569,13 @@ app.get('/chemistry', async (req, res) => {
         const finalChemistryData = chemistryData.map(stats => {
             const sameTeamWinRate = safeRate(stats.sameTeamWins, stats.sameTeamMatches);
             const opponentWinRate = safeRate(stats.opponentWins, stats.opponentMatches);
-            // [추가] 승률 차이 계산
             const winRateDiff = sameTeamWinRate - opponentWinRate;
 
             return {
                 ...stats,
                 sameTeamWinRate,
                 opponentWinRate,
-                winRateDiff // 템플릿으로 전달할 객체에 추가
+                winRateDiff
             };
         }).sort((a, b) => b.sameTeamMatches - a.sameTeamMatches);
 
@@ -572,16 +598,23 @@ app.get('/chemistry-score', async (req, res) => {
     try {
         // 1. 필요한 모든 데이터를 병렬로 가져옵니다.
         const matchesPromise = pool.query(`
-            SELECT * FROM matchrecord 
-            WHERE team1_result IS NOT NULL 
-              AND team1_ad IS NOT NULL AND team1_ad != ''
-              AND team2_ad IS NOT NULL AND team2_ad != ''
+            SELECT * FROM matchrecord
+            WHERE team1_result IS NOT NULL
+                AND team1_ad IS NOT NULL AND team1_ad != ''
+                AND team2_ad IS NOT NULL AND team2_ad != ''
         `);
         const courtsPromise = pool.query("SELECT DISTINCT court AS name FROM matchrecord WHERE court IS NOT NULL AND court != '' ORDER BY name ASC");
-        // ✨ 정회원(order=0) 명단을 가져오는 쿼리 추가
-        const membersPromise = pool.query("SELECT name FROM member WHERE `order` = 0");
+        // ✨ 모든 회원의 이름과 성별 정보를 가져오는 쿼리로 변경
+        const allMembersPromise = pool.query("SELECT name, gender FROM member");
+        const regularMembersPromise = pool.query("SELECT name FROM member WHERE `order` = 0");
 
-        const [[allMatches], [courts], [regularMembers]] = await Promise.all([matchesPromise, courtsPromise, membersPromise]);
+        const [[allMatches], [courts], [allMembers], [regularMembers]] = await Promise.all([matchesPromise, courtsPromise, allMembersPromise, regularMembersPromise]);
+
+        // ✨ 모든 회원의 성별 정보를 담은 Map 생성
+        const genderMap = allMembers.reduce((acc, member) => {
+            acc[member.name] = member.gender;
+            return acc;
+        }, {});
 
         // 정회원 이름을 Set으로 만들어 빠른 조회를 가능하게 함
         const regularMemberSet = new Set(regularMembers.map(m => m.name));
@@ -603,9 +636,8 @@ app.get('/chemistry-score', async (req, res) => {
             const team2Players = [match.team2_deuce, match.team2_ad];
 
             const processPair = (players, result) => {
-                // ✨ 페어의 모든 멤버가 정회원인지 확인
                 const isRegularPair = players.every(p => regularMemberSet.has(p));
-                if (!isRegularPair) return; // 정회원 페어가 아니면 건너뜀
+                if (!isRegularPair) return;
 
                 const pairKey = players.sort().join('/');
                 if (!pairStats[pairKey]) {
@@ -624,7 +656,21 @@ app.get('/chemistry-score', async (req, res) => {
         const pairData = Object.keys(pairStats).map(key => {
             const stats = pairStats[key];
             const winRate = stats.matches > 0 ? Math.round((stats.wins / stats.matches) * 100) : 0;
-            return { pair: key, matches: stats.matches, wins: stats.wins, losses: stats.losses, winRate };
+            const [player1, player2] = key.split('/');
+
+            return {
+                // ✨ 기존 키(예: "김철수/박영희")는 data 속성용으로 유지
+                pairKey: key,
+                // ✨ 템플릿에서 사용할 선수 정보와 성별을 구조화하여 추가
+                players: [
+                    { name: player1, gender: genderMap[player1] },
+                    { name: player2, gender: genderMap[player2] }
+                ],
+                matches: stats.matches,
+                wins: stats.wins,
+                losses: stats.losses,
+                winRate
+            };
         });
 
         res.render('chemistry-score', { pairData, courts, currentPage: 'chemistry-score' });
@@ -635,20 +681,17 @@ app.get('/chemistry-score', async (req, res) => {
     }
 });
 
-// ✨ API: 특정 페어의 경기 기록 조회 (추가)
+// API: 특정 페어의 경기 기록 조회
 app.get('/api/matches/pair', async (req, res) => {
     try {
-        // 1. 요청으로부터 필터 조건과 페어 정보 가져오기
         let { pair, period, types, courts: courtFilter } = req.query;
         if (!pair) {
             return res.status(400).json({ message: '페어 정보가 필요합니다.' });
         }
         const [player1, player2] = pair.split('/');
 
-        // 2. 전체 경기 기록 가져오기
         const [allMatches] = await pool.query('SELECT * FROM matchrecord WHERE team1_result IS NOT NULL');
 
-        // 3. 기간, 분류, 코트 필터 적용
         let filteredMatches = applyPeriodFilter(allMatches, period);
         if (types) {
             filteredMatches = filteredMatches.filter(m => types.split(',').includes(m.type));
@@ -657,20 +700,37 @@ app.get('/api/matches/pair', async (req, res) => {
             filteredMatches = filteredMatches.filter(m => courtFilter.split(',').includes(m.court));
         }
 
-        // 4. 해당 페어가 '같은 팀'으로 뛴 경기만 필터링
         const pairMatches = filteredMatches.filter(match => {
             const team1 = [match.team1_deuce, match.team1_ad];
             const team2 = [match.team2_deuce, match.team2_ad];
-            const isTeam1 = team1.includes(player1) && team1.includes(player2);
-            const isTeam2 = team2.includes(player1) && team2.includes(player2);
-            return isTeam1 || isTeam2;
+            return (team1.includes(player1) && team1.includes(player2)) || (team2.includes(player1) && team2.includes(player2));
         });
 
-        // 5. 최신순으로 정렬
         pairMatches.sort((a, b) => new Date(b.date) - new Date(a.date) || b.id - a.id);
 
-        // 6. 결과 전송
-        res.json(pairMatches);
+        // ✨ 추가: 경기 참여 선수들의 성별 정보 가져오기
+        const playerNames = new Set();
+        pairMatches.forEach(m => {
+            if (m.team1_deuce) playerNames.add(m.team1_deuce);
+            if (m.team1_ad) playerNames.add(m.team1_ad);
+            if (m.team2_deuce) playerNames.add(m.team2_deuce);
+            if (m.team2_ad) playerNames.add(m.team2_ad);
+        });
+
+        let genderMap = {};
+        if (playerNames.size > 0) {
+            const [genderRows] = await pool.query(
+                `SELECT name, gender FROM member WHERE name IN (?)`,
+                [[...playerNames]]
+            );
+            genderMap = genderRows.reduce((acc, member) => {
+                acc[member.name] = member.gender;
+                return acc;
+            }, {});
+        }
+
+        // ✨ 수정: 경기 기록과 성별 맵을 함께 전송
+        res.json({ matches: pairMatches, genderMap });
 
     } catch (err) {
         console.error('[/api/matches/pair] 에러:', err.message);
@@ -678,19 +738,16 @@ app.get('/api/matches/pair', async (req, res) => {
     }
 });
 
-// ✨ [추가] API: 케미 분석용 경기 기록 조회
+// API: 케미 분석용 경기 기록 조회
 app.get('/api/matches/chemistry', async (req, res) => {
     try {
-        // 1. 요청에서 플레이어 및 필터 정보 가져오기
         let { player1, player2, period, types, courts: courtFilter } = req.query;
         if (!player1 || !player2) {
             return res.status(400).json({ message: '두 명의 플레이어 정보가 필요합니다.' });
         }
 
-        // 2. 전체 경기 기록 가져오기
         const [allMatches] = await pool.query('SELECT * FROM matchrecord WHERE team1_result IS NOT NULL');
         
-        // 3. 기간, 분류, 코트 필터 적용
         let filteredMatches = applyPeriodFilter(allMatches, period);
         if (types) {
             filteredMatches = filteredMatches.filter(m => types.split(',').includes(m.type));
@@ -699,17 +756,36 @@ app.get('/api/matches/chemistry', async (req, res) => {
             filteredMatches = filteredMatches.filter(m => courtFilter.split(',').includes(m.court));
         }
 
-        // 4. 두 플레이어가 모두 참여한 경기만 필터링
         const chemistryMatches = filteredMatches.filter(match => {
             const playersInMatch = [match.team1_deuce, match.team1_ad, match.team2_deuce, match.team2_ad].filter(p => p);
             return playersInMatch.includes(player1) && playersInMatch.includes(player2);
         });
         
-        // 5. 최신순으로 정렬
         chemistryMatches.sort((a, b) => new Date(b.date) - new Date(a.date) || b.id - a.id);
+        
+        // ✨ 추가: 경기 참여 선수들의 성별 정보 가져오기
+        const playerNames = new Set();
+        chemistryMatches.forEach(m => {
+            if (m.team1_deuce) playerNames.add(m.team1_deuce);
+            if (m.team1_ad) playerNames.add(m.team1_ad);
+            if (m.team2_deuce) playerNames.add(m.team2_deuce);
+            if (m.team2_ad) playerNames.add(m.team2_ad);
+        });
 
-        // 6. 결과 전송
-        res.json(chemistryMatches);
+        let genderMap = {};
+        if (playerNames.size > 0) {
+            const [genderRows] = await pool.query(
+                `SELECT name, gender FROM member WHERE name IN (?)`,
+                [[...playerNames]]
+            );
+            genderMap = genderRows.reduce((acc, member) => {
+                acc[member.name] = member.gender;
+                return acc;
+            }, {});
+        }
+
+        // ✨ 수정: 경기 기록과 성별 맵을 함께 전송
+        res.json({ matches: chemistryMatches, genderMap });
 
     } catch (err) {
         console.error('[/api/matches/chemistry] 에러:', err.message);
@@ -727,19 +803,19 @@ app.get('/attendance', async (req, res) => {
         const lastDayOfMonth = new Date(year, month, 0).getDate();
         const endDate = `${year}-${String(month).padStart(2, '0')}-${String(lastDayOfMonth).padStart(2, '0')}`;
 
-        // 1. 정회원 목록과 해당 월의 '일정 참석' 기록을 가져옵니다.
-        const membersPromise = pool.query('SELECT name FROM member WHERE `order` = 0 ORDER BY name ASC');
+        // ✨ 수정: 정회원 목록 조회 시 성별(gender) 정보도 함께 가져옵니다.
+        const membersPromise = pool.query('SELECT name, gender FROM member WHERE `order` = 0 ORDER BY name ASC');
         const attendanceRecordsPromise = pool.query(
             `SELECT sa.member_name, s.schedule_date
-             FROM schedule_attendees sa
-             JOIN schedules s ON sa.schedule_id = s.id
-             WHERE s.schedule_date BETWEEN ? AND ?`,
+            FROM schedule_attendees sa
+            JOIN schedules s ON sa.schedule_id = s.id
+            WHERE s.schedule_date BETWEEN ? AND ?`,
             [startDate, endDate]
         );
 
         const [[members], [records]] = await Promise.all([membersPromise, attendanceRecordsPromise]);
 
-        // 2. 회원별로 출석일 데이터를 가공합니다.
+        // 회원별로 출석일 데이터를 가공합니다.
         const attendanceByMember = new Map();
         records.forEach(record => {
             const day = new Date(record.schedule_date).getDate();
@@ -749,17 +825,18 @@ app.get('/attendance', async (req, res) => {
             attendanceByMember.get(record.member_name).add(day);
         });
 
-        // 3. 최종 데이터를 생성합니다.
+        // ✨ 수정: 최종 데이터 생성 시 성별 정보도 함께 포함시킵니다.
         const attendanceData = members.map(member => {
             const attendedDates = attendanceByMember.get(member.name) || new Set();
             return {
                 name: member.name,
+                gender: member.gender, // 성별 정보 추가
                 attendanceCount: attendedDates.size,
                 attendedDays: Array.from(attendedDates).sort((a, b) => a - b).join(', ')
             };
         });
 
-        // 4. EJS 템플릿을 렌더링합니다.
+        // EJS 템플릿을 렌더링합니다.
         res.render('attendance', {
             year,
             month,
@@ -841,27 +918,38 @@ app.get('/schedule', async (req, res) => {
         const startDate = `${year}-${String(month).padStart(2, '0')}-01`;
         const endDate = new Date(year, month, 0).toLocaleDateString('en-CA');
 
-        const membersPromise = pool.query('SELECT name FROM member WHERE etc = "" ORDER BY name ASC');
+        // ✨ 수정: membersPromise를 두 개로 분리
+        // 1. 로그인 드롭다운용 (기존 유지)
+        const membersForDropdownPromise = pool.query('SELECT name FROM member WHERE etc = "" ORDER BY name ASC');
+        // 2. 성별 배경색 적용을 위한 전체 회원 정보
+        const allMembersForGenderPromise = pool.query('SELECT name, gender FROM member');
+
         const schedulesPromise = pool.query(
-            `SELECT s.*, g.group_name 
-             FROM schedules s
-             LEFT JOIN group_list g ON s.group_id = g.id
-             WHERE s.schedule_date BETWEEN ? AND ? 
-             ORDER BY s.schedule_date ASC, s.start_time ASC, s.location ASC`,
+            `SELECT s.*, g.group_name
+            FROM schedules s
+            LEFT JOIN group_list g ON s.group_id = g.id
+            WHERE s.schedule_date BETWEEN ? AND ?
+            ORDER BY s.schedule_date ASC, s.start_time ASC, s.location ASC`,
             [startDate, endDate]
         );
 
-        const [[members], [schedules]] = await Promise.all([membersPromise, schedulesPromise]);
+        // ✨ 수정: Promise.all에 새로 추가한 쿼리 반영
+        const [[membersForDropdown], [allMembers], [schedules]] = await Promise.all([membersForDropdownPromise, allMembersForGenderPromise, schedulesPromise]);
+
+        // ✨ 추가: 이름으로 성별을 찾기 위한 genderMap 생성
+        const genderMap = allMembers.reduce((acc, member) => {
+            acc[member.name] = member.gender;
+            return acc;
+        }, {});
 
         if (schedules.length > 0) {
             const scheduleIds = schedules.map(s => s.id);
 
-            // 각 일정의 참석자와 댓글을 병렬로 가져옵니다.
             const attendeesPromise = pool.query(`SELECT schedule_id, member_name FROM schedule_attendees WHERE schedule_id IN (?)`, [scheduleIds]);
             const commentsPromise = pool.query(`SELECT * FROM schedule_comments WHERE schedule_id IN (?) ORDER BY created_at ASC`, [scheduleIds]);
             const groupMembersPromise = pool.query(`
-                SELECT gm.group_id, m.name 
-                FROM group_member gm 
+                SELECT gm.group_id, m.name
+                FROM group_member gm
                 JOIN member m ON gm.member_id = m.id`);
             const [[attendees], [comments], [allGroupMembers]] = await Promise.all([attendeesPromise, commentsPromise, groupMembersPromise]);
 
@@ -875,11 +963,8 @@ app.get('/schedule', async (req, res) => {
             const commentsMap = new Map();
             comments.forEach(comment => {
                 const list = commentsMap.get(comment.schedule_id) || [];
-
-                // 날짜 포맷 변경 (YYYY-MM-DD HH:mm)
                 comment.created_at = formatDateTime(comment.created_at);
                 comment.comment = decodeBase64(comment.comment);
-
                 list.push(comment);
                 commentsMap.set(comment.schedule_id, list);
             });
@@ -895,13 +980,15 @@ app.get('/schedule', async (req, res) => {
                 ...schedule,
                 attendees: attendeesMap.get(schedule.id) || [],
                 comments: commentsMap.get(schedule.id) || [],
-                allowed_members: schedule.group_id ? (groupMembersMap.get(schedule.group_id) || []) : []
+                allowed_members: schedule.group_id ? (groupMembersMap.get(schedule.id) || []) : []
             }));
 
-            res.render('schedule', { year, month, members, schedules: scheduleData, currentPage: 'schedule' });
+            // ✨ 수정: 렌더링 시 genderMap과 올바른 members 목록 전달
+            res.render('schedule', { year, month, members: membersForDropdown, schedules: scheduleData, genderMap, currentPage: 'schedule' });
 
         } else {
-            res.render('schedule', { year, month, members, schedules: [], currentPage: 'schedule' });
+            // ✨ 수정: 일정이 없을 때도 genderMap과 members 전달
+            res.render('schedule', { year, month, members: membersForDropdown, schedules: [], genderMap, currentPage: 'schedule' });
         }
 
     } catch (err) {

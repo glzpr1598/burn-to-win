@@ -44,6 +44,8 @@
         .modal-body .table * {
             font-size: 0.8rem;
         }
+        .group-a-bg td { background-color: #ffffff; }
+        .group-b-bg td { background-color: #f2f2f2; }
     </style>
 </head>
 <body>
@@ -51,7 +53,7 @@
         <div class="modal-dialog modal-dialog-centered modal-lg">
             <div class="modal-content">
                 <div class="modal-header">
-                    <h6 class="modal-title" id="matchDetailModalLabel" style="font-weight: bold;">경기 기록</h6>
+                    <h6 class="modal-title" id="matchDetailModalLabel">경기 기록</h6>
                     <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                 </div>
                 <div class="modal-body" id="matchDetailModalBody" style="padding: 0;">
@@ -140,22 +142,31 @@
                 </thead>
                 <tbody id="scoreTbody">
                     <% if (pairData && pairData.length > 0) { %>
-                         <% pairData.forEach(item => { %>
-                            <tr data-pair="<%= item.pair %>" style="cursor: pointer;" onclick="showMatchDetails(this)">
-                                <td><%= item.pair %></td>
+                        <% pairData.forEach(item => { %>
+                            <tr data-pair="<%= item.pairKey %>" style="cursor: pointer;" onclick="showMatchDetails(this)">
+                                <td>
+                                    <% item.players.forEach((player, index) => { %>
+                                        <% const color = player.gender === '남' ? '#ddffff' : (player.gender === '여' ? '#ffffdd' : 'inherit'); %>
+                                        <span style="--bg: <%= color %>; background-color: var(--bg);"><%= player.name %></span>
+                                        <% if (index === 0) { %> 
+                                            <span> </span>
+                                        <% } %>
+                                    <% }) %>
+                                </td>
                                 <td><%= item.matches %></td>
                                 <td><%= item.wins %></td>
                                 <td><%= item.losses %></td>
-                                 <% if (item.winRate > 50) { %>
+                                <% if (item.winRate > 50) { %>
                                     <td><strong><%= item.winRate %>%</strong></td>
                                 <% } else { %>
                                     <td><%= item.winRate %>%</td>
                                 <% } %>
-                                <td><i class="bi bi-chevron-right text-muted"></i></td> </tr>
+                                <td><i class="bi bi-chevron-right text-muted"></i></td>
+                            </tr>
                         <% }) %>
                     <% } else { %>
                         <tr><td colspan="6" class="text-center p-5">표시할 데이터가 없습니다.<br><small>필터 조건을 변경하거나 경기 기록을 추가해주세요.</small></td></tr>
-                     <% } %>
+                    <% } %>
                 </tbody>
             </table>
         </div>
@@ -239,20 +250,31 @@
             const keywords = searchText.split(' ').filter(k => k);
             const tbody = document.getElementById('scoreTbody');
             tbody.innerHTML = '';
+
+            // 'sortedRows'는 EJS에 의해 렌더링된, 스타일이 적용된 원본 TR 요소들의 배열입니다.
             sortedRows.forEach(row => {
+                // 검색어 매칭은 기존처럼 스타일이 제거된 순수 텍스트로 진행합니다.
                 const pairText = row.querySelector('td:first-child').innerText.toLowerCase();
                 const isMatch = keywords.every(keyword => pairText.includes(keyword));
 
-                if (isMatch || keywords.length === 0) {
+                if (isMatch) {
+                    // 일치하는 경우, 스타일이 포함된 원본 행을 복제합니다.
                     const newRow = row.cloneNode(true);
-                    // Re-attach event listener
                     newRow.addEventListener('click', () => showMatchDetails(newRow));
-                    
+
+                    // ✨ 검색어가 있을 때만 하이라이트 로직을 실행합니다.
                     if (keywords.length > 0) {
-                        const searchRegex = new RegExp(keywords.join('|'), 'gi');
                         const cell = newRow.querySelector('td:first-child');
-                        cell.innerHTML = cell.innerText.replace(searchRegex, '<strong>$&</strong>');
+                        const searchRegex = new RegExp(keywords.join('|'), 'gi');
+
+                        // ✨ 중요: 셀 전체가 아닌, 배경색 스타일이 적용된 각 'span'을 찾아 처리합니다.
+                        const nameSpans = cell.querySelectorAll('span[style]');
+                        nameSpans.forEach(span => {
+                            // span 태그와 스타일은 그대로 두고, 그 안의 텍스트에만 <strong> 태그를 적용합니다.
+                            span.innerHTML = span.innerText.replace(searchRegex, '<strong>$&</strong>');
+                        });
                     }
+                    
                     tbody.appendChild(newRow);
                 }
             });
@@ -279,11 +301,14 @@
                 if (!response.ok) {
                     throw new Error('경기 기록을 불러오는데 실패했습니다.');
                 }
-                const matches = await response.json();
-                document.getElementById('matchDetailModalLabel').innerText = `${pair} 페어`;
+                // ✨ 수정: genderMap 받기
+                const { matches, genderMap } = await response.json();
+                
+                document.getElementById('matchDetailModalLabel').innerHTML = `<b>${pair.replace('/', ' ')}</b> 페어`;
                 const modalBody = document.getElementById('matchDetailModalBody');
                 
-                modalBody.innerHTML = buildMatchTableHtml(matches, pair, stats);
+                // ✨ 수정: genderMap 전달
+                modalBody.innerHTML = buildMatchTableHtml(matches, pair, stats, genderMap);
 
                 matchDetailModal.show();
             } catch (error) {
@@ -292,26 +317,24 @@
             }
         }
         
-        function buildMatchTableHtml(matches, pair, stats) {
+        function buildMatchTableHtml(matches, pair, stats, genderMap) {
             const pairTags = [];
             if (stats.matches > 0) {
-                if (stats.winRate >= 90) { pairTags.push('#환상의케미'); } 
-                else if (stats.winRate >= 80) { pairTags.push('#우린그냥운명이야'); } 
-                else if (stats.winRate >= 70) { pairTags.push('#시너지폭발'); } 
-                else if (stats.winRate >= 60) { pairTags.push('#꿀케미'); } 
-                else if (stats.winRate >= 50) { pairTags.push('#믿고가는조합'); } 
-                else if (stats.winRate >= 40) { pairTags.push('#흔들리는케미'); } 
-                else if (stats.winRate >= 30) { pairTags.push('#분발하자'); } 
-                else if (stats.winRate >= 20) { pairTags.push('#눈물의듀오'); } 
-                else if (stats.winRate >= 10) { pairTags.push('#승률도망'); } 
+                if (stats.winRate >= 90) { pairTags.push('#환상의케미'); }
+                else if (stats.winRate >= 80) { pairTags.push('#우린그냥운명이야'); }
+                else if (stats.winRate >= 70) { pairTags.push('#시너지폭발'); }
+                else if (stats.winRate >= 60) { pairTags.push('#꿀케미'); }
+                else if (stats.winRate >= 50) { pairTags.push('#믿고가는조합'); }
+                else if (stats.winRate >= 40) { pairTags.push('#흔들리는케미'); }
+                else if (stats.winRate >= 30) { pairTags.push('#분발하자'); }
+                else if (stats.winRate >= 20) { pairTags.push('#눈물의듀오'); }
+                else if (stats.winRate >= 10) { pairTags.push('#승률도망'); }
                 else { pairTags.push('#케미실종'); }
             }
             const pairTagsText = pairTags.join(' ');
-
-            const winRateHtml = stats.winRate > 50 
-                ? `<strong>(${stats.winRate}%)</strong>` 
+            const winRateHtml = stats.winRate > 50
+                ? `<strong>(${stats.winRate}%)</strong>`
                 : `(${stats.winRate}%)`;
-
             const summaryHtml = `
                 <div style="padding: 1rem; border-bottom: 1px solid #dee2e6;">
                     <div class="stat-item">
@@ -326,48 +349,79 @@
                 </div>
             `;
 
+            // 플레이어 이름에 성별에 따른 배경색과 스타일을 적용하는 헬퍼 함수
+            const stylePlayerName = (player, isBold = false) => {
+                if (!player) return '';
+                const gender = genderMap[player];
+                // 성별에 따라 배경색 지정
+                const color = gender === '남' ? '#ddffff' : (gender === '여' ? '#ffffdd' : 'inherit');
+                const content = isBold ? `<strong>${player}</strong>` : player;
+                // 'backgrond-color' 오타 수정 및 스타일 적용
+                return `<span style="background-color: ${color};">${content}</span>`;
+            };
+
             let tableHtml = '';
             if (matches.length > 0) {
                 const [player1, player2] = pair.split('/');
                 tableHtml = `
                     <div class="table-responsive">
-                        <table class="table table-sm table-striped text-center align-middle text-nowrap" style="font-size: 0.8rem;">
+                        <table class="table table-sm text-center align-middle text-nowrap" style="font-size: 0.8rem;">
                             <thead class="table-light">
-                                <tr><th>날짜</th><th>코트</th><th>상대 팀</th><th>스코어</th><th>결과</th><th>분류</th><th>영상</th></tr>
+                                <tr><th>날짜</th><th>코트</th><th>우리 팀</th><th></th><th>상대 팀</th><th>결과</th><th>분류</th><th>영상</th></tr>
                             </thead>
                             <tbody>
                 `;
+                
+                let prevDate = null, prevCourt = null, currentGroupClass = 'group-a-bg';
                 matches.forEach(match => {
+                    if (prevDate !== null && (match.date !== prevDate || match.court !== prevCourt)) {
+                        currentGroupClass = (currentGroupClass === 'group-a-bg') ? 'group-b-bg' : 'group-a-bg';
+                    }
+                    prevDate = match.date;
+                    prevCourt = match.court;
+
                     const team1Players = [match.team1_deuce, match.team1_ad];
                     const isPairOnTeam1 = team1Players.includes(player1) && team1Players.includes(player2);
 
-                    let opponentPair, result, selectedScore, opponentScore;
+                    let myTeamDisplay, opponentTeamDisplay, result, selectedScore, opponentScore;
 
                     if (isPairOnTeam1) {
-                        opponentPair = `${match.team2_deuce}${match.team2_ad ? '/' + match.team2_ad : ''}`;
+                        // 우리 팀이 team1일 경우 (듀스, 애드 순서로 표시)
+                        myTeamDisplay = `${stylePlayerName(match.team1_deuce, true)} ${stylePlayerName(match.team1_ad, true)}`;
+                        // 상대 팀(team2) 선수들에게도 배경색 적용
+                        opponentTeamDisplay = `${stylePlayerName(match.team2_deuce)} ${stylePlayerName(match.team2_ad || '')}`;
                         result = match.team1_result;
                         selectedScore = match.team1_score;
                         opponentScore = match.team2_score;
                     } else {
-                        opponentPair = `${match.team1_deuce}${match.team1_ad ? '/' + match.team1_ad : ''}`;
+                        // 우리 팀이 team2일 경우 (듀스, 애드 순서로 표시)
+                        myTeamDisplay = `${stylePlayerName(match.team2_deuce, true)} ${stylePlayerName(match.team2_ad, true)}`;
+                        // 상대 팀(team1) 선수들에게도 배경색 적용
+                        opponentTeamDisplay = `${stylePlayerName(match.team1_deuce)} ${stylePlayerName(match.team1_ad || '')}`;
                         result = match.team2_result;
                         selectedScore = match.team2_score;
                         opponentScore = match.team1_score;
                     }
+                    
+                    // 불필요한 공백 제거
+                    myTeamDisplay = myTeamDisplay.trim();
+                    opponentTeamDisplay = opponentTeamDisplay.trim();
 
                     let resultDisplay;
                     if (result === '승') { resultDisplay = '<span style="color: darkblue;">승</span>'; } 
                     else if (result === '패') { resultDisplay = '<span style="color: darkred;">패</span>'; }
                     else { resultDisplay = '<span>무</span>'; }
                     
+                    const scoreHtml = selectedScore > opponentScore ? `<b>${selectedScore}</b>:${opponentScore}` : selectedScore < opponentScore ? `${selectedScore}:<b>${opponentScore}</b>` : `${selectedScore}:${opponentScore}`;
                     const videoLink = match.video ? `<a href="${match.video}" target="_blank" rel="noopener" onclick="event.stopPropagation();"><i class="bi bi-youtube text-danger fs-6"></i></a>` : '';
                     
                     tableHtml += `
-                        <tr>
+                        <tr class="${currentGroupClass}">
                             <td>${match.date ? match.date.substring(2) : ''}</td>
                             <td>${match.court}</td>
-                            <td>${opponentPair}</td>
-                            <td>${selectedScore}:${opponentScore}</td>
+                            <td>${myTeamDisplay}</td>
+                            <td>${scoreHtml}</td>
+                            <td>${opponentTeamDisplay}</td>
                             <td>${resultDisplay}</td>
                             <td>${match.type}</td>
                             <td>${videoLink}</td>
@@ -381,6 +435,7 @@
 
             return summaryHtml + tableHtml;
         }
+
 
         document.addEventListener('DOMContentLoaded', () => {
             originalRows = Array.from(document.querySelectorAll('#scoreTbody tr'));

@@ -123,8 +123,8 @@
             if (!playerName) return ''; // 플레이어가 없으면 빈 문자열 반환
 
             const gender = genderMap[playerName];
-            const maleColor = 'darkblue';
-            const femaleColor = 'darkred';
+            const maleColor = '#ddffff';
+            const femaleColor = '#ffffdd';
             let color = 'inherit'; // 기본 색상
 
             if (gender === '남') {
@@ -133,7 +133,7 @@
               color = femaleColor;
             }
             
-            return '<span style="color: ' + color + ';">' + playerName + '</span>';
+            return '<span style="background-color: ' + color + ';">' + playerName + '</span>';
           };
         %>
         <tbody>
@@ -162,18 +162,22 @@
                 const team2DeuceStyled = stylePlayerName(match.team2_deuce, genderMap);
                 const team2AdStyled = stylePlayerName(match.team2_ad, genderMap);
 
-                const team1Players = `${team1DeuceStyled}${team1AdStyled ? '/' + team1AdStyled : ''}`;
-                const team2Players = `${team2DeuceStyled}${team2AdStyled ? '/' + team2AdStyled : ''}`;
+                const team1Players = `${team1DeuceStyled}${team1AdStyled ? ' ' + team1AdStyled : ''}`;
+                const team2Players = `${team2DeuceStyled}${team2AdStyled ? ' ' + team2AdStyled : ''}`;
               %>
 
-              <% if (Number(match.team1_score) >= Number(match.team2_score)) { %>
+              <% if (Number(match.team1_score) > Number(match.team2_score)) { %>
                 <td><%- team1Players %></td>
-                <td style="padding: 0;"><b><%= match.team1_score %></b>:<b><%= match.team2_score %></b></td>
+                <td style="padding: 0;"><b><%= match.team1_score %></b>:<%= match.team2_score %></td>
                 <td><%- team2Players %></td>
+              <% } else if (Number(match.team1_score) < Number(match.team2_score)) { %>
+                <td><%- team2Players %></td>
+                <td style="padding: 0;"><b><%= match.team2_score %></b>:<%= match.team1_score %></td>
+                <td><%- team1Players %></td>
               <% } else { %>
-                <td><%- team2Players %></td>
-                <td style="padding: 0;"><b><%= match.team2_score %></b>:<b><%= match.team1_score %></b></td>
                 <td><%- team1Players %></td>
+                <td style="padding: 0;"><%= match.team1_score %>:<%= match.team2_score %></td>
+                <td><%- team2Players %></td>
               <% } %>
 
               <td><%= match.type %></td>

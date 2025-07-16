@@ -68,7 +68,12 @@
                     <% if (attendanceData && attendanceData.length > 0) { %>
                         <% attendanceData.forEach(member => { %>
                             <tr onclick="showMemberDetails(this)" data-name="<%= member.name %>">
-                                <td><strong><%= member.name %></strong></td>
+                                <td>
+                                    <% const color = member.gender === '남' ? '#ddffff' : (member.gender === '여' ? '#ffffdd' : 'inherit'); %>
+                                    <span style="--bg: <%= color %>; background-color: var(--bg);">
+                                        <%= member.name %>
+                                    </span>
+                                </td>
                                 <td><%= member.attendanceCount %>일</td>
                                 <td class="text-start ps-2" style="white-space: normal;">
                                     <%

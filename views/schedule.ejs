@@ -208,7 +208,7 @@
 						data-date="<%= schedule.schedule_date %>"
 						data-maximum="<%= schedule.maximum %>">
 
-												<div class="d-flex justify-content-between align-items-start mb-2">
+						<div class="d-flex justify-content-between align-items-start mb-2">
 							<div>
 								<div class="fw-bold">
 									<%= formattedDate %> | <%= startTime %>~<%= endTime %> | <%= schedule.location %>
@@ -244,14 +244,22 @@
 								data-schedule-id="<%= schedule.id %>">기록</button>
 						</div>
 
-												<div class="mb-2">
+						<div class="mb-2">
 							<span class="fw-bold">참석(<span class="attendee-count"><%= schedule.attendees.length %></span>):</span>
 							<span class="text-muted attendees-list">
-								<%= schedule.attendees.sort().join(', ') || ' 없음' %>
+								<% if (schedule.attendees.length > 0) { %>
+									<% schedule.attendees.sort().forEach((attendee, index) => { %>
+										<% const gender = genderMap[attendee] || ''; %>
+										<% const color = gender === '남' ? '#ddffff' : (gender === '여' ? '#ffffdd' : 'inherit'); %>
+										<span style="--bg: <%= color %>; background-color: var(--bg);"><%= attendee %></span><% if (index < schedule.attendees.length - 1) { %><%= ', ' %><% } %>
+									<% }) %>
+								<% } else { %>
+									없음
+								<% } %>
 							</span>
 						</div>
 
-												<div>
+						<div>
 							<div class="d-flex justify-content-between align-items-center">
 								<button class="btn btn-sm btn-primary py-0 px-2 attend-btn"
 									data-schedule-id="<%= schedule.id %>">참석</button>
@@ -259,7 +267,7 @@
 									data-schedule-id="<%= schedule.id %>">댓글</button>
 							</div>
 
-														<div class="comment-container">
+							<div class="comment-container">
 								<% if (schedule.comments.length > 0) { %>
 									<div class="comments-section">
 										<div class="comment-list">
@@ -295,9 +303,6 @@
 					<p class="text-center p-5 text-muted">해당 월의 일정이 없습니다.</p>
 				<% } %>
 			</div>
-
-
-
 
 			<%- include('partials/navbar', { currentPage: 'schedule' }) %>
 	</div>
@@ -522,6 +527,7 @@
 		const currentMonth = parseInt(appContainer.dataset.month);
 		const schedulesJsonString = `<%- JSON.stringify(schedules) %>`;
 		const schedulesData = JSON.parse(schedulesJsonString);
+    	const genderMap = JSON.parse('<%- JSON.stringify(genderMap || {}) %>');
 
 		// --- 초기화 ---
 		document.addEventListener('DOMContentLoaded', () => {
@@ -849,84 +855,104 @@
 		}
 
         async function handleAttendClick(event) {
-            if (!selectedUser) return userSelectModal.show();
+			if (!selectedUser) return userSelectModal.show();
 
-            const button = event.target;
-            const card = button.closest('.schedule-card');
-            const scheduleId = button.dataset.scheduleId;
-            const schedule = schedulesData.find(s => s.id == scheduleId);
-            const isAttending = button.textContent === '취소';
+			const button = event.target;
+			const card = button.closest('.schedule-card');
+			const scheduleId = button.dataset.scheduleId;
+			const schedule = schedulesData.find(s => s.id == scheduleId);
+			const isAttending = button.textContent === '취소';
 
-            // 1. 지난 일정인지 확인
-            if (card.classList.contains('past-schedule')) {
-                alert("지난 일정은 참석 및 취소할 수 없습니다.");
-                return;
-            }
+			if (card.classList.contains('past-schedule')) {
+				alert("지난 일정은 참석 및 취소할 수 없습니다.");
+				return;
+			}
 
-            // 2. 그룹 제한 확인
-            if (schedule && schedule.allowed_members && schedule.allowed_members.length > 0) {
-                if (!isAttending && !schedule.allowed_members.includes(selectedUser)) {
-                    alert(`'${schedule.group_name}' 그룹의 멤버만 참석할 수 있습니다.`);
-                    return;
-                }
-            }
+			if (schedule && schedule.allowed_members && schedule.allowed_members.length > 0) {
+				if (!isAttending && !schedule.allowed_members.includes(selectedUser)) {
+					alert(`'${schedule.group_name}' 그룹의 멤버만 참석할 수 있습니다.`);
+					return;
+				}
+			}
 
-            // 3. 인원이 가득 찼는지 확인 (참석을 시도할 때만)
-            const attendees = getAttendees(card.querySelector('.attendees-list'));
-            const maxAttendees = parseInt(card.dataset.maximum, 10);
-            if (attendees.length >= maxAttendees && !isAttending) {
-                alert("참석 인원이 가득 찼습니다.");
-                return;
-            }
+			const attendees = getAttendees(card.querySelector('.attendees-list'));
+			const maxAttendees = parseInt(card.dataset.maximum, 10);
+			if (attendees.length >= maxAttendees && !isAttending) {
+				alert("참석 인원이 가득 찼습니다.");
+				return;
+			}
 
-            // ✨ 취소할 때만 날짜 확인 로직 실행 (기존 로직 유지)
-            if (isAttending) {
-                const scheduleDate = new Date(card.dataset.date + 'T00:00:00');
-                const today = new Date();
-                today.setHours(0, 0, 0, 0);
+			if (isAttending) {
+				const scheduleDate = new Date(card.dataset.date + 'T00:00:00');
+				const today = new Date();
+				today.setHours(0, 0, 0, 0);
+				const diff = scheduleDate.getTime() - today.getTime();
+				const diffDays = diff / (1000 * 60 * 60 * 24);
+				if (diffDays >= 0 && diffDays < 7) {
+					const message = "❗ 일정 1주일 이내 참석 취소 ❗\n\n댓글을 통해 취소를 알려주세요.\n참석을 취소하시겠습니까?";
+					if (!confirm(message)) {
+						return;
+					}
+				}
+			}
 
-                const diff = scheduleDate.getTime() - today.getTime();
-                const diffDays = diff / (1000 * 60 * 60 * 24);
+			button.disabled = true;
+			const url = isAttending ? `/api/schedule/${scheduleId}/cancel` : `/api/schedule/${scheduleId}/attend`;
 
-                if (diffDays >= 0 && diffDays < 7) {
-                    const message = "❗ 일정 1주일 이내 참석 취소 ❗\n\n댓글을 통해 취소를 알려주세요.\n참석을 취소하시겠습니까?";
-                    if (!confirm(message)) {
-                        return;
-                    }
-                }
-            }
+			try {
+				const response = await fetch(url, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ memberName: selectedUser }) });
+				if (!response.ok) throw new Error('서버 응답 오류');
 
-            button.disabled = true;
-            const url = isAttending ? `/api/schedule/${scheduleId}/cancel` : `/api/schedule/${scheduleId}/attend`;
+				const result = await response.json();
+				if (result.success) {
+					let currentAttendees = getAttendees(card.querySelector('.attendees-list'));
+					let newAttendees = isAttending ? currentAttendees.filter(n => n !== selectedUser) : [...currentAttendees, selectedUser];
 
-            try {
-                const response = await fetch(url, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ memberName: selectedUser }) });
-                if (!response.ok) throw new Error('서버 응답 오류');
+					card.querySelector('.attendee-count').textContent = newAttendees.length;
+					
+					// ✨ 수정된 핵심 부분: DOM을 직접 업데이트하는 함수 호출
+					updateAttendeesDOM(card, newAttendees);
+					
+					updateSingleCardUI(card);
 
-                const result = await response.json();
-                if (result.success) {
-                    const attendeesListEl = card.querySelector('.attendees-list');
-                    let attendees = getAttendees(attendeesListEl);
-                    attendees = isAttending ? attendees.filter(n => n !== selectedUser) : [...attendees, selectedUser];
+					const scheduleInJS = schedulesData.find(s => s.id == scheduleId);
+					if (scheduleInJS) scheduleInJS.attendees = newAttendees;
 
-                    attendees.sort();
-                    card.querySelector('.attendee-count').textContent = attendees.length;
-                    attendeesListEl.textContent = attendees.length > 0 ? attendees.join(', ') : '없음';
-                    updateSingleCardUI(card);
+				} else {
+					alert(result.message);
+					updateSingleCardUI(card);
+				}
+			} catch (error) {
+				console.error('Error:', error);
+				updateSingleCardUI(card);
+			}
+		}
 
-                    const scheduleInJS = schedulesData.find(s => s.id == scheduleId);
-                    if (scheduleInJS) scheduleInJS.attendees = attendees;
+		function updateAttendeesDOM(card, newAttendees) {
+			const attendeesListEl = card.querySelector('.attendees-list');
+			attendeesListEl.innerHTML = ''; // 기존 목록을 완전히 비웁니다.
 
-                } else {
-                    alert(result.message);
-                    updateSingleCardUI(card);
-                }
-            } catch (error) {
-                console.error('Error:', error);
-                updateSingleCardUI(card);
-            }
-        }
+			if (newAttendees.length > 0) {
+				newAttendees.sort().forEach((attendee, index) => {
+					const gender = genderMap[attendee] || '';
+					const color = gender === '남' ? '#ddffff' : (gender === '여' ? '#ffffdd' : 'inherit');
+					
+					// 배경색이 적용된 span 태그를 생성합니다.
+					const span = document.createElement('span');
+					span.style.cssText = `--bg: ${color}; background-color: var(--bg);`;
+					span.textContent = attendee;
+					
+					attendeesListEl.appendChild(span);
 
+					// 마지막 이름이 아니면 쉼표와 공백을 추가합니다.
+					if (index < newAttendees.length - 1) {
+						attendeesListEl.appendChild(document.createTextNode(', '));
+					}
+				});
+			} else {
+				attendeesListEl.textContent = '없음';
+			}
+		}
 
 		function openCommentModal(scheduleId) {
 			if (!selectedUser) return userSelectModal.show();
@@ -1045,8 +1071,16 @@
 
 		// --- 헬퍼 함수 ---
 		function getAttendees(element) {
-			const text = element.textContent.trim();
-			return (text === '없음' || text === '') ? [] : text.split(', ');
+			// attendees-list 내부에서 배경색 스타일이 적용된 모든 이름표(span)를 찾습니다.
+			const nameSpans = element.querySelectorAll('span[style]');
+
+			// 이름표가 없으면 빈 배열을 반환합니다.
+			if (nameSpans.length === 0) {
+				return [];
+			}
+			
+			// 각 이름표(span)에서 텍스트(이름)만 추출하여 배열로 만듭니다.
+			return Array.from(nameSpans).map(span => span.textContent.trim());
 		}
 
 		// --- 유예 신청 관련 함수들 ---
