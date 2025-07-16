@@ -133,6 +133,10 @@
 		.app-container .btn-sm {
 			font-size: 0.8rem;
 		}
+		#searchContainer { display: none; width: 150px; }
+		#searchInput { min-width: 100px; }
+		#searchToggle .bi-search { font-size: 1.2rem; color: black; margin-right: 15px; }
+		#searchToggle { white-space: nowrap; }
 	</style>
 </head>
 
@@ -147,7 +151,16 @@
 					<h5 style="margin-bottom: 0;"><b>불꽃 일정</b></h5>
 				</a>
 			</div>
-			<i class="bi bi-list hamburger-icon"></i>
+			<div class="d-flex align-items-center">
+				<div id="searchContainer" class="input-group input-group-sm me-2">
+					<input type="text" id="searchInput" class="form-control" placeholder="일정 검색" />
+					<button class="btn btn-outline-secondary" type="button" id="clearSearchBtn">
+						<i class="bi bi-x-lg"></i>
+					</button>
+				</div>
+				<a href="#" id="searchToggle"><i class="bi bi-search"></i></a>
+				<i class="bi bi-list hamburger-icon"></i>
+			</div>
 		</div>
 
 		<%- include('partials/sidemenu') %>
@@ -518,7 +531,8 @@
 	<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
 	<script>
 		// --- 전역 변수 ---
-		let selectedUser = null;
+		let allScheduleCards = [];
+    	let selectedUser = null;
 		let userSelectModal, changePasswordModal, monthModal, commentModal, matchRecordModal;
 		let postponeModal;
 		let currentScheduleId = null;
@@ -531,12 +545,38 @@
 
 		// --- 초기화 ---
 		document.addEventListener('DOMContentLoaded', () => {
+			allScheduleCards = Array.from(document.querySelectorAll('.schedule-card')); // 전역 변수에 모든 카드 저장
+    		allScheduleCards.forEach(card => card.dataset.originalHtml = card.innerHTML);
+
 			initializeModals();
 			stylePastSchedules();
 			initializeUser();
 			initializeNavigators();
 			addEventListenersToElements();
 			setupSideMenu();
+
+			// --- 검색 관련 이벤트 리스너 설정 ---
+			const searchToggle = document.getElementById('searchToggle');
+			const searchContainer = document.getElementById('searchContainer');
+			const searchInput = document.getElementById('searchInput');
+			const clearSearchBtn = document.getElementById('clearSearchBtn');
+
+			searchToggle.addEventListener('click', (e) => {
+				e.preventDefault();
+				searchToggle.style.display = 'none';
+				searchContainer.style.display = 'flex';
+				searchInput.focus();
+			});
+
+			clearSearchBtn.addEventListener('click', () => {
+				searchInput.value = '';
+				filterSchedules(); // 입력값 초기화 후 필터링 다시 실행
+				searchContainer.style.display = 'none';
+				searchToggle.style.display = 'block';
+			});
+
+			searchInput.addEventListener('keyup', filterSchedules);
+			// --- 검색 관련 설정 끝 ---
 		});
 
 		function initializeModals() {
@@ -570,7 +610,95 @@
 			document.getElementById('submitPostponeBtn').addEventListener('click', handleSubmitPostpone);
 		}
 
-		// --- 주요 기능 함수 ---
+		function filterSchedules() {
+			const searchInput = document.getElementById('searchInput').value.toLowerCase().trim();
+			const keywords = searchInput.split(' ').filter(k => k !== '');
+
+			allScheduleCards.forEach(card => {
+				// 1. 하이라이트를 적용하기 전, 카드의 내용을 원본 HTML로 초기화합니다.
+				if (card.dataset.originalHtml) {
+					card.innerHTML = card.dataset.originalHtml;
+				}
+
+				// 2. 검색 대상 텍스트를 모든 필드에서 수집 (작성일시는 이미 포함되어 있음)
+				const infoElement = card.querySelector('.fw-bold');
+				const attendeesElement = card.querySelector('.attendees-list');
+				const bookerElement = card.querySelector('.bi-person').parentElement;
+				const commentsContainer = card.querySelector('.comment-container');
+				
+				let cardText = (
+					infoElement.textContent + 
+					attendeesElement.textContent + 
+					bookerElement.textContent
+				).toLowerCase();
+
+				if (commentsContainer) {
+					cardText += commentsContainer.textContent.toLowerCase();
+				}
+				
+				const isMatch = keywords.every(keyword => cardText.includes(keyword));
+
+				if (isMatch) {
+					card.style.display = '';
+
+					// 3. 검색어가 있을 경우, 일치하는 텍스트를 찾아 굵게 표시합니다.
+					if (keywords.length > 0) {
+						const searchRegex = new RegExp(keywords.join('|'), 'gi');
+						const highlightWrapper = (match) => `<strong>${match}</strong>`;
+
+						// 기존 필드 하이라이트
+						if (infoElement) {
+							infoElement.innerHTML = infoElement.innerHTML.replace(searchRegex, highlightWrapper);
+						}
+						card.querySelectorAll('.attendees-list > span[style]').forEach(span => {
+							span.innerHTML = span.innerHTML.replace(searchRegex, highlightWrapper);
+						});
+						if (bookerElement) {
+							bookerElement.innerHTML = bookerElement.innerHTML.replace(searchRegex, highlightWrapper);
+						}
+
+						// 댓글 하이라이트
+						card.querySelectorAll('.comment-item').forEach(comment => {
+							const authorElement = comment.querySelector('.fw-bold');
+							const contentElement = authorElement.nextElementSibling;
+							// ✨ 댓글 작성일시 요소를 선택합니다.
+							const timestampElement = comment.querySelector('.text-black-50');
+
+							if (authorElement) {
+								authorElement.innerHTML = authorElement.innerHTML.replace(searchRegex, highlightWrapper);
+							}
+							if (contentElement) {
+								contentElement.innerHTML = contentElement.innerHTML.replace(searchRegex, highlightWrapper);
+							}
+							// ✨ 댓글 작성일시를 하이라이트합니다.
+							if (timestampElement) {
+								timestampElement.innerHTML = timestampElement.innerHTML.replace(searchRegex, highlightWrapper);
+							}
+						});
+					}
+				} else {
+					card.style.display = 'none';
+				}
+			});
+
+			// 주차(h6) 헤더 표시 여부를 업데이트하는 로직
+			const scheduleList = document.getElementById('scheduleList');
+			const weekHeaders = scheduleList.querySelectorAll('h6');
+			weekHeaders.forEach(header => {
+				let nextElement = header.nextElementSibling;
+				let weekHasVisibleCard = false;
+				while (nextElement && (nextElement.tagName === 'H6' || nextElement.classList.contains('schedule-card'))) {
+					if (nextElement.tagName === 'H6') break;
+					if (nextElement.style.display !== 'none') {
+						weekHasVisibleCard = true;
+						break;
+					}
+					nextElement = nextElement.nextElementSibling;
+				}
+				header.style.display = weekHasVisibleCard ? '' : 'none';
+			});
+		}
+
 		async function handleMatchRecordSubmit() {
 			const form = document.getElementById('matchRecordForm');
 			const formData = new FormData(form);
