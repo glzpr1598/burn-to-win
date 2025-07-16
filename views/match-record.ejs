@@ -117,6 +117,25 @@
             <th class="hidden-etc"></th>
           </tr>
         </thead>
+        <%
+          // EJS 헬퍼 함수: 선수 이름에 성별에 따른 색상을 입혀 반환
+          const stylePlayerName = (playerName, genderMap) => {
+            if (!playerName) return ''; // 플레이어가 없으면 빈 문자열 반환
+
+            const gender = genderMap[playerName];
+            const maleColor = 'darkblue';
+            const femaleColor = 'darkred';
+            let color = 'inherit'; // 기본 색상
+
+            if (gender === '남') {
+              color = maleColor;
+            } else if (gender === '여') {
+              color = femaleColor;
+            }
+            
+            return '<span style="color: ' + color + ';">' + playerName + '</span>';
+          };
+        %>
         <tbody>
           <% 
             let prevDate = null;
@@ -127,10 +146,8 @@
             <%
               // 날짜 또는 코트가 변경되었는지 확인
               if (prevDate !== null && (match.date !== prevDate || match.court !== prevCourt)) {
-                // 클래스 토글
                 currentGroupClass = (currentGroupClass === 'group-a-bg') ? 'group-b-bg' : 'group-a-bg';
               }
-              // 다음 비교를 위해 현재 값을 저장
               prevDate = match.date;
               prevCourt = match.court;
             %>
@@ -138,30 +155,26 @@
               <td><%= match.date ? match.date.substring(2) : '' %></td>
               <td><%= match.court %></td>
               
-              <td>
-                <% if (match.team1_score >= match.team2_score) { %>
-                  <%= match.team1_deuce %><% if (match.team1_ad) { %>/<%= match.team1_ad %><% } %>
-                <% } else { %>
-                  <%= match.team2_deuce %><% if (match.team2_ad) { %>/<%= match.team2_ad %><% } %>
-                <% } %>
-              </td>
+              <% 
+                // 헬퍼 함수를 사용해 선수 이름에 스타일 적용
+                const team1DeuceStyled = stylePlayerName(match.team1_deuce, genderMap);
+                const team1AdStyled = stylePlayerName(match.team1_ad, genderMap);
+                const team2DeuceStyled = stylePlayerName(match.team2_deuce, genderMap);
+                const team2AdStyled = stylePlayerName(match.team2_ad, genderMap);
 
-              <td style="padding: 0;">
-                <b>
-                <% if (Number(match.team1_score) >= Number(match.team2_score)) { %>
-                  <%= match.team1_score %>:<%= match.team2_score %>
-                <% } else { %>
-                  <%= match.team2_score %>:<%= match.team1_score %>
-                <% } %></b>
-              </td>
+                const team1Players = `${team1DeuceStyled}${team1AdStyled ? '/' + team1AdStyled : ''}`;
+                const team2Players = `${team2DeuceStyled}${team2AdStyled ? '/' + team2AdStyled : ''}`;
+              %>
 
-              <td>
-                <% if (match.team1_score >= match.team2_score) { %>
-                  <%= match.team2_deuce %><% if (match.team2_ad) { %>/<%= match.team2_ad %><% } %>
-                <% } else { %>
-                  <%= match.team1_deuce %><% if (match.team1_ad) { %>/<%= match.team1_ad %><% } %>
-                <% } %>
-              </td>
+              <% if (Number(match.team1_score) >= Number(match.team2_score)) { %>
+                <td><%- team1Players %></td>
+                <td style="padding: 0;"><b><%= match.team1_score %></b>:<b><%= match.team2_score %></b></td>
+                <td><%- team2Players %></td>
+              <% } else { %>
+                <td><%- team2Players %></td>
+                <td style="padding: 0;"><b><%= match.team2_score %></b>:<b><%= match.team1_score %></b></td>
+                <td><%- team1Players %></td>
+              <% } %>
 
               <td><%= match.type %></td>
               <td>

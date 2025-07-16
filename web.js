@@ -125,11 +125,25 @@ app.get('/', (req, res) => {
 // 경기 기록
 app.get('/match-record', async (req, res) => {
     try {
-        const sql = 'SELECT * FROM matchrecord ORDER BY date DESC, court ASC, id DESC';
-        const [rows] = await pool.query(sql);
-        res.render('match-record', { matches: rows, currentPage: 'match-record' });
+        // 1. 경기 기록과 회원 정보를 병렬로 가져옵니다.
+        const matchesPromise = pool.query('SELECT * FROM matchrecord ORDER BY date DESC, court ASC, id DESC');
+        const membersPromise = pool.query('SELECT name, gender FROM member');
+        const [[matches], [members]] = await Promise.all([matchesPromise, membersPromise]);
+
+        // 2. 이름으로 성별을 쉽게 찾을 수 있는 객체(genderMap)를 만듭니다.
+        const genderMap = members.reduce((acc, member) => {
+            acc[member.name] = member.gender;
+            return acc;
+        }, {});
+
+        // 3. 경기 기록(matches)과 성별 맵(genderMap)을 템플릿에 전달합니다.
+        res.render('match-record', {
+            matches: matches,
+            genderMap: genderMap,
+            currentPage: 'match-record'
+        });
     } catch (err) {
-        console.error('[/] 에러:', err.message);
+        console.error('[/match-record] 에러:', err.message);
         res.status(500).send('서버 오류가 발생했습니다.');
     }
 });
