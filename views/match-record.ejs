@@ -59,10 +59,9 @@
     #matchTable td { overflow: hidden; text-overflow: ellipsis; }
     td.hidden-etc { display: none; }
 
-    /* --- ✨ 추가 및 수정된 스타일 --- */
-    .winner-team {
+    /* .winner-team {
         color: darkblue;
-    }
+    } */
 
   </style>
 </head>
@@ -96,11 +95,11 @@
     <div class="table-responsive">
       <table id="matchTable" class="table table-sm table-striped text-center align-middle text-nowrap">
         <colgroup>
-            <col style="width: 80px;">
+            <col style="width: 70px;">
             <col style="width: 60px;">
-            <col style="width: 95px;">
-            <col style="width: 95px;">
-            <col style="width: 60px;">
+            <col style="width: 105px;">
+            <col style="width: 105px;">
+            <col style="width: 50px;">
             <col style="width: 80px;">
             <col style="width: 50px;">
             <col style="width: 30px;"> 
@@ -111,12 +110,12 @@
             <th onclick="sortTable(0, this)" style="cursor: pointer;">
               날짜 <i class="bi bi-sort-down"></i>
             </th>
-            <th>코트 <span></span></th>
-            <th>팀1 <span></span></th>
-            <th>팀2 <span></span></th>
-            <th>스코어 <span></span></th>
-            <th>분류 <span></span></th>
-            <th>영상 <span></span></th>
+            <th>코트<span></span></th>
+            <th>승리팀<span></span></th>
+            <th>패배팀<span></span></th>
+            <th>스코어<span></span></th>
+            <th>분류<span></span></th>
+            <th>영상<span></span></th>
             <th></th>
             <th class="hidden-etc"></th>
           </tr>
@@ -126,26 +125,31 @@
             <tr onclick="window.location.href='/edit/<%= match.id %>'">
               <td><%= match.date ? match.date.substring(2) : '' %></td>
               <td><%= match.court %></td>
+              
               <td>
-                <%# ✨ 1. 이긴팀 스타일 변경: strong 태그 대신 .winner-team 클래스를 가진 span 사용 %>
-                <% if (match.team1_score > match.team2_score) { %>
-                  <span class="winner-team"><%= match.team1_deuce %><% if (match.team1_ad) { %>/<%= match.team1_ad %><% } %></span>
-                <% } else { %>
+                <% if (match.team1_score >= match.team2_score) { %>
                   <%= match.team1_deuce %><% if (match.team1_ad) { %>/<%= match.team1_ad %><% } %>
-                <% } %>
-              </td>
-              <td>
-                <%# ✨ 1. 이긴팀 스타일 변경: strong 태그 대신 .winner-team 클래스를 가진 span 사용 %>
-                <% if (match.team2_score > match.team1_score) { %>
-                  <span class="winner-team"><%= match.team2_deuce %><% if (match.team2_ad) { %>/<%= match.team2_ad %><% } %></span>
                 <% } else { %>
                   <%= match.team2_deuce %><% if (match.team2_ad) { %>/<%= match.team2_ad %><% } %>
                 <% } %>
               </td>
+
               <td>
-                <%# ✨ 2. 스코어 볼드체 제거 %>
-                <%= match.team1_score %>:<%= match.team2_score %>
+                <% if (match.team1_score >= match.team2_score) { %>
+                  <%= match.team2_deuce %><% if (match.team2_ad) { %>/<%= match.team2_ad %><% } %>
+                <% } else { %>
+                  <%= match.team1_deuce %><% if (match.team1_ad) { %>/<%= match.team1_ad %><% } %>
+                <% } %>
               </td>
+
+              <td>
+                <% if (Number(match.team1_score) >= Number(match.team2_score)) { %>
+                  <%= match.team1_score %>:<%= match.team2_score %>
+                <% } else { %>
+                  <%= match.team2_score %>:<%= match.team1_score %>
+                <% } %>
+              </td>
+
               <td><%= match.type %></td>
               <td>
                 <% if (match.video) { %>
