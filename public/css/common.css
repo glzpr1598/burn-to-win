@@ -105,10 +105,10 @@ html, body {
 
 .text-male {
   color: #506680;
-  font-weight: bold;
+  font-weight: 600;
 }
 
 .text-female {
   color:#884D5B;
-  font-weight: bold;
+  font-weight: 600;
 }

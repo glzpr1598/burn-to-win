@@ -650,7 +650,7 @@
 						if (infoElement) {
 							infoElement.innerHTML = infoElement.innerHTML.replace(searchRegex, highlightWrapper);
 						}
-						card.querySelectorAll('.attendees-list > span[style]').forEach(span => {
+						card.querySelectorAll('.attendees-list > span').forEach(span => {
 							span.innerHTML = span.innerHTML.replace(searchRegex, highlightWrapper);
 						});
 						if (bookerElement) {

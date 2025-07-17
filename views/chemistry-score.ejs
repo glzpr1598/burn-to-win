@@ -267,8 +267,7 @@
                         const cell = newRow.querySelector('td:first-child');
                         const searchRegex = new RegExp(keywords.join('|'), 'gi');
 
-                        // ✨ 중요: 셀 전체가 아닌, 배경색 스타일이 적용된 각 'span'을 찾아 처리합니다.
-                        const nameSpans = cell.querySelectorAll('span[style]');
+                        const nameSpans = cell.querySelectorAll('.text-male, .text-female');
                         nameSpans.forEach(span => {
                             // span 태그와 스타일은 그대로 두고, 그 안의 텍스트에만 <strong> 태그를 적용합니다.
                             span.innerHTML = span.innerText.replace(searchRegex, '<strong>$&</strong>');
