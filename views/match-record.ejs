@@ -118,22 +118,24 @@
           </tr>
         </thead>
         <%
-          // EJS 헬퍼 함수: 선수 이름에 성별에 따른 색상을 입혀 반환
+          // EJS 헬퍼 함수: 선수 이름에 성별에 따른 CSS 클래스를 입혀 반환
           const stylePlayerName = (playerName, genderMap) => {
             if (!playerName) return ''; // 플레이어가 없으면 빈 문자열 반환
 
             const gender = genderMap[playerName];
-            const maleColor = 'darkblue';
-            const femaleColor = 'darkgreen';
-            let color = 'inherit'; // 기본 색상
+            let genderClass = ''; // 기본 클래스 없음
 
             if (gender === '남') {
-              color = maleColor;
+              genderClass = 'text-male';
             } else if (gender === '여') {
-              color = femaleColor;
+              genderClass = 'text-female';
             }
             
-            return '<span style="color: ' + color + ';">' + playerName + '</span>';
+            // 클래스가 있는 경우에만 span으로 감싸기
+            if (genderClass) {
+              return '<span class="' + genderClass + '">' + playerName + '</span>';
+            }
+            return playerName; // 성별 정보가 없으면 이름만 반환
           };
         %>
         <tbody>

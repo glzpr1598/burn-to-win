@@ -102,3 +102,11 @@ html, body {
 .overlay.active {
   display: block;
 }
+
+.text-male {
+  color: darkblue;
+}
+
+.text-female {
+  color: darkgreen;
+}

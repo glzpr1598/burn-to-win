@@ -146,8 +146,8 @@
                             <tr data-pair="<%= item.pairKey %>" style="cursor: pointer;" onclick="showMatchDetails(this)">
                                 <td>
                                     <% item.players.forEach((player, index) => { %>
-                                        <% const color = player.gender === '남' ? 'darkblue' : (player.gender === '여' ? 'darkgreen' : 'inherit'); %>
-                                        <span style="--bg: <%= color %>; color: var(--bg);"><%= player.name %></span>
+                                        <% const genderClass = player.gender === '남' ? 'text-male' : (player.gender === '여' ? 'text-female' : ''); %>
+                                        <span class="<%= genderClass %>"><%= player.name %></span>
                                         <% if (index === 0) { %> 
                                             <span> </span>
                                         <% } %>
@@ -354,10 +354,10 @@
                 if (!player) return '';
                 const gender = genderMap[player];
                 // 성별에 따라 배경색 지정
-                const color = gender === '남' ? 'darkblue' : (gender === '여' ? 'darkgreen' : 'inherit');
+                const genderClass = gender === '남' ? 'text-male' : (gender === '여' ? 'text-female' : '');
                 const content = isBold ? `<strong>${player}</strong>` : player;
                 // 'backgrond-color' 오타 수정 및 스타일 적용
-                return `<span style="color: ${color};">${content}</span>`;
+                return `<span class="${genderClass}">${content}</span>`;
             };
 
             let tableHtml = '';

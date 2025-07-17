@@ -259,12 +259,12 @@
 
 						<div class="mb-2">
 							<span class="fw-bold">참석(<span class="attendee-count"><%= schedule.attendees.length %></span>):</span>
-							<span class="text-muted attendees-list">
+							<span class="attendees-list">
 								<% if (schedule.attendees.length > 0) { %>
 									<% schedule.attendees.sort().forEach((attendee, index) => { %>
 										<% const gender = genderMap[attendee] || ''; %>
-										<% const color = gender === '남' ? 'darkblue' : (gender === '여' ? 'darkgreen' : 'inherit'); %>
-										<span style="--bg: <%= color %>; color: var(--bg);"><%= attendee %></span><% if (index < schedule.attendees.length - 1) { %><%= ', ' %><% } %>
+										<% const genderClass = gender === '남' ? 'text-male' : (gender === '여' ? 'text-female' : ''); %>
+										<span class="<%= genderClass %>"><%= attendee %></span><% if (index < schedule.attendees.length - 1) { %><%= ', ' %><% } %>
 									<% }) %>
 								<% } else { %>
 									없음
@@ -1063,11 +1063,10 @@
 			if (newAttendees.length > 0) {
 				newAttendees.sort().forEach((attendee, index) => {
 					const gender = genderMap[attendee] || '';
-					const color = gender === '남' ? 'darkblue' : (gender === '여' ? 'darkgreen' : 'inherit');
+					const genderClass = gender === '남' ? 'text-male' : (gender === '여' ? 'text-female' : '');
 					
-					// 배경색이 적용된 span 태그를 생성합니다.
 					const span = document.createElement('span');
-					span.style.cssText = `--bg: ${color}; color: var(--bg);`;
+					span.className = genderClass;
 					span.textContent = attendee;
 					
 					attendeesListEl.appendChild(span);
@@ -1200,7 +1199,7 @@
 		// --- 헬퍼 함수 ---
 		function getAttendees(element) {
 			// attendees-list 내부에서 배경색 스타일이 적용된 모든 이름표(span)를 찾습니다.
-			const nameSpans = element.querySelectorAll('span[style]');
+			const nameSpans = element.querySelectorAll('.attendees-list > span');
 
 			// 이름표가 없으면 빈 배열을 반환합니다.
 			if (nameSpans.length === 0) {

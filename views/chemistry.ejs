@@ -153,8 +153,8 @@
                                  data-opponent-win-rate="<%= player.opponentWinRate %>"
                                 data-win-rate-diff="<%= player.winRateDiff %>">
                                 <td>
-                                    <% const color = player.gender === '남' ? 'darkblue' : (player.gender === '여' ? 'darkgreen' : 'inherit'); %>
-                                    <span style="--bg: <%= color %>; color: var(--bg);"><%= player.name %></span>
+                                    <% const genderClass = player.gender === '남' ? 'text-male' : (player.gender === '여' ? 'text-female' : ''); %>
+                                    <span class="<%= genderClass %>"><%= player.name %></span>
                                 </td>
                                  <td class="text-teammate"><%= player.sameTeamMatches %></td>
                                 <td class="text-teammate">
@@ -464,9 +464,9 @@
             const stylePlayerName = (player) => {
                 if (!player) return '';
                 const gender = genderMap[player];
-                const color = gender === '남' ? 'darkblue' : (gender === '여' ? 'darkgreen' : 'inherit');
+                const genderClass = gender === '남' ? 'text-male' : (gender === '여' ? 'text-female' : '');
                 const isBold = player === basePlayer || player === comparePlayer;
-                return `<span style="color: ${color}; ${isBold ? 'font-weight: bold;' : ''}">${player}</span>`;
+                return `<span class = "${genderClass}" style="${isBold ? 'font-weight: bold;' : ''}">${player}</span>`;
             };
 
             const sameTeamMatches = [];

@@ -72,7 +72,7 @@
                         <% memberList.forEach(member => { %>
                             <tr id="member-row-<%= member.id %>">
                                 <td>
-                                    <span style="--bg: <%= member.gender === '남' ? 'darkblue' : (member.gender === '여' ? 'darkgreen' : 'transparent') %>; color: var(--bg);">
+                                    <span class="<%= member.gender === '남' ? 'text-male' : (member.gender === '여' ? 'text-female' : '') %>">
                                         <%= member.name %>
                                     </span>
                                 </td>

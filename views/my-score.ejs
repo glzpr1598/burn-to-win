@@ -162,8 +162,8 @@
                                 data-weighted-diff="<%= player.weightedDiff %>">
                                 <td>
                                     <% const gender = genderMap[player.name]; %>
-                                    <% const color = gender === '남' ? 'darkblue' : (gender === '여' ? 'darkgreen' : 'inherit'); %>
-                                    <span style="--bg: <%= color %>; color: var(--bg);"><%= player.name %></span>
+                                    <% const genderClass = gender === '남' ? 'text-male' : (gender === '여' ? 'text-female' : ''); %>
+                                    <span class="<%= genderClass %>"><%= player.name %></span>
                                 </td>
                                 <td><%= player.matches %></td>
                                 <td>
@@ -404,8 +404,8 @@
             const stylePlayerName = (player, isBold = false) => {
                 if (!player) return '';
                 const gender = genderMap[player];
-                const color = gender === '남' ? 'darkblue' : (gender === '여' ? 'darkgreen' : 'inherit');
-                return `<span style="color: ${color}; ${isBold ? 'font-weight: bold;' : ''}">${player}</span>`;
+                const genderClass = gender === '남' ? 'text-male' : (gender === '여' ? 'text-female' : '');
+                return `<span class="${genderClass}" style="${isBold ? 'font-weight: bold;' : ''}">${player}</span>`;
             };
 
             const deuceMatches = [];
