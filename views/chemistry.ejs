@@ -153,7 +153,7 @@
                                  data-opponent-win-rate="<%= player.opponentWinRate %>"
                                 data-win-rate-diff="<%= player.winRateDiff %>">
                                 <td>
-                                    <% const color = player.gender === '남' ? 'darkblue' : (player.gender === '여' ? 'darkblue' : 'inherit'); %>
+                                    <% const color = player.gender === '남' ? 'darkblue' : (player.gender === '여' ? 'darkgreen' : 'inherit'); %>
                                     <span style="--bg: <%= color %>; color: var(--bg);"><%= player.name %></span>
                                 </td>
                                  <td class="text-teammate"><%= player.sameTeamMatches %></td>
