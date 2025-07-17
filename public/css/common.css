@@ -104,9 +104,11 @@ html, body {
 }
 
 .text-male {
-  color: darkblue;
+  color: #506680;
+  font-weight: bold;
 }
 
 .text-female {
-  color: darkgreen;
+  color:#884D5B;
+  font-weight: bold;
 }
