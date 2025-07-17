@@ -123,8 +123,8 @@
             if (!playerName) return ''; // 플레이어가 없으면 빈 문자열 반환
 
             const gender = genderMap[playerName];
-            const maleColor = '#ddffff';
-            const femaleColor = '#ffffdd';
+            const maleColor = 'darkblue';
+            const femaleColor = 'darkgreen';
             let color = 'inherit'; // 기본 색상
 
             if (gender === '남') {
@@ -133,7 +133,7 @@
               color = femaleColor;
             }
             
-            return '<span style="background-color: ' + color + ';">' + playerName + '</span>';
+            return '<span style="color: ' + color + ';">' + playerName + '</span>';
           };
         %>
         <tbody>

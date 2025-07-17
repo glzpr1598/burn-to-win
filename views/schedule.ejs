@@ -263,8 +263,8 @@
 								<% if (schedule.attendees.length > 0) { %>
 									<% schedule.attendees.sort().forEach((attendee, index) => { %>
 										<% const gender = genderMap[attendee] || ''; %>
-										<% const color = gender === '남' ? '#ddffff' : (gender === '여' ? '#ffffdd' : 'inherit'); %>
-										<span style="--bg: <%= color %>; background-color: var(--bg);"><%= attendee %></span><% if (index < schedule.attendees.length - 1) { %><%= ', ' %><% } %>
+										<% const color = gender === '남' ? 'darkblue' : (gender === '여' ? 'darkgreen' : 'inherit'); %>
+										<span style="--bg: <%= color %>; color: var(--bg);"><%= attendee %></span><% if (index < schedule.attendees.length - 1) { %><%= ', ' %><% } %>
 									<% }) %>
 								<% } else { %>
 									없음
@@ -1063,11 +1063,11 @@
 			if (newAttendees.length > 0) {
 				newAttendees.sort().forEach((attendee, index) => {
 					const gender = genderMap[attendee] || '';
-					const color = gender === '남' ? '#ddffff' : (gender === '여' ? '#ffffdd' : 'inherit');
+					const color = gender === '남' ? 'darkblue' : (gender === '여' ? 'darkgreen' : 'inherit');
 					
 					// 배경색이 적용된 span 태그를 생성합니다.
 					const span = document.createElement('span');
-					span.style.cssText = `--bg: ${color}; background-color: var(--bg);`;
+					span.style.cssText = `--bg: ${color}; color: var(--bg);`;
 					span.textContent = attendee;
 					
 					attendeesListEl.appendChild(span);

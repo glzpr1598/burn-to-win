@@ -69,8 +69,8 @@
                         <% attendanceData.forEach(member => { %>
                             <tr onclick="showMemberDetails(this)" data-name="<%= member.name %>">
                                 <td>
-                                    <% const color = member.gender === '남' ? '#ddffff' : (member.gender === '여' ? '#ffffdd' : 'inherit'); %>
-                                    <span style="--bg: <%= color %>; background-color: var(--bg);">
+                                    <% const color = member.gender === '남' ? 'darkblue' : (member.gender === '여' ? 'darkgreen' : 'inherit'); %>
+                                    <span style="--bg: <%= color %>; color: var(--bg);">
                                         <%= member.name %>
                                     </span>
                                 </td>
