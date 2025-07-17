@@ -405,7 +405,8 @@
                 if (!player) return '';
                 const gender = genderMap[player];
                 const genderClass = gender === '남' ? 'text-male' : (gender === '여' ? 'text-female' : '');
-                return `<span class="${genderClass}" style="${isBold ? 'font-weight: bold;' : ''}">${player}</span>`;
+                const content = isBold ? `<strong>${player}</strong>` : player;
+                return `<span class="${genderClass}">${content}</span>`;
             };
 
             const deuceMatches = [];
