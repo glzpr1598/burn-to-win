@@ -116,8 +116,14 @@
                                 <div class="form-row"><label for="addMemberGender">성별</label><select id="addMemberGender" name="gender" class="form-select"><option value="남">남</option><option value="여">여</option></select></div>
                                 <div class="form-row"><label for="addMemberBirth">생년월일</label><input type="date" id="addMemberBirth" name="birth" class="form-control"></div>
                                 <div class="form-row"><label for="addMemberPhone">연락처</label><input type="tel" id="addMemberPhone" name="phone" class="form-control" placeholder="010-1234-5678"></div>
-                                <div class="form-row"><label for="addMemberOrder">정렬 순서</label><input type="number" id="addMemberOrder" name="order" class="form-control" placeholder="정회원: 0, 게스트: 2" required></div>
-                                <div class="form-row"><label for="addMemberEtc">비고</label><input type="text" id="addMemberEtc" name="etc" class="form-control" placeholder="게스트, 교류전 등"></div>
+                                <div class="form-row">
+                                    <label for="addMemberOrder">회원 구분</label>
+                                    <select id="addMemberOrder" name="order" class="form-select" required>
+                                        <option value="0">정회원</option>
+                                        <option value="2">비회원</option>
+                                    </select>
+                                </div>
+                                <div class="form-row"><label for="addMemberEtc">비고</label><input type="text" id="addMemberEtc" name="etc" class="form-control" placeholder="게스트, 교류전, 탈퇴 등"></div>
                                 <button type="submit" class="btn btn-sm btn-primary">멤버 등록</button>
                             </form>
                             <p id="addMemberMessage" class="mt-3"></p>
@@ -136,8 +142,14 @@
                                 <div class="form-row"><label for="updateMemberGender">성별</label><select id="updateMemberGender" name="gender" class="form-select"><option value="남">남</option><option value="여">여</option></select></div>
                                 <div class="form-row"><label for="updateMemberBirth">생년월일</label><input type="date" id="updateMemberBirth" name="birth" class="form-control"></div>
                                 <div class="form-row"><label for="updateMemberPhone">연락처</label><input type="tel" id="updateMemberPhone" name="phone" class="form-control" placeholder="010-1234-5678"></div>
-                                <div class="form-row"><label for="updateMemberOrder">정렬 순서</label><input type="number" id="updateMemberOrder" name="order" class="form-control" placeholder="정회원: 0, 게스트: 2" required></div>
-                                <div class="form-row"><label for="updateMemberEtc">비고</label><input type="text" id="updateMemberEtc" name="etc" class="form-control" placeholder="게스트, 교류전 등"></div>
+                                <div class="form-row">
+                                    <label for="updateMemberOrder">회원 구분</label>
+                                    <select id="updateMemberOrder" name="order" class="form-select" required>
+                                        <option value="0">정회원</option>
+                                        <option value="2">비회원</option>
+                                    </select>
+                                </div>                                
+                                <div class="form-row"><label for="updateMemberEtc">비고</label><input type="text" id="updateMemberEtc" name="etc" class="form-control" placeholder="게스트, 교류전, 탈퇴 등"></div>
                                 <button type="submit" class="btn btn-sm btn-success">멤버 수정</button>
                                 <button id="resetPasswordBtn" type="button" class="btn btn-sm btn-warning mt-2">비밀번호 초기화</button>
                                 <button id="deleteMemberBtn" type="button" class="btn btn-sm btn-danger mt-2">멤버 삭제</button>
@@ -328,7 +340,8 @@
                     displaySchedules(filtered, keywords);
                 } else if (modalContext === 'manageMember' || modalContext === 'addAttendee' || modalContext === 'addGroupMember') {
                     const filtered = allMembers.filter(m => {
-                        const targetText = `${m.name} | ${m.gender}`.toLowerCase();
+                        const orderText = m.order == 0? "정회원" : "비회원";
+                        const targetText = `${m.name} | ${m.gender} | ${orderText} | ${m.etc}`.toLowerCase();
                         return keywords.every(kw => targetText.includes(kw));
                     });
                     displayMembers(filtered, keywords);
@@ -475,11 +488,13 @@
             };
 
             const displayMembers = (members, keywords = []) => {
-                 const listBody = document.getElementById('listModalBody');
+                const listBody = document.getElementById('listModalBody');
                 listBody.innerHTML = '';
+                
                 members.forEach(m => {
+                    const orderText = m.order == 0? "정회원" : "비회원";
                     const parts = [
-                        `${m.order} | ${m.name} | ${m.gender}`,
+                        `${m.name} | ${m.gender} | ${orderText}`,
                         m.etc
                     ];
                     const text = parts.filter(Boolean).join(' | ');
@@ -492,7 +507,7 @@
                 const listBody = document.getElementById('listModalBody');
                 listBody.innerHTML = '';
                 records.forEach(r => {
-                    const text = `${r.date} | ${r.court} | ${r.team1_deuce}/${r.team1_ad || ''} vs ${r.team2_deuce}/${r.team2_ad || ''}`;
+                    const text = `${r.date} | ${r.court}<br>${r.team1_deuce} ${r.team1_ad || ''} vs ${r.team2_deuce} ${r.team2_ad || ''}`;
                     const highlightedHTML = highlightText(text, keywords);
                     listBody.appendChild(createListItem(r, highlightedHTML, modalContext, handleMatchRecordSelection));
                 });
