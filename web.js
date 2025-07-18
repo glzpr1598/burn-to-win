@@ -918,7 +918,8 @@ app.get('/schedule', async (req, res) => {
         const startDate = `${year}-${String(month).padStart(2, '0')}-01`;
         const endDate = new Date(year, month, 0).toLocaleDateString('en-CA');
 
-        // ✨ 수정: membersPromise를 두 개로 분리
+        const latestNoticePromise = pool.query('SELECT created_at FROM notices ORDER BY created_at DESC LIMIT 1');
+
         // 1. 로그인 드롭다운용 (기존 유지)
         const membersForDropdownPromise = pool.query('SELECT name FROM member WHERE etc = "" ORDER BY name ASC');
         // 2. 성별 배경색 적용을 위한 전체 회원 정보
@@ -933,10 +934,15 @@ app.get('/schedule', async (req, res) => {
             [startDate, endDate]
         );
 
-        // ✨ 수정: Promise.all에 새로 추가한 쿼리 반영
-        const [[membersForDropdown], [allMembers], [schedules]] = await Promise.all([membersForDropdownPromise, allMembersForGenderPromise, schedulesPromise]);
+        const [[[latestNotice]], [membersForDropdown], [allMembers], [schedules]] = await Promise.all([
+            latestNoticePromise,
+            membersForDropdownPromise,
+            allMembersForGenderPromise,
+            schedulesPromise
+        ]);
 
-        // ✨ 추가: 이름으로 성별을 찾기 위한 genderMap 생성
+        const latestNoticeDate = latestNotice ? latestNotice.created_at : null;
+
         const genderMap = allMembers.reduce((acc, member) => {
             acc[member.name] = member.gender;
             return acc;
@@ -983,12 +989,10 @@ app.get('/schedule', async (req, res) => {
                 allowed_members: schedule.group_id ? (groupMembersMap.get(schedule.id) || []) : []
             }));
 
-            // ✨ 수정: 렌더링 시 genderMap과 올바른 members 목록 전달
-            res.render('schedule', { year, month, members: membersForDropdown, schedules: scheduleData, genderMap, currentPage: 'schedule' });
+            res.render('schedule', { year, month, members: membersForDropdown, schedules: scheduleData, genderMap, currentPage: 'schedule', latestNoticeDate });
 
         } else {
-            // ✨ 수정: 일정이 없을 때도 genderMap과 members 전달
-            res.render('schedule', { year, month, members: membersForDropdown, schedules: [], genderMap, currentPage: 'schedule' });
+            res.render('schedule', { year, month, members: membersForDropdown, schedules: [], genderMap, currentPage: 'schedule', latestNoticeDate });
         }
 
     } catch (err) {

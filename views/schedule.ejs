@@ -528,17 +528,34 @@
 		</div>
 	</div>
 
+	<div class="modal fade" id="newNoticeModal" tabindex="-1">
+		<div class="modal-dialog modal-dialog-centered">
+			<div class="modal-content" style="max-width: 300px; margin: 0 auto;">
+				<div class="modal-header">
+					<h6 class="modal-title"><b>알림</b></h6>
+					<button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+				</div>
+				<div class="modal-body">
+					<p class="text-center my-3">새로운 공지사항이 있습니다.</p>
+				</div>
+				<div class="modal-footer">
+					<button type="button" class="btn btn-sm btn-primary" id="viewNoticesBtn">공지사항 보기</button>
+				</div>
+			</div>
+		</div>
+	</div>
+
 	<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
 	<script>
 		// --- 전역 변수 ---
 		let allScheduleCards = [];
     	let selectedUser = null;
-		let userSelectModal, changePasswordModal, monthModal, commentModal, matchRecordModal;
-		let postponeModal;
+		let userSelectModal, changePasswordModal, monthModal, commentModal, matchRecordModal, postponeModal,newNoticeModal;
 		let currentScheduleId = null;
 		const appContainer = document.querySelector('.app-container');
 		const currentYear = parseInt(appContainer.dataset.year);
 		const currentMonth = parseInt(appContainer.dataset.month);
+		appContainer.dataset.latestNoticeDate = "<%= latestNoticeDate %>";
 		const schedulesJsonString = `<%- JSON.stringify(schedules) %>`;
 		const schedulesData = JSON.parse(schedulesJsonString);
     	const genderMap = JSON.parse('<%- JSON.stringify(genderMap || {}) %>');
@@ -585,7 +602,25 @@
 			monthModal = new bootstrap.Modal(document.getElementById('monthSelectModal'));
 			commentModal = new bootstrap.Modal(document.getElementById('commentModal'));
 			matchRecordModal = new bootstrap.Modal(document.getElementById('matchRecordModal'));
-			postponeModal = new bootstrap.Modal(document.getElementById('postponeModal')); // ✨ [추가]
+			postponeModal = new bootstrap.Modal(document.getElementById('postponeModal'));
+
+			const newNoticeModalEl = document.getElementById('newNoticeModal');
+			if (newNoticeModalEl) {
+				newNoticeModal = new bootstrap.Modal(newNoticeModalEl);
+
+				const noticeKey = 'seen-notice-' + appContainer.dataset.latestNoticeDate;
+
+				// '공지사항 보기' 버튼 클릭 시
+				document.getElementById('viewNoticesBtn').addEventListener('click', () => {
+					localStorage.setItem(noticeKey, 'true');
+					window.location.href = '/notice';
+				});
+
+				// 모달이 닫힐 때 (취소, X 버튼, 배경 클릭 등)
+				newNoticeModalEl.addEventListener('hide.bs.modal', () => {
+					localStorage.setItem(noticeKey, 'true');
+				});
+			}
 
 			document.getElementById('month-display').addEventListener('click', () => monthModal.show());
 			document.getElementById('monthSelectConfirm').addEventListener('click', () => {
@@ -797,6 +832,7 @@
 				selectedUser = savedUser;
 				document.getElementById('currentUser').textContent = selectedUser;
 				scrollToUpcoming();
+				checkAndShowNoticeModal();
 			} else {
 				userSelectModal.show();
 			}
@@ -836,6 +872,8 @@
 					selectUser(name); // 로그인 성공 시 사용자 선택 함수 호출
 					userSelectModal.hide();
 					document.getElementById('loginPassword').value = '';
+
+					checkAndShowNoticeModal();
 				} else {
 					alert(result.message);
 				}
@@ -878,6 +916,27 @@
 			document.getElementById('currentUser').textContent = selectedUser;
 			updateAllSchedulesUI();
 			scrollToUpcoming();
+		}
+
+		function checkAndShowNoticeModal() {
+			const latestNoticeDateStr = appContainer.dataset.latestNoticeDate;
+			if (!latestNoticeDateStr) {
+				return; // 최신 공지가 없으면 종료
+			}
+
+			const latestNoticeDate = new Date(latestNoticeDateStr);
+			const sevenDaysAgo = new Date();
+			sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
+
+			// 최신 공지가 7일 이내의 글인지 확인
+			if (latestNoticeDate > sevenDaysAgo) {
+				const noticeKey = 'seen-notice-' + latestNoticeDateStr;
+				const hasSeen = localStorage.getItem(noticeKey);
+
+				if (!hasSeen) {
+					newNoticeModal.show();
+				}
+			}
 		}
 
 		// --- UI 업데이트 및 상호작용 ---

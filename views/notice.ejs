@@ -33,6 +33,20 @@
             border-bottom-right-radius: 0.375rem;
             font-size: 0.8rem;
         }
+        .new-notice-icon {
+            display: inline-block;
+            width: 12px;
+            height: 12px;
+            line-height: 12px;
+            text-align: center;
+            border-radius: 50%;
+            background-color: #dc3545;
+            color: white;
+            font-weight: bold;
+            font-size: 0.5rem;
+            margin-left: 5px;
+            vertical-align: middle;
+        }
     </style>
 </head>
 <body>
@@ -66,9 +80,14 @@
                     <% notices.forEach(notice => { %>
                         <div class="accordion-item" id="notice-item-<%= notice.id %>">
                             <h2 class="accordion-header" id="heading-<%= notice.id %>">
-                                <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapse-<%= notice.id %>" aria-expanded="false" aria-controls="collapse-<%= notice.id %>">
-                                    <div class="w-100">
-                                        <div class="fw-bold"><%= notice.title %></div>
+                                <button class="accordion-button collapsed" type="button" 
+                                        data-bs-toggle="collapse" 
+                                        data-bs-target="#collapse-<%= notice.id %>" 
+                                        aria-expanded="false" 
+                                        aria-controls="collapse-<%= notice.id %>"
+                                        data-created-at="<%= notice.created_at %>"
+                                        data-notice-id="<%= notice.id %>">  <div class="w-100">
+                                        <div class="fw-bold notice-title"><%= notice.title %></div>
                                         <div class="text-muted mt-2" style="font-size: 0.75rem;"><%= notice.author %> | <%= notice.created_at %></div>
                                     </div>
                                 </button>
@@ -159,9 +178,35 @@
             let loggedInUser = null;
             let quill;
 
+            
             initializeModalsAndEditor();
             checkLoginStatus();
             addEventListeners();
+            displayNewNoticeIcons();
+
+            function displayNewNoticeIcons() {
+                const sevenDaysAgo = new Date();
+                sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
+                
+                const readNotices = JSON.parse(localStorage.getItem('readNotices')) || [];
+
+                document.querySelectorAll('.accordion-button').forEach(button => {
+                    const createdAt = new Date(button.dataset.createdAt);
+                    
+                    const noticeId = button.dataset.noticeId;
+
+                    // 7일 이내의 새 글이고, 아직 읽지 않은 경우에만 'N' 아이콘을 표시합니다.
+                    if (createdAt > sevenDaysAgo && !readNotices.includes(noticeId)) {
+                        const titleElement = button.querySelector('.notice-title');
+                        if (titleElement) {
+                            const newIcon = document.createElement('span');
+                            newIcon.className = 'new-notice-icon';
+                            newIcon.textContent = 'N';
+                            titleElement.appendChild(newIcon);
+                        }
+                    }
+                });
+            }
 
             function initializeModalsAndEditor() {
                 userSelectModal = new bootstrap.Modal(document.getElementById('userSelectModal'));
@@ -190,13 +235,31 @@
                 
                 document.querySelectorAll('.accordion-button').forEach(button => {
                     button.addEventListener('click', (e) => {
-                        const collapseTarget = document.querySelector(e.currentTarget.dataset.bsTarget);
+                        const currentButton = e.currentTarget;
+                        const collapseTarget = document.querySelector(currentButton.dataset.bsTarget);
+                        
+                        const noticeId = currentButton.dataset.noticeId; 
+
+                        markNoticeAsRead(noticeId);
+                        
+                        const icon = currentButton.querySelector('.new-notice-icon');
+                        if (icon) {
+                            icon.style.display = 'none';
+                        }
+                        
                         if (!collapseTarget.classList.contains('show')) {
-                            const noticeId = collapseTarget.id.split('-')[1];
                             loadNoticeContent(noticeId);
                         }
                     });
                 });
+            }
+
+            function markNoticeAsRead(noticeId) {
+                let readNotices = JSON.parse(localStorage.getItem('readNotices')) || [];
+                if (!readNotices.includes(noticeId)) {
+                    readNotices.push(noticeId);
+                    localStorage.setItem('readNotices', JSON.stringify(readNotices));
+                }
             }
 
             function checkLoginStatus() {
