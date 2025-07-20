@@ -986,7 +986,7 @@ app.get('/schedule', async (req, res) => {
                 ...schedule,
                 attendees: attendeesMap.get(schedule.id) || [],
                 comments: commentsMap.get(schedule.id) || [],
-                allowed_members: schedule.group_id ? (groupMembersMap.get(schedule.id) || []) : []
+                allowed_members: schedule.group_id ? (groupMembersMap.get(schedule.group_id) || []) : []
             }));
 
             res.render('schedule', { year, month, members: membersForDropdown, schedules: scheduleData, genderMap, currentPage: 'schedule', latestNoticeDate });
