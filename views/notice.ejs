@@ -1,0 +1,497 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <link rel="apple-touch-icon" href="/image/btw.png"/> 
+    <link rel="icon" type="image/png" href="/image/btw.png"/> 
+    <link rel="stylesheet" href="/css/common.css" />
+    <title>불꽃테니스</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet" />
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css" />
+    <link href="https://cdn.quilljs.com/1.3.6/quill.snow.css" rel="stylesheet">
+    <style>
+        .user-selection-bar, #mainContent { display: none; }
+        .user-selection-bar { flex-shrink: 0; padding: 10px 15px; background-color: #f8f9fa; border-bottom: 1px solid #dee2e6; font-size: 0.9rem; }
+        #mainContent { flex-grow: 1; overflow-y: auto; padding: 15px; }
+        .accordion-button { font-size: 0.9rem; }
+        .accordion-body { font-size: 0.8rem; }
+        .comment-item { display: flex; justify-content: space-between; align-items: flex-start; padding: 8px 0; border-bottom: 1px solid #f0f0f0; }
+        .comment-item:last-child { border-bottom: none; }
+        .comment-author { font-weight: bold; margin-right: 10px; }
+        .comment-content { flex-grow: 1; word-break: break-all; }
+        .comment-meta { flex-shrink: 0; text-align: right; font-size: 0.75rem; color: #6c757d; }
+        .delete-btn { cursor: pointer; color: #dc3545; }
+        .modal-body { font-size: 0.8rem;}
+        .modal-body .form-control { font-size: 0.8rem;}
+        .ql-toolbar {
+            border-top-left-radius: 0.375rem;
+            border-top-right-radius: 0.375rem;
+        }
+        .ql-container {
+            border-bottom-left-radius: 0.375rem;
+            border-bottom-right-radius: 0.375rem;
+            font-size: 0.8rem;
+        }
+        .new-notice-icon {
+            display: inline-block;
+            width: 12px;
+            height: 12px;
+            line-height: 12px;
+            text-align: center;
+            border-radius: 50%;
+            background-color: #dc3545;
+            color: white;
+            font-weight: bold;
+            font-size: 0.5rem;
+            margin-left: 5px;
+            vertical-align: middle;
+        }
+    </style>
+</head>
+<body>
+    <div class="app-container">
+        <!-- Header -->
+        <div class="d-flex align-items-center justify-content-between sticky-header">
+            <div class="d-flex align-items-center">
+                <a href="/schedule">
+                    <img src="/image/btw-tran-180x180.png" alt="로고" style="height: 40px; margin-right: 5px;">
+                </a>
+                <a href="/notice" style="color: black; text-decoration: none;">
+                    <h5 style="margin-bottom: 0;"><b>공지</b></h5>
+                </a>
+            </div>
+            <i class="bi bi-list hamburger-icon"></i>
+        </div>
+
+        <!-- Side Menu -->
+        <%- include('partials/sidemenu') %>
+
+        <!-- User Selection Bar -->
+        <div class="user-selection-bar justify-content-between align-items-center" id="userBar">
+            <span class="d-flex align-items-center"><i class="bi bi-person-circle me-2"></i><strong id="currentUser"></strong></span>
+            <button class="btn btn-outline-secondary btn-sm py-0" id="logoutBtn">로그아웃</button>
+        </div>
+
+        <!-- Main Content -->
+        <div id="mainContent">
+            <div class="accordion" id="noticeAccordion">
+                <% if (notices.length > 0) { %>
+                    <% notices.forEach(notice => { %>
+                        <div class="accordion-item" id="notice-item-<%= notice.id %>">
+                            <h2 class="accordion-header" id="heading-<%= notice.id %>">
+                                <button class="accordion-button collapsed" type="button" 
+                                        data-bs-toggle="collapse" 
+                                        data-bs-target="#collapse-<%= notice.id %>" 
+                                        aria-expanded="false" 
+                                        aria-controls="collapse-<%= notice.id %>"
+                                        data-created-at="<%= notice.created_at %>"
+                                        data-notice-id="<%= notice.id %>">  <div class="w-100">
+                                        <div class="fw-bold notice-title"><%= notice.title %></div>
+                                        <div class="text-muted mt-2" style="font-size: 0.75rem;"><%= notice.author %> | <%= notice.created_at %></div>
+                                    </div>
+                                </button>
+                            </h2>
+                            <div id="collapse-<%= notice.id %>" class="accordion-collapse collapse" aria-labelledby="heading-<%= notice.id %>" data-bs-parent="#noticeAccordion">
+                                <div class="accordion-body">
+                                    <!-- Content and comments will be loaded here dynamically -->
+                                </div>
+                            </div>
+                        </div>
+                    <% }) %>
+                <% } else { %>
+                    <p class="text-center p-5 text-muted">등록된 공지가 없습니다.</p>
+                <% } %>
+            </div>
+            <div class="d-flex justify-content-end mt-3">
+                <button class="btn btn-primary btn-sm" id="writeNoticeBtn">글쓰기</button>
+            </div>
+        </div>
+
+        <!-- Bottom Navigation -->
+        <%- include('partials/navbar', { currentPage: 'notice' }) %>
+    </div>
+
+    <!-- Login Modal -->
+    <div class="modal fade" id="userSelectModal" tabindex="-1">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">사용자 선택</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label for="loginName" class="form-label">이름</label>
+                        <select id="loginName" class="form-select">
+                            <option value="">-- 선택 --</option>
+                            <% members.forEach(member => { %>
+                                <option value="<%= member.name %>"><%= member.name %></option>
+                            <% }); %>
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label for="loginPassword" class="form-label">비밀번호</label>
+                        <input type="password" class="form-control" id="loginPassword" placeholder="초기 비밀번호: 0000">
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-primary w-100" id="loginBtn">로그인</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Write/Edit Notice Modal -->
+    <div class="modal fade" id="writeNoticeModal" tabindex="-1">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h6 class="modal-title" id="writeNoticeModalLabel" style="font-weight: bold;">공지 작성</h6>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <input type="hidden" id="noticeId">
+                    <div class="mb-3">
+                        <label for="noticeTitle" class="form-label">제목</label>
+                        <input type="text" class="form-control" id="noticeTitle" placeholder="제목을 입력하세요">
+                    </div>
+                    <div class="mb-3">
+                        <label for="noticeContent" class="form-label">내용</label>
+                        <div id="editor-container" style="height: 250px;"></div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-sm btn-secondary" data-bs-dismiss="modal">취소</button>
+                    <button type="button" class="btn btn-sm btn-primary" id="saveNoticeBtn">저장</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="/js/common-filter.js"></script>
+    <script src="https://cdn.quilljs.com/1.3.6/quill.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            let userSelectModal, writeNoticeModal;
+            let loggedInUser = null;
+            let quill;
+
+            
+            initializeModalsAndEditor();
+            checkLoginStatus();
+            addEventListeners();
+            displayNewNoticeIcons();
+
+            function displayNewNoticeIcons() {
+                const sevenDaysAgo = new Date();
+                sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
+                
+                const readNotices = JSON.parse(localStorage.getItem('readNotices')) || [];
+
+                document.querySelectorAll('.accordion-button').forEach(button => {
+                    const createdAt = new Date(button.dataset.createdAt);
+                    
+                    const noticeId = button.dataset.noticeId;
+
+                    // 7일 이내의 새 글이고, 아직 읽지 않은 경우에만 'N' 아이콘을 표시합니다.
+                    if (createdAt > sevenDaysAgo && !readNotices.includes(noticeId)) {
+                        const titleElement = button.querySelector('.notice-title');
+                        if (titleElement) {
+                            const newIcon = document.createElement('span');
+                            newIcon.className = 'new-notice-icon';
+                            newIcon.textContent = 'N';
+                            titleElement.appendChild(newIcon);
+                        }
+                    }
+                });
+            }
+
+            function initializeModalsAndEditor() {
+                userSelectModal = new bootstrap.Modal(document.getElementById('userSelectModal'));
+                writeNoticeModal = new bootstrap.Modal(document.getElementById('writeNoticeModal'));
+                
+                // Quill 에디터 초기화
+                quill = new Quill('#editor-container', {
+                    theme: 'snow', // 'snow'는 툴바가 있는 표준 테마입니다.
+                    modules: {
+                        toolbar: [
+                            [{ 'header': [1, 2, 3, false] }, { 'font': [] }],
+                            ['bold', 'italic', 'underline', 'strike'],
+                            [{ 'list': 'ordered'}, { 'list': 'bullet' }],
+                            [{ 'color': [] }, { 'background': [] }],
+                            ['clean']
+                        ]
+                    },
+                });
+            }
+
+            function addEventListeners() {
+                document.getElementById('loginBtn').addEventListener('click', handleLogin);
+                document.getElementById('logoutBtn').addEventListener('click', handleLogout);
+                document.getElementById('writeNoticeBtn').addEventListener('click', openWriteModal);
+                document.getElementById('saveNoticeBtn').addEventListener('click', saveNotice);
+                
+                document.querySelectorAll('.accordion-button').forEach(button => {
+                    button.addEventListener('click', (e) => {
+                        const currentButton = e.currentTarget;
+                        const collapseTarget = document.querySelector(currentButton.dataset.bsTarget);
+                        
+                        const noticeId = currentButton.dataset.noticeId; 
+
+                        markNoticeAsRead(noticeId);
+                        
+                        const icon = currentButton.querySelector('.new-notice-icon');
+                        if (icon) {
+                            icon.style.display = 'none';
+                        }
+                        
+                        if (!collapseTarget.classList.contains('show')) {
+                            loadNoticeContent(noticeId);
+                        }
+                    });
+                });
+            }
+
+            function markNoticeAsRead(noticeId) {
+                let readNotices = JSON.parse(localStorage.getItem('readNotices')) || [];
+                if (!readNotices.includes(noticeId)) {
+                    readNotices.push(noticeId);
+                    localStorage.setItem('readNotices', JSON.stringify(readNotices));
+                }
+            }
+
+            function checkLoginStatus() {
+                const storedUserName = localStorage.getItem('tennis-schedule-user');
+                if (storedUserName) {
+                    loggedInUser = storedUserName;
+                    document.getElementById('currentUser').textContent = loggedInUser;
+                    document.getElementById('userBar').style.display = 'flex';
+                    document.getElementById('mainContent').style.display = 'block';
+                    refreshOpenNoticePermissions();
+                } else {
+                    userSelectModal.show();
+                }
+            }
+
+            async function handleLogin() {
+                const name = document.getElementById('loginName').value;
+                const password = document.getElementById('loginPassword').value;
+                if (!name || !password) return alert('이름과 비밀번호를 입력하세요.');
+                try {
+                    const response = await fetch('/api/member/login', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ name, password })
+                    });
+                    const result = await response.json();
+                    if (result.success) {
+                        localStorage.setItem('tennis-schedule-user', result.member.name);
+                        document.getElementById('loginPassword').value = '';
+                        userSelectModal.hide();
+                        checkLoginStatus();
+                    } else { alert(result.message); }
+                } catch (err) { alert('로그인 중 오류가 발생했습니다.'); }
+            }
+
+            function handleLogout() {
+                localStorage.removeItem('tennis-schedule-user');
+                loggedInUser = null;
+                document.getElementById('mainContent').style.display = 'none';
+                document.getElementById('userBar').style.display = 'none';
+                userSelectModal.show();
+            }
+
+            function refreshOpenNoticePermissions() {
+                const openItems = document.querySelectorAll('.accordion-collapse.show');
+                openItems.forEach(item => {
+                    const noticeId = item.id.split('-')[1];
+                    if (noticeId) {
+                        loadNoticeContent(noticeId);
+                    }
+                });
+            }
+
+            async function loadNoticeContent(noticeId) {
+                const accordionBody = document.querySelector(`#collapse-${noticeId} .accordion-body`);
+                accordionBody.innerHTML = '로딩 중...';
+                try {
+                    const response = await fetch(`/api/notices/${noticeId}`);
+                    const result = await response.json();
+                    if(result.success) {
+                        accordionBody.innerHTML = createNoticeDetailHtml(result.notice, result.comments);
+                        accordionBody.querySelector('.delete-notice-btn')?.addEventListener('click', deleteNotice);
+                        accordionBody.querySelector('.edit-notice-btn')?.addEventListener('click', openEditModal);
+                        accordionBody.querySelector('.submit-comment-btn').addEventListener('click', submitComment);
+                        accordionBody.querySelectorAll('.delete-comment-btn').forEach(btn => btn.addEventListener('click', deleteComment));
+                    } else {
+                        accordionBody.innerHTML = `<div class="text-danger">${result.message}</div>`;
+                    }
+                } catch (error) {
+                    accordionBody.innerHTML = `<div class="text-danger">내용을 불러오는데 실패했습니다.</div>`;
+                }
+            }
+
+            function createNoticeDetailHtml(notice, comments) {
+                // --- 댓글 목록 HTML 생성 ---
+                let commentsHtml = `<div class="mt-4"><div class="mb-2"><i class="bi bi-chat-left-text"></i> <strong>댓글 ${comments.length}</strong></div>`;
+                if (comments.length > 0) {
+                    comments.forEach(c => {
+                        // ✨ c.comment가 null일 경우 빈 문자열로 처리하여 오류 방지
+                        const commentContent = (c.comment || '').replace(/\n/g, '<br>');
+                        commentsHtml += `
+                            <div class="comment-item" id="comment-${c.id}">
+                                <div>
+                                    <span class="comment-author">${c.author}</span>
+                                    <span class="comment-content">${commentContent}</span>
+                                </div>
+                                <div class="comment-meta ms-1">
+                                    <span>${c.created_at}</span>
+                                    ${loggedInUser === c.author ? ` <i class="bi bi-x-lg delete-btn delete-comment-btn" data-comment-id="${c.id}"></i>` : ''}
+                                </div>
+                            </div>
+                        `;
+                    });
+                } else {
+                    commentsHtml += '<p class="text-muted small my-3">등록된 댓글이 없습니다.</p>';
+                }
+                commentsHtml += '</div>';
+
+                // --- 공지 내용 HTML 생성 ---
+                const noticeContent = notice.content || '';
+                let noticeContentHtml = `<div class="mb-3 bg-light rounded ql-snow"><div class="ql-editor" id="notice-content-text-${notice.id}">${noticeContent}</div></div>`;
+
+                // --- 수정/삭제 버튼 HTML 생성 ---
+                let authorControls = '';
+                if (loggedInUser === notice.author) {
+                    authorControls = `
+                        <div class="text-end mb-3">
+                            <button class="btn btn-sm btn-outline-secondary edit-notice-btn" data-notice-id="${notice.id}">수정</button>
+                            <button class="btn btn-sm btn-outline-danger delete-notice-btn" data-notice-id="${notice.id}">삭제</button>
+                        </div>
+                    `;
+                }
+
+                const commentFormHtml = `
+                    <div class="mt-3">
+                        <textarea class="form-control form-control-sm comment-input" rows="2" placeholder="댓글을 입력하세요..."></textarea>
+                        <div class="text-end mt-2">
+                        <button class="btn btn-secondary btn-sm submit-comment-btn" data-notice-id="${notice.id}">댓글 등록</button>
+                        </div>
+                    </div>
+                `;
+
+                // --- 최종 HTML 조합하여 반환 ---
+                return `
+                    ${noticeContentHtml}
+                    ${authorControls}
+                    ${commentsHtml}
+                    ${commentFormHtml}
+                `;
+            }
+
+            function openWriteModal() {
+                document.getElementById('writeNoticeModalLabel').textContent = '공지사항 작성';
+                document.getElementById('noticeId').value = '';
+                document.getElementById('noticeTitle').value = '';
+                quill.setText('');
+
+                writeNoticeModal.show();
+            }
+
+            function openEditModal(e) {
+                const noticeId = e.target.dataset.noticeId;
+                const title = e.target.closest('.accordion-item').querySelector('.accordion-button .fw-bold').textContent;
+                const content = document.getElementById(`notice-content-text-${noticeId}`).innerHTML;
+
+                document.getElementById('writeNoticeModalLabel').textContent = '공지사항 수정';
+                document.getElementById('noticeId').value = noticeId;
+                document.getElementById('noticeTitle').value = title;
+                quill.root.innerHTML = content;
+
+                writeNoticeModal.show();
+            }
+
+            async function saveNotice() {
+                const id = document.getElementById('noticeId').value;
+                const title = document.getElementById('noticeTitle').value;
+                const content = quill.root.innerHTML;
+                if (!title.trim() || quill.getText().trim().length === 0) {
+                    return alert('제목과 내용을 모두 입력해주세요.');
+                }
+
+                const isEditing = !!id;
+                const url = isEditing ? `/api/notices/${id}` : '/api/notices';
+                const method = isEditing ? 'PUT' : 'POST';
+
+                try {
+                    const response = await fetch(url, {
+                        method,
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ title, content, author: loggedInUser })
+                    });
+                    const result = await response.json();
+                    if(result.success) {
+                        writeNoticeModal.hide();
+                        location.reload();
+                    } else { alert(result.message); }
+                } catch(err) { alert('저장 중 오류 발생'); }
+            }
+
+            async function deleteNotice(e) {
+                const noticeId = e.target.dataset.noticeId;
+                if (!confirm('정말로 게시글을 삭제하시겠습니까? 댓글도 모두 삭제됩니다.')) return;
+                try {
+                    const response = await fetch(`/api/notices/${noticeId}`, {
+                        method: 'DELETE',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ author: loggedInUser })
+                    });
+                    const result = await response.json();
+                    if(result.success) {
+                        document.getElementById(`notice-item-${noticeId}`).remove();
+                    } else { alert(result.message); }
+                } catch(err) { alert('게시글 삭제 중 오류 발생'); }
+            }
+
+            async function submitComment(e) {
+                const noticeId = e.target.dataset.noticeId;
+                const accordionBody = e.target.closest('.accordion-body');
+                const commentInput = accordionBody.querySelector('.comment-input');
+                const comment = commentInput.value.trim();
+                if(!comment) return alert('댓글 내용을 입력하세요.');
+
+                try {
+                    const response = await fetch('/api/notice-comments', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ notice_id: noticeId, author: loggedInUser, comment })
+                    });
+                    const result = await response.json();
+                    if(result.success) {
+                        loadNoticeContent(noticeId);
+                    } else { alert(result.message); }
+                } catch(err) { alert('댓글 등록 중 오류 발생'); }
+            }
+
+            async function deleteComment(e) {
+                const commentId = e.target.dataset.commentId;
+                const noticeId = e.target.closest('.accordion-collapse').id.split('-')[1];
+                if (!confirm('정말로 댓글을 삭제하시겠습니까?')) return;
+                try {
+                    const response = await fetch(`/api/notice-comments/${commentId}`, {
+                        method: 'DELETE',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ author: loggedInUser })
+                    });
+                    const result = await response.json();
+                    if(result.success) {
+                        loadNoticeContent(noticeId);
+                    } else { alert(result.message); }
+                } catch(err) { alert('댓글 삭제 중 오류 발생'); }
+            }
+        });
+    </script>
+</body>
+</html>

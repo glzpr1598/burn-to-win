@@ -3,14 +3,14 @@
 <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <link rel="apple-touch-icon" href="/image/btw-tran-180x180.png"/>
-    <link rel="icon" type="image/png" href="/image/btw-tran-180x180.png"/>
+    <link rel="apple-touch-icon" href="/image/btw.png"/>
+    <link rel="icon" type="image/png" href="/image/btw.png"/>
     <link rel="stylesheet" href="/css/common.css" />
     <title>불꽃테니스</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet" />
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css" />
     <style>
-        .month-navigator { display: flex; justify-content: center; align-items: center; padding: 15px; background-color: #f8f9fa; border-bottom: 1px solid #eee; flex-shrink: 0; }
+        .month-navigator { display: flex; justify-content: center; align-items: center; padding: 10px; background-color: #f8f9fa; border-bottom: 1px solid #eee; flex-shrink: 0; }
         .month-navigator a { text-decoration: none; color: #212529; }
         .month-navigator h5 { margin: 0; }
         .table-responsive { flex-grow: 1; overflow-y: auto; }
@@ -19,14 +19,20 @@
         #attendanceTable tbody tr { cursor: pointer; }
         #attendanceTable td { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; } /* 셀 내용이 길어질 경우 대비 */
         .sortable-th { cursor: pointer; }
+        .modal-body * { font-size: 0.9rem; }
+        .modal-body .table * { font-size: 0.8rem; }
     </style>
 </head>
 <body>
     <div class="app-container" data-year="<%= year %>" data-month="<%= month %>">
         <div class="d-flex align-items-center justify-content-between sticky-header">
             <div class="d-flex align-items-center">
-                <img src="/image/btw-tran-180x180.png" alt="로고" style="height: 40px; margin-right: 5px;">
-                <h5 style="margin-bottom: 0;"><b>출석부</b></h5>
+                <a href="/schedule">
+                    <img src="/image/btw-tran-180x180.png" alt="로고" style="height: 40px; margin-right: 5px;">
+                </a>
+                <a href="/attendance" style="color: black; text-decoration: none;">
+                    <h5 style="margin-bottom: 0;"><b>출석부</b></h5>
+                </a>
             </div>
             <i class="bi bi-list hamburger-icon"></i>
         </div>
@@ -36,9 +42,9 @@
 
         <div class="month-navigator">
             <div class="d-flex align-items-center" style="gap: 1rem;">
-                <a id="prevMonth" href="#"><i class="bi bi-chevron-left fs-5"></i></a>
-                <h5 id="month-display" style="cursor: pointer; margin: 0;"><b><%= year %>년 <%= month %>월</b></h5>
-                <a id="nextMonth" href="#"><i class="bi bi-chevron-right fs-5"></i></a>
+                <a id="prevMonth" href="#"><i class="bi bi-chevron-left fs-6"></i></a>
+                <h6 id="month-display" style="cursor: pointer; margin: 0;"><b><%= year %>년 <%= month %>월</b></h6>
+                <a id="nextMonth" href="#"><i class="bi bi-chevron-right fs-6"></i></a>
             </div>
         </div>
 
@@ -54,7 +60,7 @@
                     <tr>
                         <th class="sortable-th" onclick="sortTable(0, 'str')">이름 <i class="bi bi-arrow-down-up"></i></th>
                         <th class="sortable-th" onclick="sortTable(1, 'num')">출석 <i class="bi bi-arrow-down-up"></i></th>
-                        <th>출석일</th>
+                        <th>참석일</th>
                         <th></th>
                     </tr>
                 </thead>
@@ -62,7 +68,12 @@
                     <% if (attendanceData && attendanceData.length > 0) { %>
                         <% attendanceData.forEach(member => { %>
                             <tr onclick="showMemberDetails(this)" data-name="<%= member.name %>">
-                                <td><strong><%= member.name %></strong></td>
+                                <td>
+                                    <% const genderClass = member.gender === '남' ? 'text-male' : (member.gender === '여' ? 'text-female' : ''); %>
+                                    <span class="<%= genderClass %>">
+                                        <%= member.name %>
+                                    </span>
+                                </td>
                                 <td><%= member.attendanceCount %>일</td>
                                 <td class="text-start ps-2" style="white-space: normal;">
                                     <%
@@ -94,10 +105,10 @@
     </div>
 
     <div class="modal fade" id="memberDetailModal" tabindex="-1">
-      <div class="modal-dialog modal-dialog-centered modal-lg modal-dialog-scrollable">
+      <div class="modal-dialog modal-dialog-centered modal-dialog-scrollable">
         <div class="modal-content">
           <div class="modal-header">
-            <h5 class="modal-title" id="modalMemberName"></h5>
+            <h6 class="modal-title" id="modalMemberName" style="font-weight: bolder;"></h6>
             <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
           </div>
           <div class="modal-body" style="font-size: 0.8rem;">
@@ -107,7 +118,7 @@
                         <tr>
                             <th>날짜</th>
                             <th>출석</th>
-                            <th>출석일</th>
+                            <th>참석일</th>
                         </tr>
                     </thead>
                     <tbody id="modalTbody">
@@ -119,12 +130,11 @@
       </div>
     </div>
 
-
     <div class="modal fade" id="monthSelectModal" tabindex="-1">
       <div class="modal-dialog modal-sm modal-dialog-centered">
         <div class="modal-content">
           <div class="modal-header">
-            <h5 class="modal-title">날짜 선택</h5>
+            <h6 class="modal-title"><b>날짜 선택</b></h6>
             <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
           </div>
           <div class="modal-body d-flex justify-content-center">
@@ -144,7 +154,7 @@
               </div>
           </div>
           <div class="modal-footer">
-            <button type="button" class="btn btn-primary w-100" id="monthSelectConfirm">확인</button>
+            <button type="button" class="btn btn-sm btn-primary w-100" id="monthSelectConfirm">확인</button>
           </div>
         </div>
       </div>

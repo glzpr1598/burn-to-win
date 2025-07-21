@@ -3,8 +3,8 @@
 <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <link rel="apple-touch-icon" href="/image/btw-tran-180x180.png"/> 
-    <link rel="icon" type="image/png" href="/image/btw-tran-180x180.png"/> 
+    <link rel="apple-touch-icon" href="/image/btw.png"/> 
+    <link rel="icon" type="image/png" href="/image/btw.png"/> 
     <link rel="stylesheet" href="/css/common.css" />
     <title>불꽃테니스</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet" />
@@ -23,9 +23,7 @@
         #searchToggle .bi-search { font-size: 1.2rem; color: black; margin-right: 15px; }
         .text-teammate { color: darkblue !important; }
         .text-opponent { color: darkred !important; }
-        /* 행 클릭을 유도하기 위해 커서 모양 변경 */
         #chemistryTable tbody tr { cursor: pointer; }
-        /* 모달 스타일 추가 */
         .modal-body .stat-item {
             display: flex;
             justify-content: space-between;
@@ -40,24 +38,33 @@
             text-align: right;
             font-size: 0.9rem;
         }
+        .modal-body * {
+            font-size: 0.9rem;
+        }
+        .modal-body .table * {
+            font-size: 0.8rem;
+        }
+        .group-a-bg td { background-color: #ffffff; }
+        .group-b-bg td { background-color: #f2f2f2; }
     </style>
 </head>
 
 <body>
     <div class="app-container">
-        <!-- 헤더 -->
         <div class="d-flex align-items-center sticky-header" style="padding: 0px 5px;">
             <div class="d-flex align-items-center flex-grow-1">
-                <img src="/image/btw-tran-180x180.png" alt="로고" style="height: 40px; margin-right: 5px;">
-                <h5 style="margin-bottom: 0;"><b>상대와 케미</b></h5>
+                <a href="/schedule">
+                    <img src="/image/btw-tran-180x180.png" alt="로고" style="height: 40px; margin-right: 5px;">
+                </a>
+                <a href="/chemistry" style="color: black; text-decoration: none;">
+                    <h5 style="margin-bottom: 0;"><b>상대와 케미</b></h5>
+                </a>
             </div>
             <i class="bi bi-list hamburger-icon"></i>
         </div>
 
-        <!-- 사이드 메뉴 -->
         <%- include('partials/sidemenu') %>
 
-        <!-- 필터 섹션 -->
         <div class="filter-section">
             <div class="row g-2 mb-3">
                 <div class="col-4">
@@ -67,50 +74,50 @@
                             <% const periods = [ { value: 'all', text: '전체' }, { value: '1m', text: '최근 1개월' }, { value: '3m', text: '최근 3개월' }, { value: '6m', text: '최근 6개월' }, { value: '1y', text: '최근 1년' }, { value: '2025', text: '2025년' }, { value: '2024', text: '2024년' } ]; %>
                             <% periods.forEach(period => { %>
                                 <li><a class="dropdown-item" href="#" onclick="applyFilters({ period: '<%= period.value %>' })"><%= period.text %></a></li>
-                            <% }) %>
+                             <% }) %>
                         </ul>
                     </div>
                 </div>
                 <div class="col-4">
-                    <div class="dropdown">
+                     <div class="dropdown">
                         <button class="btn btn-outline-secondary btn-sm dropdown-toggle w-100" style="font-size: 0.8rem;" type="button" id="typeDropdownButton" data-bs-toggle="dropdown" data-bs-auto-close="outside" aria-expanded="false">분류</button>
                         <div class="dropdown-menu" aria-labelledby="typeDropdownButton">
                             <div class="filter-control-links"><a href="#" onclick="selectAll('typeFilter'); return false;">전체선택</a><a href="#" onclick="deselectAll('typeFilter'); return false;">전체해제</a></div>
                             <div id="typeFilter" class="checkbox-group">
-                                <% const types = ['남단', '여단', '남복', '여복', '혼복', '혼단(남vs여)', '혼복(남3)', '혼복(여3)', '혼복(남vs여)']; %>
+                                 <% const types = ['남단', '여단', '남복', '여복', '혼복', '혼단(남vs여)', '혼복(남3)', '혼복(여3)', '혼복(남vs여)']; %>
                                 <% types.forEach(type => { %>
                                     <div class="form-check"><input class="form-check-input" type="checkbox" value="<%= type %>" id="type-<%= type %>"><label class="form-check-label" for="type-<%= type %>"><%= type %></label></div>
-                                <% }) %>
+                                 <% }) %>
                             </div>
                             <button class="btn btn-primary btn-sm w-100" onclick="applyFilters()">확인</button>
-                        </div>
+                         </div>
                     </div>
                 </div>
                 <div class="col-4">
                     <div class="dropdown">
-                        <button class="btn btn-outline-secondary btn-sm dropdown-toggle w-100" style="font-size: 0.8rem;" type="button" id="courtDropdownButton" data-bs-toggle="dropdown" data-bs-auto-close="outside" aria-expanded="false">코트</button>
+                         <button class="btn btn-outline-secondary btn-sm dropdown-toggle w-100" style="font-size: 0.8rem;" type="button" id="courtDropdownButton" data-bs-toggle="dropdown" data-bs-auto-close="outside" aria-expanded="false">코트</button>
                         <div class="dropdown-menu" aria-labelledby="courtDropdownButton">
                             <div class="filter-control-links"><a href="#" onclick="selectAll('courtFilter'); return false;">전체선택</a><a href="#" onclick="deselectAll('courtFilter'); return false;">전체해제</a></div>
                             <div id="courtFilter" class="checkbox-group">
-                                <% courts.forEach(court => { %>
+                                 <% courts.forEach(court => { %>
                                     <div class="form-check"><input class="form-check-input" type="checkbox" value="<%= court.name %>" id="court-<%= court.name %>"><label class="form-check-label" for="court-<%= court.name %>"><%= court.name %></label></div>
-                                <% }) %>
+                                 <% }) %>
                             </div>
                             <button class="btn btn-primary btn-sm w-100" onclick="applyFilters()">확인</button>
-                        </div>
+                     </div>
                     </div>
                 </div>
             </div>
             <div class="row align-items-center g-2">
                  <div class="col-auto" style="width: 100px;">
-                    <select id="playerSelect" class="form-select form-select-sm" onchange="applyFilters({ player: this.value })">
+                     <select id="playerSelect" class="form-select form-select-sm" onchange="applyFilters({ player: this.value })">
                         <% if (members && members.length > 0) { %>
                             <% members.forEach(member => { %>
                                 <option value="<%= member.name %>" <%= member.name === selectedPlayer ? 'selected' : '' %>><%= member.name %></option>
                             <% }) %>
                         <% } else { %><option>선수 없음</option><% } %>
                     </select>
-                 </div>
+                </div>
                  <div class="col-auto">
                      <span class="col-form-label-sm">은(는)</span>
                  </div>
@@ -118,61 +125,63 @@
         </div>
 
         <div class="table-responsive">
-            <table id="chemistryTable" class="table table-sm table-striped text-center align-middle">
+             <table id="chemistryTable" class="table table-sm table-striped text-center align-middle">
                 <thead class="table-light">
                     <tr>
                         <th class="sortable-th" onclick="sortTable(0)">그(녀)와</th>
-                        <th class="sortable-th" onclick="sortTable(1)">같은편</th>
-                        <th class="sortable-th" onclick="sortTable(2)">승률</th>
-                        <th class="sortable-th" onclick="sortTable(3)">상대편</th>
+                        <th class="sortable-th" onclick="sortTable(1)">같은 팀</th>
+                         <th class="sortable-th" onclick="sortTable(2)">승률</th>
+                        <th class="sortable-th" onclick="sortTable(3)">상대 팀</th>
                         <th class="sortable-th" onclick="sortTable(4)">승률</th>
                         <th></th>
-                    </tr>
+                     </tr>
                 </thead>
                 <tbody>
                     <% if (chemistryData && chemistryData.length > 0) { %>
-                        <% chemistryData.forEach(player => { %>
+                         <% chemistryData.forEach(player => { %>
                             <tr onclick="showChemistryDetails(this)"
                                 data-name="<%= player.name %>"
-                                data-same-team-matches="<%= player.sameTeamMatches %>"
+                                 data-same-team-matches="<%= player.sameTeamMatches %>"
                                 data-same-team-wins="<%= player.sameTeamWins %>"
                                 data-same-team-draws="<%= player.sameTeamDraws %>"
-                                data-same-team-losses="<%= player.sameTeamLosses %>"
+                                 data-same-team-losses="<%= player.sameTeamLosses %>"
                                 data-same-team-win-rate="<%= player.sameTeamWinRate %>"
                                 data-opponent-matches="<%= player.opponentMatches %>"
-                                data-opponent-wins="<%= player.opponentWins %>"
+                                 data-opponent-wins="<%= player.opponentWins %>"
                                 data-opponent-draws="<%= player.opponentDraws %>"
                                 data-opponent-losses="<%= player.opponentLosses %>"
-                                data-opponent-win-rate="<%= player.opponentWinRate %>"
+                                 data-opponent-win-rate="<%= player.opponentWinRate %>"
                                 data-win-rate-diff="<%= player.winRateDiff %>">
-                                <td><strong><%= player.name %></strong></td>
-                                <td class="text-teammate"><%= player.sameTeamMatches %></td>
+                                <td>
+                                    <% const genderClass = player.gender === '남' ? 'text-male' : (player.gender === '여' ? 'text-female' : ''); %>
+                                    <span class="<%= genderClass %>"><%= player.name %></span>
+                                </td>
+                                 <td class="text-teammate"><%= player.sameTeamMatches %></td>
                                 <td class="text-teammate">
                                     <% if (player.sameTeamWinRate > 50) { %>
-                                        <strong><%= player.sameTeamWinRate %>%</strong>
+                                         <strong><%= player.sameTeamWinRate %>%</strong>
                                     <% } else { %>
-                                        <%= player.sameTeamWinRate %>%
+                                         <%= player.sameTeamWinRate %>%
                                     <% } %>
                                 </td>
-                                <td class="text-opponent"><%= player.opponentMatches %></td>
+                                 <td class="text-opponent"><%= player.opponentMatches %></td>
                                 <td class="text-opponent">
                                     <% if (player.opponentWinRate > 50) { %>
-                                        <strong><%= player.opponentWinRate %>%</strong>
+                                         <strong><%= player.opponentWinRate %>%</strong>
                                     <% } else { %>
-                                        <%= player.opponentWinRate %>%
+                                         <%= player.opponentWinRate %>%
                                     <% } %>
                                 </td>
-                                <td><i class="bi bi-chevron-right text-muted"></i></td>
+                                 <td><i class="bi bi-chevron-right text-muted"></i></td>
                             </tr>
                         <% }) %>
                     <% } else { %>
-                        <tr><td colspan="6" class="text-center p-5">표시할 데이터가 없습니다.<br><small>필터 조건을 변경해주세요.</small></td></tr>
+                         <tr><td colspan="6" class="text-center p-5">표시할 데이터가 없습니다.<br><small>필터 조건을 변경해주세요.</small></td></tr>
                     <% } %>
                 </tbody>
             </table>
         </div>
 
-        <!-- 하단 네비게이션 -->
         <%- include('partials/navbar', { currentPage: 'chemistry' }) %>
     </div>
 
@@ -180,17 +189,17 @@
         <div class="modal-dialog modal-dialog-centered">
             <div class="modal-content">
                 <div class="modal-header">
-                    <h5 class="modal-title" id="chemistryDetailModalLabel">상세 케미</h5>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                    <h6 class="modal-title" id="chemistryDetailModalLabel">상세 케미</h6>
+                     <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                 </div>
-                <div id="modalBodyContent" class="modal-body">
-                    </div>
+                <div id="modalBodyContent" class="modal-body" style="padding: 0;">
+                </div>
             </div>
         </div>
     </div>
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
-    <script src="/js/common-filter.js"></script>
+     <script src="/js/common-filter.js"></script>
     <script>
     function applyFilters(options = {}) {
         let filters = filterStorage.load();
@@ -201,7 +210,6 @@
         if (options.period) filters.period = options.period;
         if (options.player) filters.player = options.player;
         filterStorage.save(filters);
-
         const params = new URLSearchParams();
         params.set('period', filters.period);
         if (filters.types.length > 0) params.set('types', filters.types.join(','));
@@ -221,7 +229,7 @@
         if (savedFilters.courts && savedFilters.courts.length > 0) savedParams.set('courts', savedFilters.courts.join(','));
         if (savedFilters.player) savedParams.set('player', savedFilters.player);
 
-        if (!currentParams.has('player') && savedFilters.player || currentParams.toString() !== savedParams.toString()) {
+         if (!currentParams.has('player') && savedFilters.player || currentParams.toString() !== savedParams.toString()) {
             window.location.replace(`/chemistry?${savedParams.toString()}`);
             return;
         }
@@ -229,7 +237,6 @@
         const periods = [ { value: 'all', text: '전체' }, { value: '1m', text: '최근 1개월' }, { value: '3m', text: '최근 3개월' }, { value: '6m', text: '최근 6개월' }, { value: '1y', text: '최근 1년' }, { value: '2025', text: '2025년' }, { value: '2024', text: '2024년' } ];
         const selectedPeriod = periods.find(p => p.value === savedFilters.period) || periods[3];
         document.getElementById('periodDropdownButton').textContent = `기간: ${selectedPeriod.text}`;
-        
         document.querySelectorAll('#typeFilter input').forEach(cb => { if (savedFilters.types.includes(cb.value)) cb.checked = true; });
         if (savedFilters.courts) document.querySelectorAll('#courtFilter input').forEach(cb => { if (savedFilters.courts.includes(cb.value)) cb.checked = true; });
         
@@ -241,27 +248,21 @@
         
         defaultSortTable();
     });
-
-        /**
-         * 페이지 하단 네비게이션 링크를 업데이트하는 함수
-         * localStorage에 저장된 값을 기준으로 링크의 href를 동적으로 생성합니다.
-         */
         function updateNavLinks() {
             const navLinks = document.querySelectorAll('.bottom-nav .nav-link');
-            const savedFilters = filterStorage.load(); // 저장된 필터 불러오기
+            const savedFilters = filterStorage.load();
             
             const paramsToCarry = new URLSearchParams();
             paramsToCarry.set('period', savedFilters.period);
             if (savedFilters.types.length > 0) paramsToCarry.set('types', savedFilters.types.join(','));
             if (savedFilters.courts.length > 0) paramsToCarry.set('courts', savedFilters.courts.join(','));
-
             navLinks.forEach(link => {
                 const targetUrl = new URL(link.href, window.location.origin);
                 const finalParams = new URLSearchParams(paramsToCarry);
 
                 if (targetUrl.pathname === '/chemistry' && savedFilters.player) {
                     finalParams.set('player', savedFilters.player);
-                }
+                 }
                 
                 link.href = `${targetUrl.pathname}?${finalParams.toString()}`;
             });
@@ -274,28 +275,26 @@
             if (!tbody || (tbody.rows.length <= 1 && tbody.rows[0].cells.length <= 1)) { return; }
             
             const rows = Array.from(tbody.querySelectorAll('tr'));
-            
             if (sortState.columnIndex === columnIndex) {
                 sortState.ascending = !sortState.ascending;
             } else {
                 sortState.columnIndex = columnIndex;
-                sortState.ascending = false; // 새로운 컬럼 클릭 시 기본적으로 내림차순
+                sortState.ascending = false;
             }
             
             rows.sort((rowA, rowB) => {
                 const cellA_text = rowA.cells[columnIndex].innerText.trim();
                 const cellB_text = rowB.cells[columnIndex].innerText.trim();
-                let valA, valB;
+                 let valA, valB;
 
-                if (columnIndex === 0) { // '그(녀)와' 컬럼 (문자열 정렬)
+                if (columnIndex === 0) {
                     return sortState.ascending ? cellA_text.localeCompare(cellB_text) : cellB_text.localeCompare(cellA_text);
-                } else { // 나머지 숫자 컬럼 (경기수, 승률)
-                    // '%' 기호를 제거하고 숫자로 변환합니다.
+                } else {
                     valA = parseFloat(cellA_text.replace('%', ''));
                     valB = parseFloat(cellB_text.replace('%', ''));
                     
-                    if (isNaN(valA)) valA = -Infinity; // 빈 값은 가장 작게 처리
-                    if (isNaN(valB)) valB = -Infinity;
+                    if (isNaN(valA)) valA = -Infinity;
+                     if (isNaN(valB)) valB = -Infinity;
                     
                     return sortState.ascending ? valA - valB : valB - valA;
                 }
@@ -311,49 +310,37 @@
             if (!tbody || (tbody.rows.length <= 1 && tbody.rows[0].cells.length <= 1)) { return; }
 
             const rows = Array.from(tbody.querySelectorAll('tr'));
-
-            // 셀의 텍스트에서 숫자 값만 추출하는 헬퍼 함수
             const getValue = (row, index) => {
                 const text = row.cells[index].innerText.trim().replace('%', '');
                 const value = parseFloat(text);
-                return isNaN(value) ? -Infinity : value; // 숫자가 아니면 가장 작은 값으로 처리
+                return isNaN(value) ? -Infinity : value;
             };
-
             rows.sort((a, b) => {
-                // 1. 같은 편 경기수 (내림차순)
                 const teamMatchesA = getValue(a, 1);
                 const teamMatchesB = getValue(b, 1);
                 if (teamMatchesA !== teamMatchesB) {
-                    return teamMatchesB - teamMatchesA;
+                     return teamMatchesB - teamMatchesA;
                 }
-
-                // 2. 같은 편 승률 (내림차순)
                 const teamWinRateA = getValue(a, 2);
                 const teamWinRateB = getValue(b, 2);
                 if (teamWinRateA !== teamWinRateB) {
                     return teamWinRateB - teamWinRateA;
                 }
-
-                // 3. 상대 편 경기수 (내림차순)
                 const oppMatchesA = getValue(a, 3);
                 const oppMatchesB = getValue(b, 3);
                 if (oppMatchesA !== oppMatchesB) {
                     return oppMatchesB - oppMatchesA;
                 }
-
-                // 4. 상대 편 승률 (내림차순)
                 const oppWinRateA = getValue(a, 4);
                 const oppWinRateB = getValue(b, 4);
                 return oppWinRateB - oppWinRateA;
             });
-
-            // 정렬된 순서대로 행을 다시 추가
             tbody.innerHTML = '';
             rows.forEach(row => tbody.appendChild(row));
         }
 
 		let chemistryModal = null;
-		function showChemistryDetails(rowElement) {
+		async function showChemistryDetails(rowElement) {
 			const dataset = rowElement.dataset;
 			const selectedPlayer = '<%= selectedPlayer %>';
 			const clickedPlayerName = dataset.name;
@@ -372,7 +359,6 @@
 
 			const winRateDiff = parseInt(dataset.winRateDiff);
 			const totalMatches = sameMatches + oppMatches;
-
 			const sameDrawsText = sameDraws > 0 ? `${sameDraws}무 ` : '';
 			const oppDrawsText = oppDraws > 0 ? `${oppDraws}무 ` : '';
 			const sameWinRateText = sameWinRate > 50 ? `<strong>(${sameWinRate}%)</strong>` : `(${sameWinRate}%)`;
@@ -382,7 +368,6 @@
 			const diffSign = winRateDiff > 0 ? '+' : '';
 			const winRateDiffHTML = `<span class="${diffClass}">${diffSign}${winRateDiff}%</span>`;
 
-            // [수정] 케미 태그를 종류별로 분리하여 생성
             const sameTeamTags = [];
             if (sameMatches > 0) {
                 if (sameWinRate >= 90) { sameTeamTags.push('#환상의케미'); } 
@@ -397,7 +382,6 @@
                 else { sameTeamTags.push('#케미실종'); } 
             }
             const sameTeamTagsText = sameTeamTags.join(' ');
-
             const opponentTags = [];
             if (oppMatches > 0) {
                 if (oppWinRate >= 90) { opponentTags.push('#통곡의벽'); } 
@@ -413,42 +397,152 @@
                 else { opponentTags.push('#제발한번만이기자'); }
             }
             const opponentTagsText = opponentTags.join(' ');
-
-			// [수정] 모달 내용 구성 시, 각 태그를 해당 전적 아래에 오도록 변경
 			const modalTitle = `<strong>${selectedPlayer}</strong>은(는) <strong>${clickedPlayerName}</strong>과(와)`;
 			const modalBodyHTML = `
-				<div class="stat-item">
-					<span><strong>📊&nbsp; 전체</strong></span>
-					<span class="stat-value"><strong>${totalMatches}전</strong></span>
-				</div>
-				<div class="stat-item">
-					<span><strong>🤝&nbsp; 같은편일 때</strong></span>
-					<span class="stat-value text-teammate">${sameMatches}전 ${sameWins}승 ${sameDrawsText}${sameLosses}패 ${sameWinRateText}</span>
-				</div>
-                ${sameTeamTagsText ? `
-                <div class="stat-item">
-                    <span></span>
-                    <span class="stat-value">${sameTeamTagsText}</span>
-                </div>` : ''}
-				<div class="stat-item">
-					<span><strong>⚔️&nbsp; 상대편일 때</strong></span>
-					<span class="stat-value text-opponent">${oppMatches}전 ${oppWins}승 ${oppDrawsText}${oppLosses}패 ${oppWinRateText}</span>
-				</div>
-                ${opponentTagsText ? `
-                <div class="stat-item">
-                    <span></span>
-                    <span class="stat-value">${opponentTagsText}</span>
-                </div>` : ''}
+                <div style="padding: 1rem; border-bottom: 1px solid #dee2e6;">
+    				<div class="stat-item">
+	    				<span><strong>📊 전체</strong></span>
+		    			<span class="stat-value">${totalMatches}전</span>
+			    	</div>
+				    <div class="stat-item">
+					    <span><strong>🤝 같은 팀일 때</strong></span>
+    					<span class="stat-value text-teammate">${sameMatches}전 ${sameWins}승 ${sameDrawsText}${sameLosses}패 ${sameWinRateText}</span>
+	    			</div>
+                    ${sameTeamTagsText ? `
+                    <div class="stat-item">
+                        <span></span>
+                        <span class="stat-value">${sameTeamTagsText}</span>
+                    </div>` : ''}
+    				<div class="stat-item">
+	    				<span><strong>⚔️ 상대 팀일 때</strong></span>
+		    			<span class="stat-value text-opponent">${oppMatches}전 ${oppWins}승 ${oppDrawsText}${oppLosses}패 ${oppWinRateText}</span>
+			    	</div>
+                    ${opponentTagsText ? `
+                    <div class="stat-item">
+                        <span></span>
+                        <span class="stat-value">${opponentTagsText}</span>
+                    </div>` : ''}
+                </div>
 			`;
-
 			document.getElementById('chemistryDetailModalLabel').innerHTML = modalTitle;
 			document.getElementById('modalBodyContent').innerHTML = modalBodyHTML;
+
+            // Fetch and display match records
+            const savedFilters = filterStorage.load();
+            const params = new URLSearchParams({
+                player1: selectedPlayer,
+                player2: clickedPlayerName,
+                period: savedFilters.period,
+                types: savedFilters.types.join(','),
+                courts: savedFilters.courts.join(',')
+            });
+            
+            try {
+                const response = await fetch(`/api/matches/chemistry?${params.toString()}`);
+                if (!response.ok) throw new Error('경기 기록을 불러오지 못했습니다.');
+
+                // ✨ 수정: genderMap 받기
+                const { matches, genderMap } = await response.json();
+                
+                // ✨ 수정: genderMap 전달
+                const tableHtml = buildChemistryMatchTableHtml(matches, selectedPlayer, clickedPlayerName, genderMap);
+                document.getElementById('modalBodyContent').innerHTML += tableHtml;
+            } catch (error) {
+                console.error(error);
+                document.getElementById('modalBodyContent').innerHTML += `<p class="text-center p-3 text-danger">${error.message}</p>`;
+            }
 
 			if (!chemistryModal) {
 				chemistryModal = new bootstrap.Modal(document.getElementById('chemistryDetailModal'));
 			}
 			chemistryModal.show();
 		}
+
+        function buildChemistryMatchTableHtml(matches, basePlayer, comparePlayer, genderMap) {
+            if (matches.length === 0) return '';
+            
+            const stylePlayerName = (player) => {
+                if (!player) return '';
+                const gender = genderMap[player];
+                const genderClass = gender === '남' ? 'text-male' : (gender === '여' ? 'text-female' : '');
+                const isBold = player === basePlayer || player === comparePlayer;
+                const content = isBold ? `<strong>${player}</strong>` : player;
+                return `<span class = "${genderClass}">${content}</span>`;
+            };
+
+            const sameTeamMatches = [];
+            const opponentMatches = [];
+            matches.forEach(match => {
+                const team1Players = [match.team1_deuce, match.team1_ad].filter(p => p);
+                const isBaseOnTeam1 = team1Players.includes(basePlayer);
+                const isCompareOnTeam1 = team1Players.includes(comparePlayer);
+                if (isBaseOnTeam1 === isCompareOnTeam1) {
+                    sameTeamMatches.push(match);
+                } else {
+                    opponentMatches.push(match);
+                }
+            });
+
+            let finalHtml = '';
+
+            const createTable = (title, matchList, titleClass, isSameTeam) => {
+                if (matchList.length === 0) return '';
+                
+                const borderColor = isSameTeam ? '#0d6efd' : '#dc3545';
+                const textColor = isSameTeam ? 'darkblue' : 'darkred';
+                const icon = isSameTeam ? '🤝' : '⚔️';
+
+                let tableHtml = `
+                    <div class="mt-3" style="padding: 0 1rem;">
+                        <h6 class="p-2" style="border-bottom: 2px solid ${borderColor}; color: ${textColor};">${icon} <strong>${title}</strong></h6>
+                    </div>
+                    <div class="table-responsive">
+                        <table class="table table-sm text-center align-middle text-nowrap" style="font-size: 0.8rem; margin-bottom: 0;">
+                            <thead class="table-light">
+                                <tr><th>날짜</th><th>코트</th><th>우리 팀</th><th></th><th>상대 팀</th><th>결과</th><th>영상</th></tr>
+                            </thead>
+                            <tbody>`;
+
+                let prevDate = null, prevCourt = null, currentGroupClass = 'group-a-bg';
+                matchList.forEach(match => {
+                    if (prevDate !== null && (match.date !== prevDate || match.court !== prevCourt)) {
+                        currentGroupClass = (currentGroupClass === 'group-a-bg') ? 'group-b-bg' : 'group-a-bg';
+                    }
+                    prevDate = match.date;
+                    prevCourt = match.court;
+
+                    const team1_raw = [match.team1_deuce, match.team1_ad].filter(p => p);
+                    const team2_raw = [match.team2_deuce, match.team2_ad].filter(p => p);
+                    const isBaseOnTeam1 = team1_raw.includes(basePlayer);
+                    
+                    const myTeam = isBaseOnTeam1 ? team1_raw : team2_raw;
+                    const opponentTeam = isBaseOnTeam1 ? team2_raw : team1_raw;
+                    
+                    const myTeamScore = isBaseOnTeam1 ? match.team1_score : match.team2_score;
+                    const opponentScore = isBaseOnTeam1 ? match.team2_score : match.team1_score;
+                    const scoreHtml = myTeamScore > opponentScore ? `<b>${myTeamScore}</b>:${opponentScore}` : myTeamScore < opponentScore ? `${myTeamScore}:<b>${opponentScore}</b>` : `${myTeamScore}:${opponentScore}`;
+                    
+                    const result = isBaseOnTeam1 ? match.team1_result : match.team2_result;
+
+                    const myTeamFormatted = myTeam.map(p => stylePlayerName(p)).join(' ');
+                    const opponentTeamFormatted = opponentTeam.map(p => stylePlayerName(p)).join(' ');
+                    
+                    const result_display = result === '승' ? '<span style="color: darkblue;">승</span>' : (result === '패' ? '<span style="color: darkred;">패</span>' : '<span>무</span>');
+                    const videoLink = match.video ? `<a href="${match.video}" target="_blank" rel="noopener" onclick="event.stopPropagation();"><i class="bi bi-youtube text-danger fs-6"></i></a>` : '';
+                    const dateDisplay = match.date ? match.date.substring(2) : '';
+
+                    tableHtml += `<tr class="${currentGroupClass}"><td>${dateDisplay}</td><td>${match.court}</td><td>${myTeamFormatted}</td><td>${scoreHtml}</td><td>${opponentTeamFormatted}</td><td>${result_display}</td><td>${videoLink}</td></tr>`;
+                });
+                tableHtml += '</tbody></table></div>';
+                return tableHtml;
+            };
+            
+            finalHtml += createTable('같은 팀일 때', sameTeamMatches, 'text-teammate', true);
+            finalHtml += createTable('상대 팀일 때', opponentMatches, 'text-opponent', false);
+
+            return finalHtml;
+        }
+
     </script>
 </body>
 </html>

@@ -3,8 +3,8 @@
 <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <link rel="apple-touch-icon" href="/image/btw-tran-180x180.png"/> 
-    <link rel="icon" type="image/png" href="/image/btw-tran-180x180.png"/> 
+    <link rel="apple-touch-icon" href="/image/btw.png"/> 
+    <link rel="icon" type="image/png" href="/image/btw.png"/> 
     <link rel="stylesheet" href="/css/common.css" />
     <title>불꽃테니스</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet" />
@@ -25,12 +25,11 @@
         .text-ad { color: darkgreen; }
         .diff-plus { color: darkblue; }
         .diff-minus { color: darkgreen; }
-        /* 행 클릭을 유도하기 위해 커서 모양 변경 */
         #scoreTable tbody tr { cursor: pointer; }
-        /* 모달 스타일 추가 */
         .modal-body .stat-item {
             display: flex;
             justify-content: space-between;
+            align-items: center;
             padding: 8px 0;
             border-bottom: 1px solid #eee;
         }
@@ -40,81 +39,89 @@
         .modal-body .stat-value {
             text-align: right;
         }
+        .modal-body * {
+            font-size: 0.9rem;
+        }
+        .modal-body .table * {
+            font-size: 0.8rem;
+        }
+        .group-a-bg td { background-color: #ffffff; }
+        .group-b-bg td { background-color: #f2f2f2; }
     </style>
 </head>
 
 <body>
     <div class="app-container">
-        <!-- 헤더 -->
         <div class="d-flex align-items-center sticky-header" style="padding: 0px 5px;">
             <div class="d-flex align-items-center flex-grow-1">
-                <img src="/image/btw-tran-180x180.png" alt="로고" style="height: 40px; margin-right: 5px;">
-                <h5 style="margin-bottom: 0;"><b>개인 스코어</b></h5>
+                <a href="/schedule">
+                    <img src="/image/btw-tran-180x180.png" alt="로고" style="height: 40px; margin-right: 5px;">
+                </a>
+                <a href="/my-score" style="color: black; text-decoration: none;">
+                    <h5 style="margin-bottom: 0;"><b>개인 스코어</b></h5>
+                </a>
             </div>
             <i class="bi bi-list hamburger-icon"></i>
         </div>
 
-        <!-- 사이드 메뉴 -->
         <%- include('partials/sidemenu') %>
 
-        <!-- 필터 섹션 -->
         <div class="filter-section">
              <div class="row g-2">
-                <div class="col-4">
-                    <div class="dropdown">
-                        <button class="btn btn-outline-secondary btn-sm dropdown-toggle w-100" style="font-size: 0.8rem;" type="button" id="periodDropdownButton" data-bs-toggle="dropdown" aria-expanded="false">
-                            기간: 전체
-                        </button>
-                        <ul class="dropdown-menu" aria-labelledby="periodDropdownButton">
-                            <% const periods = [
-                                { value: 'all', text: '전체' }, { value: '1m', text: '최근 1개월' },
-                                { value: '3m', text: '최근 3개월' }, { value: '6m', text: '최근 6개월' },
-                                { value: '1y', text: '최근 1년' }, { value: '2025', text: '2025년' },
-                                { value: '2024', text: '2024년' }
-                            ]; %>
-                            <% periods.forEach(period => { %>
-                                <li><a class="dropdown-item" href="#" onclick="applyFilters({ period: '<%= period.value %>' })"><%= period.text %></a></li>
-                            <% }) %>
-                        </ul>
-                    </div>
-                </div>
-                <div class="col-4">
-                    <div class="dropdown">
-                        <button class="btn btn-outline-secondary btn-sm dropdown-toggle w-100" style="font-size: 0.8rem;" type="button" id="typeDropdownButton" data-bs-toggle="dropdown" data-bs-auto-close="outside" aria-expanded="false">
-                            분류
-                        </button>
-                        <div class="dropdown-menu" aria-labelledby="typeDropdownButton">
-                            <div class="filter-control-links"><a href="#" onclick="selectAll('typeFilter'); return false;">전체선택</a><a href="#" onclick="deselectAll('typeFilter'); return false;">전체해제</a></div>
-                            <div id="typeFilter" class="checkbox-group">
-                                <% const types = ['남단', '여단', '남복', '여복', '혼복', '혼복(남3)', '혼복(여3)', '혼단(남vs여)', '혼복(남vs여)']; %>
-                                <% types.forEach(type => { %>
-                                    <div class="form-check"><input class="form-check-input" type="checkbox" value="<%= type %>" id="type-<%= type %>"><label class="form-check-label" for="type-<%= type %>"><%= type %></label></div>
-                                <% }) %>
-                            </div>
-                            <button class="btn btn-primary btn-sm w-100" onclick="applyFilters()">확인</button>
-                        </div>
-                    </div>
-                </div>
-                <div class="col-4">
-                    <div class="dropdown">
-                        <button class="btn btn-outline-secondary btn-sm dropdown-toggle w-100" style="font-size: 0.8rem;" type="button" id="courtDropdownButton" data-bs-toggle="dropdown" data-bs-auto-close="outside" aria-expanded="false">
-                            코트
-                        </button>
-                        <div class="dropdown-menu" aria-labelledby="courtDropdownButton">
-                            <div class="filter-control-links"><a href="#" onclick="selectAll('courtFilter'); return false;">전체선택</a><a href="#" onclick="deselectAll('courtFilter'); return false;">전체해제</a></div>
-                            <div id="courtFilter" class="checkbox-group">
-                                <% courts.forEach(court => { %>
-                                    <div class="form-check"><input class="form-check-input" type="checkbox" value="<%= court.name %>" id="court-<%= court.name %>"><label class="form-check-label" for="court-<%= court.name %>"><%= court.name %></label></div>
-                                <% }) %>
-                            </div>
-                            <button class="btn btn-primary btn-sm w-100" onclick="applyFilters()">확인</button>
-                        </div>
-                    </div>
-                </div>
-            </div>
+                 <div class="col-4">
+                     <div class="dropdown">
+                         <button class="btn btn-outline-secondary btn-sm dropdown-toggle w-100" style="font-size: 0.8rem;" type="button" id="periodDropdownButton" data-bs-toggle="dropdown" aria-expanded="false">
+                             기간: 전체
+                         </button>
+                         <ul class="dropdown-menu" aria-labelledby="periodDropdownButton">
+                             <% const periods = [
+                                 { value: 'all', text: '전체' }, { value: '1m', text: '최근 1개월' },
+                                 { value: '3m', text: '최근 3개월' }, { value: '6m', text: '최근 6개월' },
+                                 { value: '1y', text: '최근 1년' }, { value: '2025', text: '2025년' },
+                                 { value: '2024', text: '2024년' }
+                             ]; %>
+                             <% periods.forEach(period => { %>
+                                 <li><a class="dropdown-item" href="#" onclick="applyFilters({ period: '<%= period.value %>' })"><%= period.text %></a></li>
+                             <% }) %>
+                         </ul>
+                     </div>
+                 </div>
+                 <div class="col-4">
+                     <div class="dropdown">
+                         <button class="btn btn-outline-secondary btn-sm dropdown-toggle w-100" style="font-size: 0.8rem;" type="button" id="typeDropdownButton" data-bs-toggle="dropdown" data-bs-auto-close="outside" aria-expanded="false">
+                             분류
+                         </button>
+                         <div class="dropdown-menu" aria-labelledby="typeDropdownButton">
+                             <div class="filter-control-links"><a href="#" onclick="selectAll('typeFilter'); return false;">전체선택</a><a href="#" onclick="deselectAll('typeFilter'); return false;">전체해제</a></div>
+                             <div id="typeFilter" class="checkbox-group">
+                                 <% const types = ['남단', '여단', '남복', '여복', '혼복', '혼복(남3)', '혼복(여3)', '혼단(남vs여)', '혼복(남vs여)']; %>
+                                 <% types.forEach(type => { %>
+                                     <div class="form-check"><input class="form-check-input" type="checkbox" value="<%= type %>" id="type-<%= type %>"><label class="form-check-label" for="type-<%= type %>"><%= type %></label></div>
+                                 <% }) %>
+                             </div>
+                             <button class="btn btn-primary btn-sm w-100" onclick="applyFilters()">확인</button>
+                         </div>
+                     </div>
+                 </div>
+                 <div class="col-4">
+                     <div class="dropdown">
+                         <button class="btn btn-outline-secondary btn-sm dropdown-toggle w-100" style="font-size: 0.8rem;" type="button" id="courtDropdownButton" data-bs-toggle="dropdown" data-bs-auto-close="outside" aria-expanded="false">
+                             코트
+                         </button>
+                         <div class="dropdown-menu" aria-labelledby="courtDropdownButton">
+                             <div class="filter-control-links"><a href="#" onclick="selectAll('courtFilter'); return false;">전체선택</a><a href="#" onclick="deselectAll('courtFilter'); return false;">전체해제</a></div>
+                             <div id="courtFilter" class="checkbox-group">
+                                 <% courts.forEach(court => { %>
+                                     <div class="form-check"><input class="form-check-input" type="checkbox" value="<%= court.name %>" id="court-<%= court.name %>"><label class="form-check-label" for="court-<%= court.name %>"><%= court.name %></label></div>
+                                 <% }) %>
+                             </div>
+                             <button class="btn btn-primary btn-sm w-100" onclick="applyFilters()">확인</button>
+                         </div>
+                     </div>
+                 </div>
+             </div>
         </div>
 
-        <!-- 테이블 -->
         <div class="table-responsive">
             <table id="scoreTable" class="table table-sm table-striped text-center align-middle">
                 <thead class="table-light">
@@ -153,7 +160,11 @@
                                 data-ad-win-rate="<%= player.adWinRate %>"
                                 data-ad-rate="<%= player.adRate %>"
                                 data-weighted-diff="<%= player.weightedDiff %>">
-                                <td><strong><%= player.name %></strong></td>
+                                <td>
+                                    <% const gender = genderMap[player.name]; %>
+                                    <% const genderClass = gender === '남' ? 'text-male' : (gender === '여' ? 'text-female' : ''); %>
+                                    <span class="<%= genderClass %>"><%= player.name %></span>
+                                </td>
                                 <td><%= player.matches %></td>
                                 <td>
                                     <span>
@@ -195,38 +206,18 @@
             </table>
         </div>
 
-        <!-- 하단 네비게이션 -->
         <%- include('partials/navbar', { currentPage: 'my-score' }) %>
     </div>
+
     <div class="modal fade" id="playerDetailModal" tabindex="-1" aria-labelledby="playerDetailModalLabel" aria-hidden="true">
         <div class="modal-dialog modal-dialog-centered">
             <div class="modal-content">
                 <div class="modal-header">
-                    <h5 class="modal-title" id="playerDetailModalLabel"><b><span id="modalPlayerName"></span></b></h5>
+                    <h6 class="modal-title" id="playerDetailModalLabel"><b><span id="modalPlayerName"></span></b></h6>
                     <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                 </div>
-                <div class="modal-body">
-                    <div class="stat-item">
-                        <span><strong>📊&nbsp; 전체</strong></span>
-                        <span class="stat-value" id="modalTotalStats"></span>
+                <div class="modal-body" id="modalBodyContent" style="padding: 0;">
                     </div>
-                    <div class="stat-item">
-                        <span id="modalDeuceTitle"></span>
-                        <span class="stat-value" id="modalDeuceStats"></span>
-                    </div>
-                    <div class="stat-item">
-                        <span id="modalAdTitle"></span>
-                        <span class="stat-value" id="modalAdStats"></span>
-                    </div>
-                    <div class="stat-item">
-                        <span><strong>⚖️&nbsp; 포-백 승리 가중치</strong></span>
-                        <span class="stat-value" id="modalWinRateDiff"></span>
-                    </div>
-                    <div class="stat-item">
-                        <span></span>
-                        <span class="stat-value" id="modalTags"></span>
-                    </div>
-                </div>
             </div>
         </div>
     </div>
@@ -240,7 +231,6 @@
             filters.courts = Array.from(document.querySelectorAll('#courtFilter input:checked')).map(cb => cb.value);
             if (options.period) filters.period = options.period;
             filterStorage.save(filters);
-
             const params = new URLSearchParams();
             params.set('period', filters.period);
             if (filters.types.length > 0) params.set('types', filters.types.join(','));
@@ -274,33 +264,6 @@
             
             defaultSortTable();
         });
-
-        /**
-         * 페이지 하단 네비게이션 링크를 업데이트하는 함수
-         * localStorage에 저장된 값을 기준으로 링크의 href를 동적으로 생성합니다.
-         */
-        function updateNavLinks() {
-            const navLinks = document.querySelectorAll('.bottom-nav .nav-link');
-            const savedFilters = filterStorage.load(); // 저장된 필터 불러오기
-            
-            const paramsToCarry = new URLSearchParams();
-            paramsToCarry.set('period', savedFilters.period);
-            if (savedFilters.types.length > 0) paramsToCarry.set('types', savedFilters.types.join(','));
-            if (savedFilters.courts.length > 0) paramsToCarry.set('courts', savedFilters.courts.join(','));
-
-            navLinks.forEach(link => {
-                const targetUrl = new URL(link.href, window.location.origin);
-                const finalParams = new URLSearchParams(paramsToCarry);
-
-                if (targetUrl.pathname === '/chemistry' && savedFilters.player) {
-                    finalParams.set('player', savedFilters.player);
-                }
-                
-                link.href = `${targetUrl.pathname}?${finalParams.toString()}`;
-            });
-        }
-
-        const currentParams = new URLSearchParams(window.location.search);
         
         const sortState = { columnIndex: 1, ascending: false };
         function sortTable(columnIndex) {
@@ -329,125 +292,191 @@
             rows.forEach(row => tbody.appendChild(row));
         }
 
-        /**
-         * 페이지 로드/필터 변경 시 개인 스코어 테이블의 기본 정렬을 적용하는 함수.
-         * 정렬 우선순위: 1.경기수(내림) > 2.승률(내림)
-         */
         function defaultSortTable() {
             const table = document.getElementById('scoreTable');
             const tbody = table.querySelector('tbody');
             if (!tbody || (tbody.rows.length <= 1 && tbody.rows[0].cells.length <= 1)) { return; }
-
             const rows = Array.from(tbody.querySelectorAll('tr'));
-
-            // 셀의 텍스트에서 숫자 값만 추출하는 헬퍼 함수
             const getValue = (row, index) => {
                 const text = row.cells[index].innerText.trim().replace(/%|\+/g, '');
                 const value = parseFloat(text);
                 return isNaN(value) ? -Infinity : value;
             };
-
             rows.sort((a, b) => {
-                // 1. 경기수 (내림차순)
                 const matchesA = getValue(a, 1);
                 const matchesB = getValue(b, 1);
                 if (matchesA !== matchesB) {
                     return matchesB - matchesA;
                 }
-
-                // 2. 승률 (내림차순)
                 const winRateA = getValue(a, 2);
                 const winRateB = getValue(b, 2);
                 return winRateB - winRateA;
             });
-
-            // 정렬된 순서대로 행을 다시 추가
             tbody.innerHTML = '';
             rows.forEach(row => tbody.appendChild(row));
         }
 
-        // 플레이어 상세 정보 모달을 보여주는 함수
-        let detailModal = null; // 모달 인스턴스를 저장할 변수
-        function showPlayerDetails(rowElement) {
+        let detailModal = null;
+        async function showPlayerDetails(rowElement) {
             const dataset = rowElement.dataset;
-
-            // 데이터셋에서 모든 기록을 정수형으로 추출
             const name = dataset.name;
-            const matches = parseInt(dataset.matches);
-            const wins = parseInt(dataset.wins);
-            const losses = parseInt(dataset.losses);
-            const draws = parseInt(dataset.draws);
-            const winRate = parseInt(dataset.winRate);
-
-            const deuceMatches = parseInt(dataset.deuceMatches);
-            const deuceWins = parseInt(dataset.deuceWins);
-            const deuceLosses = parseInt(dataset.deuceLosses);
-            const deuceDraws = parseInt(dataset.deuceDraws);
-            const deuceWinRate = parseInt(dataset.deuceWinRate);
-            const deuceRate = parseInt(dataset.deuceRate);
-
-            const adMatches = parseInt(dataset.adMatches);
-            const adWins = parseInt(dataset.adWins);
-            const adLosses = parseInt(dataset.adLosses);
-            const adDraws = parseInt(dataset.adDraws);
-            const adWinRate = parseInt(dataset.adWinRate);
-            const adRate = parseInt(dataset.adRate);
-
-            // [수정] 올바른 dataset 속성 이름으로 데이터 추출
-            const weightedDiff = parseInt(dataset.weightedDiff);
             
-            // --- 조건부 텍스트 생성을 위한 로직 ---
-            const drawsText = draws > 0 ? `${draws}무 ` : '';
-            const deuceDrawsText = deuceDraws > 0 ? `${deuceDraws}무 ` : '';
-            const adDrawsText = adDraws > 0 ? `${adDraws}무 ` : '';
+            const summaryHtml = buildSummaryHtml(dataset);
+            const modalBody = document.getElementById('modalBodyContent');
+            modalBody.innerHTML = summaryHtml;
 
-            const winRateText = winRate > 50 ? `<strong>(${winRate}%)</strong>` : `(${winRate}%)`;
-            const deuceWinRateText = deuceWinRate > 50 ? `<strong>(${deuceWinRate}%)</strong>` : `(${deuceWinRate}%)`;
-            const adWinRateText = adWinRate > 50 ? `<strong>(${adWinRate}%)</strong>` : `(${adWinRate}%)`;
-
-            const deuceRateText = deuceRate > 50 ? `<strong>${deuceRate}%</strong>` : `${deuceRate}%`;
-            const adRateText = adRate > 50 ? `<strong>${adRate}%</strong>` : `${adRate}%`;
-            
-            const tags = [];
-            if (deuceRate > adRate) {
-                tags.push('#포많이하는');
-            } else if (adRate > deuceRate) {
-                tags.push('#백많이하는');
-            }
-            if (deuceWinRate > adWinRate) {
-                tags.push('#포잡이');
-            } else if (adWinRate > deuceWinRate) {
-                tags.push('#백잡이');
-            }
-            const tagsText = tags.join(' ');
-            // --- 로직 수정 끝 ---
-
-
-            // 모달 내부 요소에 데이터 채우기
             document.getElementById('modalPlayerName').textContent = name;
             
-            document.getElementById('modalDeuceTitle').innerHTML = `<span class="text-deuce"><strong>🫱&nbsp; 포 비율</strong> ${deuceRateText}</span>`;
-            document.getElementById('modalAdTitle').innerHTML = `<span class="text-ad"><strong>🫲&nbsp; 백 비율</strong> ${adRateText}</span>`;
-
-            document.getElementById('modalTotalStats').innerHTML = `${matches}전 ${wins}승 ${drawsText}${losses}패 ${winRateText}`;
-            document.getElementById('modalDeuceStats').innerHTML = `<span class="text-deuce">${deuceMatches}전 ${deuceWins}승 ${deuceDrawsText}${deuceLosses}패 ${deuceWinRateText}</span>`;
-            document.getElementById('modalAdStats').innerHTML = `<span class="text-ad">${adMatches}전 ${adWins}승 ${adDrawsText}${adLosses}패 ${adWinRateText}</span>`;
-            
-            document.querySelector('#modalWinRateDiff').previousElementSibling.innerHTML = `<strong>⚖️&nbsp; 포-백 승리 가중치</strong>`;
-            const diffClass = weightedDiff > 0 ? 'diff-plus' : (weightedDiff < 0 ? 'diff-minus' : '');
-            const diffSign = weightedDiff > 0 ? '+' : '';
-            // [수정] 표시 내용에서 % 기호 제거
-            document.getElementById('modalWinRateDiff').innerHTML = `<span class="${diffClass}">${diffSign}${weightedDiff}%</span>`;
-            
-            document.getElementById('modalTags').textContent = tagsText;
-
-            // 모달 인스턴스가 없으면 생성하고, 있으면 재사용
             if (!detailModal) {
                 detailModal = new bootstrap.Modal(document.getElementById('playerDetailModal'));
             }
             detailModal.show();
+
+            const savedFilters = filterStorage.load();
+            const params = new URLSearchParams({
+                period: savedFilters.period,
+                types: savedFilters.types.join(','),
+                courts: savedFilters.courts.join(',')
+            });
+            try {
+                const response = await fetch(`/api/matches/player/${name}?${params.toString()}`);
+                if (!response.ok) throw new Error('경기 기록을 불러오는 데 실패했습니다.');
+                
+                const { matches, genderMap } = await response.json();
+                
+                const tablesHtml = buildPlayerMatchTablesHtml(matches, name, genderMap);
+                modalBody.innerHTML += tablesHtml;
+            } catch (error) {
+                console.error(error);
+                modalBody.innerHTML += `<p class="text-center p-3 text-danger">${error.message}</p>`;
+            }
         }
 
+        function buildSummaryHtml(dataset) {
+            const { name, matches, wins, losses, draws, winRate, deuceMatches, deuceWins, deuceLosses, deuceDraws, deuceWinRate, deuceRate, adMatches, adWins, adLosses, adDraws, adWinRate, adRate, weightedDiff } = dataset;
+            const drawsText = parseInt(draws) > 0 ? `${draws}무 ` : '';
+            const deuceDrawsText = parseInt(deuceDraws) > 0 ? `${deuceDraws}무 ` : '';
+            const adDrawsText = parseInt(adDraws) > 0 ? `${adDraws}무 ` : '';
+            const winRateText = parseInt(winRate) > 50 ? `<strong>(${winRate}%)</strong>` : `(${winRate}%)`;
+            const deuceWinRateText = parseInt(deuceWinRate) > 50 ? `<strong>(${deuceWinRate}%)</strong>` : `(${deuceWinRate}%)`;
+            const adWinRateText = parseInt(adWinRate) > 50 ? `<strong>(${adWinRate}%)</strong>` : `(${adWinRate}%)`;
+            const deuceRateText = parseInt(deuceRate) > 50 ? `<strong>${deuceRate}%</strong>` : `${deuceRate}%`;
+            const adRateText = parseInt(adRate) > 50 ? `<strong>${adRate}%</strong>` : `${adRate}%`;
+            const diffSign = parseInt(weightedDiff) > 0 ? '+' : '';
+            const diffClass = parseInt(weightedDiff) > 0 ? 'diff-plus' : (parseInt(weightedDiff) < 0 ? 'diff-minus' : '');
+            
+            const tags = [];
+            if (parseInt(deuceRate) > parseInt(adRate)) tags.push('#포많이하는');
+            else if (parseInt(adRate) > parseInt(deuceRate)) tags.push('#백많이하는');
+            if (parseInt(deuceWinRate) > parseInt(adWinRate)) tags.push('#포잡이');
+            else if (parseInt(adWinRate) > parseInt(deuceWinRate)) tags.push('#백잡이');
+
+            return `
+                <div style="padding: 1rem; border-bottom: 1px solid #dee2e6;">
+                    <div class="stat-item">
+                        <span><strong>📊&nbsp; 전체</strong></span>
+                        <span class="stat-value">${matches}전 ${wins}승 ${drawsText}${losses}패 ${winRateText}</span>
+                    </div>
+                    <div class="stat-item text-deuce">
+                        <span><strong>🫱&nbsp; 포 비율</strong> ${deuceRateText}</span>
+                        <span class="stat-value text-deuce">${deuceMatches}전 ${deuceWins}승 ${deuceDrawsText}${deuceLosses}패 ${deuceWinRateText}</span>
+                    </div>
+                    <div class="stat-item text-ad">
+                        <span><strong>🫲&nbsp; 백 비율</strong> ${adRateText}</span>
+                        <span class="stat-value text-ad">${adMatches}전 ${adWins}승 ${adDrawsText}${adLosses}패 ${adWinRateText}</span>
+                    </div>
+                    <div class="stat-item">
+                        <span><strong>⚖️&nbsp; 포-백 승리 가중치</strong></span>
+                        <span class="stat-value ${diffClass}">${diffSign}${weightedDiff}%</span>
+                    </div>
+                    <div class="stat-item">
+                        <span></span>
+                        <span class="stat-value">${tags.join(' ')}</span>
+                    </div>
+                </div>`;
+        }
+        
+        function buildPlayerMatchTablesHtml(matches, basePlayer, genderMap) {
+            if (matches.length === 0) {
+                return '<p class="text-center p-4">해당 조건의 경기 기록이 없습니다.</p>';
+            }
+
+            const stylePlayerName = (player, isBold = false) => {
+                if (!player) return '';
+                const gender = genderMap[player];
+                const genderClass = gender === '남' ? 'text-male' : (gender === '여' ? 'text-female' : '');
+                const content = isBold ? `<strong>${player}</strong>` : player;
+                return `<span class="${genderClass}">${content}</span>`;
+            };
+
+            const deuceMatches = [];
+            const adMatches = [];
+            matches.forEach(match => {
+                if (match.team1_deuce === basePlayer || match.team2_deuce === basePlayer) {
+                    deuceMatches.push(match);
+                } else if (match.team1_ad === basePlayer || match.team2_ad === basePlayer) {
+                    adMatches.push(match);
+                }
+            });
+
+            const createTable = (title, matchList, titleClass) => {
+                if (matchList.length === 0) return '';
+                
+                let tableHtml = `
+                    <div class="mt-3" style="padding: 0 1rem;">
+                        <h6 class="p-2" style="border-bottom: 2px solid ${titleClass === 'text-deuce' ? 'darkblue' : 'darkgreen'}; color: ${titleClass === 'text-deuce' ? 'darkblue' : 'darkgreen'};">${title}</h6>
+                    </div>
+                    <div class="table-responsive">
+                        <table class="table table-sm text-center align-middle text-nowrap" style="font-size: 0.8rem; margin-bottom: 0;">
+                            <thead class="table-light">
+                                <tr><th>날짜</th><th>코트</th><th>우리 팀</th><th></th><th>상대 팀</th><th>결과</th><th>영상</th></tr>
+                            </thead>
+                            <tbody>`;
+
+                let prevDate = null;
+                let prevCourt = null;
+                let currentGroupClass = 'group-a-bg';
+
+                matchList.forEach(match => {
+                    if (prevDate !== null && (match.date !== prevDate || match.court !== prevCourt)) {
+                        currentGroupClass = (currentGroupClass === 'group-a-bg') ? 'group-b-bg' : 'group-a-bg';
+                    }
+                    prevDate = match.date;
+                    prevCourt = match.court;
+
+                    const team1_raw = [match.team1_deuce, match.team1_ad].filter(p => p);
+                    const team2_raw = [match.team2_deuce, match.team2_ad].filter(p => p);
+                    const isBaseOnTeam1 = team1_raw.includes(basePlayer);
+                    
+                    const myTeam = isBaseOnTeam1 ? team1_raw : team2_raw;
+                    const opponentTeam = isBaseOnTeam1 ? team2_raw : team1_raw;
+                    
+                    const myTeamScore = isBaseOnTeam1 ? match.team1_score : match.team2_score;
+                    const opponentScore = isBaseOnTeam1 ? match.team2_score : match.team1_score;
+                    const scoreHtml = myTeamScore > opponentScore ? `<b>${myTeamScore}</b>:${opponentScore}` : myTeamScore < opponentScore ? `${myTeamScore}:<b>${opponentScore}</b>` : `${myTeamScore}:${opponentScore}`;
+                    
+                    const result = isBaseOnTeam1 ? match.team1_result : match.team2_result;
+
+                    const myTeamFormatted = myTeam.map(p => stylePlayerName(p, p === basePlayer)).join(' ');
+                    const opponentTeamFormatted = opponentTeam.map(p => stylePlayerName(p, false)).join(' ');
+
+                    const result_display = result === '승' ? '<span style="color: darkblue;">승</span>' : (result === '패' ? '<span style="color: darkred;">패</span>' : '<span>무</span>');
+                    const videoLink = match.video ? `<a href="${match.video}" target="_blank" rel="noopener" onclick="event.stopPropagation();"><i class="bi bi-youtube text-danger fs-6"></i></a>` : '';
+                    const dateDisplay = match.date ? match.date.substring(2) : '';
+                    
+                    tableHtml += `<tr class="${currentGroupClass}"><td>${dateDisplay}</td><td>${match.court}</td><td>${myTeamFormatted}</td><td>${scoreHtml}</td><td>${opponentTeamFormatted}</td><td>${result_display}</td><td>${videoLink}</td></tr>`;
+                });
+
+                tableHtml += '</tbody></table></div>';
+                return tableHtml;
+            };
+
+            let finalHtml = '';
+            finalHtml += createTable('🫱 <strong>듀스코트(포) 경기</strong>', deuceMatches, 'text-deuce');
+            finalHtml += createTable('🫲 <strong>애드코트(백) 경기</strong>', adMatches, 'text-ad');
+
+            return finalHtml;
+        }
     </script>
 </body>
 </html>

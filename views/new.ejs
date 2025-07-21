@@ -3,8 +3,9 @@
 <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <link rel="apple-touch-icon" href="/image/btw-tran-180x180.png"/> 
-    <link rel="icon" type="image/png" href="/image/btw-tran-180x180.png"/> 
+    <link rel="apple-touch-icon" href="/image/btw.png"/> 
+    <link rel="icon" type="image/png" href="/image/btw.png"/> 
+    <link rel="stylesheet" href="/css/common.css" />
     <title>불꽃테니스</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet" />
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css" />
@@ -13,15 +14,16 @@
             background-color: #f8f9fa;
             padding-top: 57px; 
             padding-bottom: 90px;
+            overflow: auto;
         }
         .header {
             background-color: white;
             border-bottom: 1px solid #eee;
             padding: 10px 15px;
             position: fixed;
+            width: 100%;
+            max-width: 500px;
             top: 0;
-            left: 0;
-            right: 0;
             z-index: 100;
         }
         .form-label {
@@ -30,18 +32,21 @@
         .bottom-button-container {
             position: fixed;
             bottom: 0;
-            left: 0;
-            right: 0;
+            width: 100%;
+            max-width: 500px;
             background-color: white;
             padding: 1rem;
             border-top: 1px solid #eee;
             z-index: 100;
         }
+        .container * {
+            font-size: 0.9rem;
+        }
     </style>
 </head>
 <body>
     <div class="header d-flex align-items-center">
-        <a href="/" class="text-dark me-3"><i class="bi bi-arrow-left fs-4"></i></a>
+        <a href="/match-record" class="text-dark me-3"><i class="bi bi-arrow-left fs-4"></i></a>
         <h5 class="mb-0"><b>경기 기록 입력</b></h5>
     </div>
 
@@ -68,14 +73,14 @@
                 </datalist>
             </div>
             
-            <div class="border p-3 rounded mb-3">
+            <div class="border p-3 rounded">
                 <div class="row">
                     <div class="col text-center">
-                        <label class="form-label small">듀스 코트(포)</label>
+                        <label class="form-label small">듀스코트(포)</label>
                         <input type="text" class="form-control" name="team1_deuce" list="player-list" required>
                     </div>
                     <div class="col text-center">
-                        <label class="form-label small">애드 코트(백)</label>
+                        <label class="form-label small">애드코트(백)</label>
                         <input type="text" class="form-control" name="team1_ad" list="player-list">
                     </div>
                     <div class="col-auto text-center">
@@ -94,11 +99,11 @@
             <div class="border p-3 rounded">
                 <div class="row">
                     <div class="col text-center">
-                        <label class="form-label small">듀스 코트(포)</label>
+                        <label class="form-label small">듀스코트(포)</label>
                         <input type="text" class="form-control" name="team2_deuce" list="player-list" required>
                     </div>
                     <div class="col text-center">
-                        <label class="form-label small">애드 코트(백)</label>
+                        <label class="form-label small">애드코트(백)</label>
                         <input type="text" class="form-control" name="team2_ad" list="player-list">
                     </div>
                     <div class="col-auto text-center">
@@ -123,7 +128,7 @@
             </div>
 
             <div class="bottom-button-container d-flex justify-content-between">
-                <a href="/" class="btn btn-secondary w-50 me-2">취소</a>
+                <a href="/match-record" class="btn btn-secondary w-50 me-2">취소</a>
                 <button type="submit" class="btn btn-primary w-50">저장하기</button>
             </div>
         </form>
