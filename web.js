@@ -23,6 +23,7 @@ app.set('views', path.join(__dirname, 'views'));
 app.set('view engine', 'ejs');
 app.use(bodyParser.urlencoded({ extended: false }));
 app.use(express.static(path.join(__dirname, 'public')));
+app.use(express.json());
 
 // --- 유틸리티 함수 ---
 // 쿼리 파라미터에 따른 기간 필터링 로직 (중복을 줄이기 위해 함수로 추출)
@@ -676,6 +677,86 @@ app.get('/api/member-attendance/:name', async (req, res) => {
         console.error(`[/api/member-attendance/:name] 에러:`, err.message);
         res.status(500).json({ error: '서버 오류가 발생했습니다.' });
     }
+});
+
+app.get('/exchange-match', (req, res) => {
+    res.render('exchange-match'); // views/exchange.ejs 를 렌더링
+});
+
+app.get('/api/exchange-match', async (req, res) => {
+    try {
+    const [rows] = await pool.query(`
+              SELECT id, CAST(CONCAT(match_date, ' ', opponent_team_name) AS CHAR) AS label
+                FROM ex_match_master
+               ORDER BY match_date DESC
+    `);
+    
+    res.json(rows);
+    } catch (err) {
+        console.error('[/api/exchange-match] 에러:', err.message);
+        res.status(500).json({ error: '데이터를 불러오는 중 오류가 발생했습니다.' });
+    }
+});
+
+app.get('/api/exchange-match/:id', async (req, res) => {
+  const matchId = req.params.id;
+  try {
+    const [rows] = await pool.query(`
+      SELECT
+        court_num,
+        match_round,
+        deuce_player,
+        ad_player,
+        match_type,
+        my_team_score,
+        op_team_score,
+        match_result,
+        videographer
+      FROM ex_match_detail
+      WHERE match_master_id = ?
+      ORDER BY court_num, match_round
+    `, [matchId]);
+    res.json(rows);
+  } catch (err) {
+    console.error(`[/api/exchange-match/${matchId}] 에러:`, err.message);
+    res.status(500).json({ error: '데이터 조회 실패' });
+  }
+});
+
+// GET 상세
+app.get('/api/exchange-match/detail', async (req, res) => {
+  const { masterId, courtNum, matchRound } = req.query;
+  const sql = `
+    SELECT * FROM ex_match_detail 
+    WHERE match_master_id = ? AND court_num = ? AND match_round = ?
+  `;
+  const [rows] = await pool.query(sql, [masterId, courtNum, matchRound]);
+  res.json(rows[0] || {});
+});
+
+// PUT 수정
+app.put('/api/exchange-match/detail', async (req, res) => {
+    console.log('PUT 요청:', req.body);
+    const { masterId, courtNum, matchRound, deuce_player, ad_player, my_team_score, op_team_score } = req.body;
+
+    const sql = `
+        UPDATE ex_match_detail
+        SET deuce_player = ?, ad_player = ?, my_team_score = ?, op_team_score = ?
+        WHERE match_master_id = ? AND court_num = ? AND match_round = ?
+    `;
+
+    console.log('쿼리 실행:', sql);
+    console.log('파라미터:', [
+        deuce_player, ad_player, my_team_score, op_team_score,
+        masterId, courtNum, matchRound
+    ]);
+
+    await pool.query(sql, [
+        deuce_player, ad_player, my_team_score, op_team_score,
+        masterId, courtNum, matchRound
+    ]);
+
+  res.json({ success: true });
 });
 
 const PORT = 8001;
