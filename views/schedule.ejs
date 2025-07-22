@@ -447,6 +447,11 @@
 									<input type="text" class="form-control" name="team1_deuce" list="modal-player-list"
 										required>
 								</div>
+								<div class="col-auto d-flex align-items-end p-0">
+                                    <button type="button" class="btn swap-btn px-0" data-team="1">
+                                        <i class="bi bi-arrow-left-right"></i>
+                                    </button>
+                                </div>
 								<div class="col text-center">
 									<label class="form-label small">애드코트(백)</label>
 									<input type="text" class="form-control" name="team1_ad" list="modal-player-list">
@@ -473,6 +478,11 @@
 									<input type="text" class="form-control" name="team2_deuce" list="modal-player-list"
 										required>
 								</div>
+								<div class="col-auto d-flex align-items-end p-0">
+                                    <button type="button" class="btn swap-btn px-0" data-team="2">
+                                        <i class="bi bi-arrow-left-right"></i>
+                                    </button>
+                                </div>
 								<div class="col text-center">
 									<label class="form-label small">애드코트(백)</label>
 									<input type="text" class="form-control" name="team2_ad" list="modal-player-list">
@@ -593,7 +603,18 @@
 			});
 
 			searchInput.addEventListener('keyup', filterSchedules);
-			// --- 검색 관련 설정 끝 ---
+			
+			document.querySelectorAll('.swap-btn').forEach(button => {
+                button.addEventListener('click', function() {
+                    const team = this.dataset.team;
+                    const form = document.getElementById('matchRecordForm');
+                    const deuceInput = form.querySelector(`[name="team${team}_deuce"]`);
+                    const adInput = form.querySelector(`[name="team${team}_ad"]`);
+                    const tempValue = deuceInput.value;
+                    deuceInput.value = adInput.value;
+                    adInput.value = tempValue;
+                });
+            });
 		});
 
 		function initializeModals() {

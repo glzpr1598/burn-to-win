@@ -80,6 +80,11 @@
                         <label class="form-label small">듀스코트(포)</label>
                         <input type="text" class="form-control" name="team1_deuce" list="player-list" value="<%= match.team1_deuce %>" required>
                     </div>
+                    <div class="col-auto d-flex align-items-end p-0">
+                        <button type="button" class="btn swap-btn px-0" data-team="1">
+                            <i class="bi bi-arrow-left-right"></i>
+                        </button>
+                    </div>
                     <div class="col text-center">
                         <label class="form-label small">애드코트(백)</label>
                         <input type="text" class="form-control" name="team1_ad" list="player-list" value="<%= match.team1_ad || '' %>">
@@ -102,6 +107,11 @@
                     <div class="col text-center">
                         <label class="form-label small">듀스코트(포)</label>
                         <input type="text" class="form-control" name="team2_deuce" list="player-list" value="<%= match.team2_deuce %>" required>
+                    </div>
+                    <div class="col-auto d-flex align-items-end p-0">
+                        <button type="button" class="btn swap-btn px-0" data-team="2">
+                            <i class="bi bi-arrow-left-right"></i>
+                        </button>
                     </div>
                     <div class="col text-center">
                         <label class="form-label small">애드코트(백)</label>
@@ -134,5 +144,24 @@
             </div>
         </form>
     </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // 스와프 버튼 기능
+            const swapButtons = document.querySelectorAll('.swap-btn');
+            swapButtons.forEach(button => {
+                button.addEventListener('click', function() {
+                    const team = this.getAttribute('data-team');
+                    const deuceInput = document.querySelector(`input[name="team${team}_deuce"]`);
+                    const adInput = document.querySelector(`input[name="team${team}_ad"]`);
+                    
+                    // 스와프 로직
+                    const temp = deuceInput.value;
+                    deuceInput.value = adInput.value;
+                    adInput.value = temp;
+                });
+            });
+        });
+    </script>
 </body>
 </html>
