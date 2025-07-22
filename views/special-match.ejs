@@ -22,6 +22,9 @@
             max-width: 180px;
             font-size: 0.8rem;
         }
+        .nav {
+            font-size: 0.9rem
+        }
         .bracket-table-wrapper {
             width: 100%;
             padding: 0 8px 10px 8px;
@@ -52,10 +55,8 @@
         .match-cell:hover {
             background-color: #e9ecef;
         }
-        /* --- UI 개선을 위한 CSS 추가 --- */
         .team-info {
             display: flex;
-            /* justify-content: space-between; */
             align-items: center;
             padding: 2px 4px;
         }
@@ -64,20 +65,22 @@
             flex: 3;
             word-break: keep-all;
         }
-        /* .players span { margin-right: 4px; } */
         .score {
             text-align: center;
             font-weight: bold;
             flex: 1;
             padding-left: 5px;
         }
-        /* --- 배경색 및 토글 CSS --- */
         .winner-bg { background-color: #EBF7FF !important; }
         .loser-bg { background-color: #FFEAEA !important; }
         .compact-view { display: none; }
         .show-compact .compact-view { display: block; }
         .show-compact .full-view { display: none; }
         #player-score-table th { cursor: pointer; }
+        .table-responsive {
+            font-size: 0.9rem;
+            text-align: center;
+        }
         .modal-body * {
 			font-size: 0.9rem;
 		}
@@ -376,6 +379,13 @@
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
     <script>
+        // URL 파라미터를 관리하는 함수
+        function reloadWithActiveTab(tabName) {
+            const currentUrl = new URL(window.location.href);
+            currentUrl.searchParams.set('active_tab', tabName);
+            window.location.href = currentUrl.toString();
+        }
+
         document.addEventListener('DOMContentLoaded', function () {
             // --- 초기화 ---
             const matchRecordModal = new bootstrap.Modal(document.getElementById('matchRecordModal'));
@@ -448,6 +458,17 @@
                     localStorage.setItem('scoreOpponentToggleState', this.checked);
                     applyScoreToggleState();
                 });
+            }
+
+            // 페이지 로드 시 URL 파라미터를 확인하여 활성 탭 지정
+            const urlParams = new URLSearchParams(window.location.search);
+            const activeTab = urlParams.get('active_tab');
+            if (activeTab) {
+                const tabToActivate = document.getElementById(activeTab + '-tab');
+                if (tabToActivate) {
+                    const tab = new bootstrap.Tab(tabToActivate);
+                    tab.show();
+                }
             }
 
             // 모달 열기 이벤트
@@ -524,7 +545,7 @@
                 const result = await response.json();
                 if (result.success) {
                     modalInstance.hide();
-                    window.location.reload();
+                    reloadWithActiveTab('bracket')
                 } else {
                     alert(result.message || '저장에 실패했습니다.');
                 }
@@ -594,7 +615,7 @@
                 const result = await response.json();
                 if (result.success) {
                     modalInstance.hide();
-                    window.location.reload();
+                    reloadWithActiveTab('bracket');
                 } else {
                     alert(result.message || '삭제에 실패했습니다.');
                 }
@@ -620,7 +641,7 @@
                 const result = await response.json();
                 if (result.success) {
                     modalInstance.hide();
-                    window.location.reload();
+                    reloadWithActiveTab('videographer');
                 } else {
                     alert(result.message || '저장에 실패했습니다.');
                 }
