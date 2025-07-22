@@ -158,9 +158,8 @@
             document.querySelectorAll('.swap-btn').forEach(button => {
                 button.addEventListener('click', function() {
                     const team = this.dataset.team;
-                    const form = document.getElementById('matchRecordForm');
-                    const deuceInput = form.querySelector(`[name="team${team}_deuce"]`);
-                    const adInput = form.querySelector(`[name="team${team}_ad"]`);
+                    const deuceInput = document.querySelector(`[name="team${team}_deuce"]`);
+                    const adInput = document.querySelector(`[name="team${team}_ad"]`);
                     const tempValue = deuceInput.value;
                     deuceInput.value = adInput.value;
                     adInput.value = tempValue;
