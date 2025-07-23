@@ -141,8 +141,14 @@ app.get('/', (req, res) => {
 // 경기 기록
 app.get('/match-record', async (req, res) => {
     try {
-        // 1. 경기 기록과 회원 정보를 병렬로 가져옵니다.
-        const matchesPromise = pool.query('SELECT * FROM matchrecord ORDER BY date DESC, court ASC, id DESC');
+        // 오늘 날짜를 YYYY-MM-DD 형식으로 변환
+        const today = new Date().toLocaleDateString('en-CA');
+
+        // 1. 경기 기록과 회원 정보를 병렬로 가져옵니다. (WHERE 조건 추가)
+        const matchesPromise = pool.query(
+            'SELECT * FROM matchrecord WHERE date <= ? ORDER BY date DESC, court ASC, id DESC',
+            [today]
+        );
         const membersPromise = pool.query('SELECT name, gender FROM member');
         const [[matches], [members]] = await Promise.all([matchesPromise, membersPromise]);
 
@@ -377,7 +383,7 @@ app.post('/matches', async (req, res) => {
 app.get('/my-score', async (req, res) => {
     try {
         // ✨ 수정: 회원의 이름과 성별을 함께 조회하도록 변경
-        const membersPromise = pool.query('SELECT name, gender FROM member WHERE etc = "" ORDER BY name ASC');
+        const membersPromise = pool.query('SELECT name, gender FROM member WHERE `order` = 0 ORDER BY name ASC');
         const matchesPromise = pool.query('SELECT * FROM matchrecord WHERE team1_result IS NOT NULL');
         const courtsPromise = pool.query("SELECT DISTINCT court AS name FROM matchrecord WHERE court IS NOT NULL AND court != '' ORDER BY name ASC");
 
@@ -520,7 +526,7 @@ app.get('/api/matches/player/:name', async (req, res) => {
 app.get('/chemistry', async (req, res) => {
     try {
         // ✨ 수정: 회원의 이름과 성별을 함께 조회
-        const membersPromise = pool.query('SELECT name, gender FROM member WHERE etc = "" ORDER BY name ASC');
+        const membersPromise = pool.query('SELECT name, gender FROM member WHERE `order` = 0 ORDER BY name ASC');
         const matchesPromise = pool.query('SELECT * FROM matchrecord WHERE team1_result IS NOT NULL');
         const courtsPromise = pool.query("SELECT DISTINCT court AS name FROM matchrecord WHERE court IS NOT NULL AND court != '' ORDER BY name ASC");
 
@@ -937,7 +943,7 @@ app.get('/schedule', async (req, res) => {
         const latestNoticePromise = pool.query('SELECT created_at FROM notices ORDER BY created_at DESC LIMIT 1');
 
         // 1. 로그인 드롭다운용 (기존 유지)
-        const membersForDropdownPromise = pool.query('SELECT name FROM member WHERE etc = "" ORDER BY name ASC');
+        const membersForDropdownPromise = pool.query('SELECT name FROM member WHERE `order` = 0 ORDER BY name ASC');
         // 2. 성별 배경색 적용을 위한 전체 회원 정보
         const allMembersForGenderPromise = pool.query('SELECT name, gender FROM member');
 
@@ -1976,14 +1982,27 @@ app.delete('/api/notice-comments/:id', async (req, res) => {
     }
 });
 
-// 스페셜매치 페이지
+// 리그ㆍ교류전 페이지
+// web.js
+
 app.get('/special-match', async (req, res) => {
     try {
         const { schedule_id } = req.query;
 
-        // 1. 기본 데이터 병렬 조회 (스페셜매치 목록, 전체 멤버 정보)
+        // 1. schedule_id 없이 접속 시, 가장 최근 일정으로 리디렉션
+        if (!schedule_id) {
+            const [[latestSchedule]] = await pool.query(
+                "SELECT id FROM schedules WHERE is_special_match = 'Y' ORDER BY schedule_date DESC LIMIT 1"
+            );
+            // 최근 일정이 있으면 해당 일정 페이지로 이동
+            if (latestSchedule) {
+                return res.redirect(`/special-match?schedule_id=${latestSchedule.id}`);
+            }
+        }
+
+        // 2. 페이지에 필요한 기본 데이터 병렬 조회
         const specialSchedulesPromise = pool.query("SELECT * FROM schedules WHERE is_special_match = 'Y' ORDER BY schedule_date DESC");
-        const allMembersPromise = pool.query('SELECT name, gender FROM member');
+        const allMembersPromise = pool.query('SELECT name, gender FROM member ORDER BY `order` ASC, name ASC');
         
         const [[schedules], [allMembers]] = await Promise.all([specialSchedulesPromise, allMembersPromise]);
 
@@ -1992,7 +2011,7 @@ app.get('/special-match', async (req, res) => {
             return acc;
         }, {});
 
-        // 2. 특정 일정이 선택된 경우, 추가 데이터 조회
+        // 3. 특정 일정이 선택된 경우, 상세 데이터 조회 및 가공
         if (schedule_id) {
             const selectedSchedulePromise = pool.query('SELECT * FROM schedules WHERE id = ?', [schedule_id]);
             const matchRecordsPromise = pool.query('SELECT * FROM matchrecord WHERE schedule_id = ?', [schedule_id]);
@@ -2004,66 +2023,80 @@ app.get('/special-match', async (req, res) => {
                  return res.status(404).send('선택한 스페셜매치 일정을 찾을 수 없습니다.');
             }
 
-            // 대진표 및 촬영자 표를 위한 데이터 가공 (2차원 객체)
             const matchData = {};
+            const playerStats = {};
+            const playerMatchCounts = {};
+            const allPlayerNames = new Set();
+
+            // 데이터 1차 가공: 참여한 모든 선수 목록 생성 및 대진표 데이터 구성
             matchRecords.forEach(m => {
-                if (!matchData[m.round_num]) {
-                    matchData[m.round_num] = {};
-                }
+                const players = [m.team1_deuce, m.team1_ad, m.team2_deuce, m.team2_ad].filter(p => p);
+                players.forEach(p => allPlayerNames.add(p));
+
+                if (!matchData[m.round_num]) matchData[m.round_num] = {};
                 matchData[m.round_num][m.court_num] = m;
             });
 
+            // 통계 객체 초기화
+            allPlayerNames.forEach(name => {
+                playerStats[name] = { name, matches: 0, wins: 0, losses: 0, points: 0 };
+                playerMatchCounts[name] = { name, completed: 0, scheduled: 0, total: 0 };
+            });
+
+            // 데이터 2차 가공: 개인 스코어 및 경기수 계산
+            matchRecords.forEach(m => {
+                const players = [m.team1_deuce, m.team1_ad, m.team2_deuce, m.team2_ad].filter(p => p);
+                const isCompleted = !(parseInt(m.team1_score) === 0 && parseInt(m.team2_score) === 0);
+
+                // 개인별 경기수 계산
+                players.forEach(p => {
+                    if (playerMatchCounts[p]) {
+                        if (isCompleted) {
+                            playerMatchCounts[p].completed++;
+                        } else {
+                            playerMatchCounts[p].scheduled++;
+                        }
+                        playerMatchCounts[p].total++;
+                    }
+                });
+                
+                // 개인 스코어 계산 (0:0 경기는 제외)
+                if (isCompleted) {
+                    const team1 = [m.team1_deuce, m.team1_ad].filter(p => p);
+                    const team2 = [m.team2_deuce, m.team2_ad].filter(p => p);
+                    const score1 = parseInt(m.team1_score);
+                    const score2 = parseInt(m.team2_score);
+                    const pointDiff = score1 - score2;
+
+                    team1.forEach(p => {
+                        if (playerStats[p]) {
+                            playerStats[p].matches++;
+                            playerStats[p].points += pointDiff;
+                            if (pointDiff > 0) playerStats[p].wins++;
+                            else if (pointDiff < 0) playerStats[p].losses++;
+                        }
+                    });
+
+                    team2.forEach(p => {
+                         if (playerStats[p]) {
+                            playerStats[p].matches++;
+                            playerStats[p].points -= pointDiff;
+                            if (pointDiff < 0) playerStats[p].wins++;
+                            else if (pointDiff > 0) playerStats[p].losses++;
+                        }
+                    });
+                }
+            });
+
+            // '팀1' 선수 목록 생성 (토글 기능용)
             const team1PlayerSet = new Set();
             matchRecords.forEach(m => {
                 if (m.team1_deuce) team1PlayerSet.add(m.team1_deuce);
                 if (m.team1_ad) team1PlayerSet.add(m.team1_ad);
             });
             const team1Players = Array.from(team1PlayerSet);
-
-            // 개인 스코어 계산
-            const playerStats = {};
-            const allPlayerNames = new Set();
-            matchRecords.forEach(m => {
-                // 0:0 경기는 제외
-                if (parseInt(m.team1_score) === 0 && parseInt(m.team2_score) === 0) return;
-
-                const players = [m.team1_deuce, m.team1_ad, m.team2_deuce, m.team2_ad].filter(p => p);
-                players.forEach(p => allPlayerNames.add(p));
-            });
-
-            allPlayerNames.forEach(name => {
-                playerStats[name] = { name, matches: 0, wins: 0, losses: 0, points: 0 };
-            });
-
-            matchRecords.forEach(m => {
-                 if (parseInt(m.team1_score) === 0 && parseInt(m.team2_score) === 0) return;
-
-                const team1 = [m.team1_deuce, m.team1_ad].filter(p => p);
-                const team2 = [m.team2_deuce, m.team2_ad].filter(p => p);
-                
-                const score1 = parseInt(m.team1_score);
-                const score2 = parseInt(m.team2_score);
-                const pointDiff = score1 - score2;
-
-                team1.forEach(p => {
-                    if (playerStats[p]) {
-                        playerStats[p].matches++;
-                        playerStats[p].points += pointDiff;
-                        if (pointDiff > 0) playerStats[p].wins++;
-                        else if (pointDiff < 0) playerStats[p].losses++;
-                    }
-                });
-
-                team2.forEach(p => {
-                     if (playerStats[p]) {
-                        playerStats[p].matches++;
-                        playerStats[p].points -= pointDiff;
-                        if (pointDiff < 0) playerStats[p].wins++;
-                        else if (pointDiff > 0) playerStats[p].losses++;
-                    }
-                });
-            });
             
+            // 랭킹 계산
             let sortedStats = Object.values(playerStats).sort((a, b) => b.points - a.points);
             let rank = 1;
             for (let i = 0; i < sortedStats.length; i++) {
@@ -2073,11 +2106,13 @@ app.get('/special-match', async (req, res) => {
                 sortedStats[i].rank = rank;
             }
 
+            // 4. 최종 데이터 렌더링
             res.render('special-match', {
                 schedules,
                 selectedSchedule,
                 matchData,
                 playerStats: sortedStats,
+                playerMatchCounts: Object.values(playerMatchCounts),
                 allPlayers: allMembers,
                 genderMap,
                 team1Players,
@@ -2085,26 +2120,26 @@ app.get('/special-match', async (req, res) => {
             });
 
         } else {
-            // 선택된 일정이 없을 경우
+            // 5. 선택된 일정이 없을 경우 (DB에 스페셜매치가 하나도 없는 경우)
             res.render('special-match', {
                 schedules,
                 selectedSchedule: null,
                 matchData: {},
                 playerStats: [],
+                playerMatchCounts: [],
                 allPlayers: [],
                 genderMap,
                 team1Players: [], 
                 currentPage: 'special-match'
             });
         }
-
     } catch (err) {
         console.error('[/special-match] 에러:', err.message);
         res.status(500).send('서버 오류가 발생했습니다.');
     }
 });
 
-// API: 스페셜매치 경기 기록 추가/수정
+// API: 리그ㆍ교류전 경기 기록 추가/수정
 app.post('/api/special-match/record', async (req, res) => {
     const { id, schedule_id, round_num, court_num, team1_deuce, team1_ad, team1_score, team2_deuce, team2_ad, team2_score } = req.body;
     
@@ -2124,14 +2159,14 @@ app.post('/api/special-match/record', async (req, res) => {
         
         const type = await calculateMatchType([team1_deuce, team1_ad, team2_deuce, team2_ad]);
         
-        // --- ▼▼▼ 수정된 SQL 쿼리 ▼▼▼ ---
         const sql = `
-            INSERT INTO matchrecord (id, schedule_id, round_num, court_num, team1_deuce, team1_ad, team1_score, team2_deuce, team2_ad, team2_score, team1_result, team2_result, date, type)
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, (SELECT schedule_date FROM schedules WHERE id = ?), ?)
+            INSERT INTO matchrecord (id, schedule_id, round_num, court_num, team1_deuce, team1_ad, team1_score, team2_deuce, team2_ad, team2_score, team1_result, team2_result, court, date, type)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, (SELECT location FROM schedules WHERE id = ?), (SELECT schedule_date FROM schedules WHERE id = ?), ?)
             ON DUPLICATE KEY UPDATE
             team1_deuce = VALUES(team1_deuce), team1_ad = VALUES(team1_ad), team1_score = VALUES(team1_score),
             team2_deuce = VALUES(team2_deuce), team2_ad = VALUES(team2_ad), team2_score = VALUES(team2_score),
             team1_result = VALUES(team1_result), team2_result = VALUES(team2_result),
+            court = VALUES(court),
             type = VALUES(type)
         `;
 
@@ -2140,7 +2175,8 @@ app.post('/api/special-match/record', async (req, res) => {
             team1_deuce || null, team1_ad || null, team1_score || 0,
             team2_deuce || null, team2_ad || null, team2_score || 0,
             team1_result, team2_result,
-            schedule_id,
+            schedule_id, // court 입력을 위한 schedule_id
+            schedule_id, // date 입력을 위한 schedule_id
             type
         ];
 
@@ -2153,7 +2189,7 @@ app.post('/api/special-match/record', async (req, res) => {
     }
 });
 
-// API: 스페셜매치 경기 기록 삭제
+// API: 리그ㆍ교류전 경기 기록 삭제
 app.delete('/api/special-match/record', async (req, res) => {
     const { id } = req.body;
     if (!id) {
@@ -2168,7 +2204,7 @@ app.delete('/api/special-match/record', async (req, res) => {
     }
 });
 
-// API: 스페셜매치 촬영자 수정
+// API: 리그ㆍ교류전 촬영담당 수정
 app.post('/api/special-match/videographer', async (req, res) => {
     const { id, schedule_id, round_num, court_num, videographer } = req.body;
 
@@ -2178,15 +2214,20 @@ app.post('/api/special-match/videographer', async (req, res) => {
 
     try {
          const sql = `
-            INSERT INTO matchrecord (id, schedule_id, round_num, court_num, videographer, date, type)
-            VALUES (?, ?, ?, ?, ?, (SELECT schedule_date FROM schedules WHERE id = ?), '기타')
+            INSERT INTO matchrecord (id, schedule_id, round_num, court_num, videographer, court, date, type)
+            VALUES (?, ?, ?, ?, ?, (SELECT location FROM schedules WHERE id = ?), (SELECT schedule_date FROM schedules WHERE id = ?), '기타')
             ON DUPLICATE KEY UPDATE
-            videographer = VALUES(videographer)
+            videographer = VALUES(videographer),
+            court = VALUES(court)
         `;
-        const params = [id || null, schedule_id, round_num, court_num, videographer || null, schedule_id];
+        const params = [
+            id || null, schedule_id, round_num, court_num, videographer || null, 
+            schedule_id, // court 입력을 위한 schedule_id
+            schedule_id  // date 입력을 위한 schedule_id
+        ];
         
         await pool.query(sql, params);
-        res.json({ success: true, message: '촬영자 정보가 저장되었습니다.' });
+        res.json({ success: true, message: '촬영담당 정보가 저장되었습니다.' });
     } catch(err) {
         console.error('[/api/special-match/videographer] 에러:', err.message);
         res.status(500).json({ success: false, message: '저장 중 오류 발생' });
