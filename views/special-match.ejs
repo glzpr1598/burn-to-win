@@ -112,7 +112,6 @@
             </div>
             <div class="d-flex align-items-center">
                 <select id="scheduleSelector" class="form-select form-select-sm header-select me-2">
-                    <option value="">-- 리그ㆍ교류전 선택 --</option>
                     <% schedules.forEach(s => { %>
                         <option value="<%= s.id %>" <%= selectedSchedule && selectedSchedule.id == s.id ? 'selected' : '' %>>
                             <%= s.schedule_date.substring(2) %> <%= s.notes %>
