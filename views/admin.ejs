@@ -54,6 +54,21 @@
                                         <option value="">-- 그룹 없음 --</option>
                                     </select>
                                 </div>
+                                <div class="form-row">
+                                    <label for="addIsSpecialMatch">리그ㆍ교류전 여부</label>
+                                    <select id="addIsSpecialMatch" name="is_special_match" class="form-select">
+                                        <option value="N" selected>아니오</option>
+                                        <option value="Y">예</option>
+                                    </select>
+                                </div>
+                                <div class="form-row">
+                                    <label for="addTotalCourtNum">코트 수</label>
+                                    <input type="number" id="addTotalCourtNum" name="total_court_num" class="form-control" placeholder="리그ㆍ교류전인 경우 입력">
+                                </div>
+                                <div class="form-row">
+                                    <label for="addTotalRoundNum">라운드 수</label>
+                                    <input type="number" id="addTotalRoundNum" name="total_round_num" class="form-control" placeholder="리그ㆍ교류전인 경우 입력">
+                                </div>
                                 <button type="submit" class="btn btn-sm btn-primary">일정 등록</button>
                             </form>
                             <p id="addScheduleMessage" class="mt-3"></p>
@@ -83,6 +98,21 @@
                                     </select>
                                 </div>
                                 <div class="form-row"><label for="updateCalculated">정산 여부</label><select id="updateCalculated" name="calculated" class="form-select"><option value="N">미완료</option><option value="Y">완료</option></select></div>
+                                <div class="form-row">
+                                    <label for="updateIsSpecialMatch">리그ㆍ교류전 여부</label>
+                                    <select id="updateIsSpecialMatch" name="is_special_match" class="form-select">
+                                        <option value="N">아니오</option>
+                                        <option value="Y">예</option>
+                                    </select>
+                                </div>
+                                <div class="form-row">
+                                    <label for="updateTotalCourtNum">코트 수</label>
+                                    <input type="number" id="updateTotalCourtNum" name="total_court_num" class="form-control" placeholder="리그ㆍ교류전인 경우 입력">
+                                </div>
+                                <div class="form-row">
+                                    <label for="updateTotalRoundNum">라운드 수</label>
+                                    <input type="number" id="updateTotalRoundNum" name="total_round_num" class="form-control" placeholder="리그ㆍ교류전인 경우 입력">
+                                </div>
                                 <button type="submit" class="btn btn-sm btn-success">일정 수정</button>
                                 <button id="deleteScheduleBtn" type="button" class="btn btn-sm btn-danger mt-2">일정 삭제</button>
                             </form>

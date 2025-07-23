@@ -1306,13 +1306,26 @@ app.post('/admin/delete-match', isAuthenticated, async (req, res) => {
 
 // 일정 등록
 app.post('/admin/add-schedule', isAuthenticated, async (req, res) => {
-    const { schedule_date, start_time, end_time, location, notes, booker, price, maximum, group_id } = req.body;
+    const { 
+        schedule_date, start_time, end_time, location, notes, booker, price, maximum, group_id,
+        is_special_match, total_court_num, total_round_num 
+    } = req.body;
+    
     try {
-        const [result] = await pool.query(
-            'INSERT INTO schedules (schedule_date, start_time, end_time, location, notes, booker, price, maximum, group_id) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)',
-            [schedule_date, start_time, end_time, location, notes, booker || null, price || null, maximum || 6, group_id || null]
-        );
+        const sql = `
+            INSERT INTO schedules (
+                schedule_date, start_time, end_time, location, notes, booker, price, maximum, group_id, 
+                is_special_match, total_court_num, total_round_num
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        `;
+        const params = [
+            schedule_date, start_time, end_time, location, notes, booker || null, price || null, maximum || 6, group_id || null,
+            is_special_match || 'N', total_court_num || null, total_round_num || null
+        ];
+        
+        const [result] = await pool.query(sql, params);
         res.json({ success: true, message: `일정(ID: ${result.insertId})이 성공적으로 등록되었습니다.` });
+
     } catch (err) {
         console.error('일정 등록 에러:', err.message);
         res.status(500).json({ success: false, message: '일정 등록 중 오류가 발생했습니다.' });
@@ -1321,12 +1334,27 @@ app.post('/admin/add-schedule', isAuthenticated, async (req, res) => {
 
 // 일정 수정
 app.post('/admin/update-schedule', isAuthenticated, async (req, res) => {
-    const { id, schedule_date, start_time, end_time, location, notes, booker, price, calculated, maximum, group_id } = req.body;
+    const { 
+        id, schedule_date, start_time, end_time, location, notes, booker, price, calculated, maximum, group_id,
+        is_special_match, total_court_num, total_round_num
+    } = req.body;
+    
     try {
-        const [result] = await pool.query(
-            'UPDATE schedules SET schedule_date = ?, start_time = ?, end_time = ?, location = ?, notes = ?, booker = ?, price = ?, calculated = ?, maximum = ?, group_id = ? WHERE id = ?',
-            [schedule_date, start_time, end_time, location, notes, booker || null, price || null, calculated, maximum || 6, group_id || null, id]
-        );
+        const sql = `
+            UPDATE schedules SET 
+                schedule_date = ?, start_time = ?, end_time = ?, location = ?, notes = ?, 
+                booker = ?, price = ?, calculated = ?, maximum = ?, group_id = ?,
+                is_special_match = ?, total_court_num = ?, total_round_num = ? 
+            WHERE id = ?
+        `;
+        const params = [
+            schedule_date, start_time, end_time, location, notes, booker || null, price || null, calculated, maximum || 6, group_id || null,
+            is_special_match || 'N', total_court_num || null, total_round_num || null,
+            id
+        ];
+
+        const [result] = await pool.query(sql, params);
+
         if (result.affectedRows > 0) {
             res.json({ success: true, message: `일정(ID: ${id})이 성공적으로 수정되었습니다.` });
         } else {
@@ -2020,7 +2048,7 @@ app.get('/special-match', async (req, res) => {
             const selectedSchedule = selectedScheduleArr[0];
             
             if (!selectedSchedule) {
-                 return res.status(404).send('선택한 스페셜매치 일정을 찾을 수 없습니다.');
+                 return res.status(404).send('선택한 리그ㆍ교류전 일정을 찾을 수 없습니다.');
             }
 
             const matchData = {};
@@ -2120,7 +2148,7 @@ app.get('/special-match', async (req, res) => {
             });
 
         } else {
-            // 5. 선택된 일정이 없을 경우 (DB에 스페셜매치가 하나도 없는 경우)
+            // 5. 선택된 일정이 없을 경우 (DB에 리그ㆍ교류전 하나도 없는 경우)
             res.render('special-match', {
                 schedules,
                 selectedSchedule: null,
