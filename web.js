@@ -319,12 +319,14 @@ app.post('/update/:id', async (req, res) => {
 
 // 새로운 경기 기록 저장하기
 app.post('/matches', async (req, res) => {
+    // schedule_id를 req.body에서 받아옵니다.
     const {
         date, court,
         team1_deuce, team1_ad,
         team2_deuce, team2_ad,
         team1_score, team2_score,
-        video, etc
+        video, etc,
+        schedule_id 
     } = req.body;
 
     try {
@@ -342,34 +344,33 @@ app.post('/matches', async (req, res) => {
 
         const type = await calculateMatchType([team1_deuce, team1_ad, team2_deuce, team2_ad]);
 
+        // SQL INSERT 문에 schedule_id 컬럼을 추가합니다.
         const sql = `
             INSERT INTO matchrecord 
-            (date, court, team1_deuce, team1_ad, team2_deuce, team2_ad, team1_score, team2_score, video, etc, team1_result, team2_result, type) 
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            (date, court, team1_deuce, team1_ad, team2_deuce, team2_ad, team1_score, team2_score, video, etc, team1_result, team2_result, type, schedule_id) 
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
         `;
+        // 파라미터 배열에 schedule_id 값을 추가합니다.
         const params = [
             date, court,
             team1_deuce, team1_ad || null,
             team2_deuce, team2_ad || null,
             team1_score, team2_score,
             video, etc,
-            team1_result, team2_result, type
+            team1_result, team2_result, type,
+            schedule_id || null
         ];
 
         await pool.query(sql, params);
 
-        // ✨ 요청 타입을 확인하여 다르게 응답하는 로직
         if (req.is('json')) {
-            // 'Content-Type'이 'application/json'인 경우 (fetch 요청)
             res.json({ success: true, message: '경기가 성공적으로 기록되었습니다.' });
         } else {
-            // 그 외의 경우 (일반 form 제출)
             res.redirect('/match-record');
         }
 
     } catch (err) {
         console.error('[/matches] 에러:', err.message);
-
         if (req.is('json')) {
             res.status(500).json({ success: false, message: '데이터 저장 중 오류가 발생했습니다.' });
         } else {

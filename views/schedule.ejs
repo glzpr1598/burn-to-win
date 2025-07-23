@@ -439,7 +439,7 @@
 						<datalist id="modal-player-list"></datalist>
 						<input type="hidden" name="date">
 						<input type="hidden" name="court">
-
+						<input type="hidden" name="schedule_id">
 						<div class="border p-3 rounded">
 							<div class="row">
 								<div class="col text-center">
@@ -1202,6 +1202,7 @@
 
 			modal.querySelector('input[name="date"]').value = schedule.schedule_date;
 			modal.querySelector('input[name="court"]').value = schedule.location;
+			modal.querySelector('input[name="schedule_id"]').value = scheduleId;
 
 			matchRecordModal.show();
 		}
