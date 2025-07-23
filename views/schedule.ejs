@@ -444,8 +444,10 @@
 							<div class="row">
 								<div class="col text-center">
 									<label class="form-label small">듀스코트(포)</label>
-									<input type="text" class="form-control" name="team1_deuce" list="modal-player-list"
-										required>
+									<div class="position-relative">
+										<input type="text" class="form-control" id="team1_deuce" name="team1_deuce" list="modal-player-list" required>
+                                        <button type="button" class="btn-close position-absolute top-50 end-0 translate-middle-y me-2" style="font-size: 0.6rem;" aria-label="지우기" onclick="clearInputValue('team1_deuce')"></button>
+                                    </div>
 								</div>
 								<div class="col-auto d-flex align-items-end p-0">
                                     <button type="button" class="btn swap-btn px-0" data-team="1">
@@ -454,7 +456,10 @@
                                 </div>
 								<div class="col text-center">
 									<label class="form-label small">애드코트(백)</label>
-									<input type="text" class="form-control" name="team1_ad" list="modal-player-list">
+									<div class="position-relative">
+										<input type="text" class="form-control" id="team1_ad" name="team1_ad" list="modal-player-list">
+                                        <button type="button" class="btn-close position-absolute top-50 end-0 translate-middle-y me-2" style="font-size: 0.6rem;" aria-label="지우기" onclick="clearInputValue('team1_ad')"></button>
+                                    </div>
 								</div>
 								<div class="col-auto text-center">
 									<label class="form-label small">스코어</label>
@@ -475,8 +480,10 @@
 							<div class="row">
 								<div class="col text-center">
 									<label class="form-label small">듀스코트(포)</label>
-									<input type="text" class="form-control" name="team2_deuce" list="modal-player-list"
-										required>
+									<div class="position-relative">
+										<input type="text" class="form-control" id="team2_deuce" name="team2_deuce" list="modal-player-list" required>
+                                        <button type="button" class="btn-close position-absolute top-50 end-0 translate-middle-y me-2" style="font-size: 0.6rem;" aria-label="지우기" onclick="clearInputValue('team2_deuce')"></button>
+                                    </div>
 								</div>
 								<div class="col-auto d-flex align-items-end p-0">
                                     <button type="button" class="btn swap-btn px-0" data-team="2">
@@ -485,7 +492,10 @@
                                 </div>
 								<div class="col text-center">
 									<label class="form-label small">애드코트(백)</label>
-									<input type="text" class="form-control" name="team2_ad" list="modal-player-list">
+									<div class="position-relative">
+										<input type="text" class="form-control" id="team2_ad" name="team2_ad" list="modal-player-list">
+                                        <button type="button" class="btn-close position-absolute top-50 end-0 translate-middle-y me-2" style="font-size: 0.6rem;" aria-label="지우기" onclick="clearInputValue('team2_ad')"></button>
+                                    </div>
 								</div>
 								<div class="col-auto text-center">
 									<label class="form-label small">스코어</label>
@@ -569,6 +579,13 @@
 		const schedulesJsonString = `<%- JSON.stringify(schedules) %>`;
 		const schedulesData = JSON.parse(schedulesJsonString);
     	const genderMap = JSON.parse('<%- JSON.stringify(genderMap || {}) %>');
+
+		function clearInputValue(inputId) {
+			const inputElement = document.getElementById(inputId);
+			if (inputElement) {
+				inputElement.value = '';
+			}
+		}
 
 		// --- 초기화 ---
 		document.addEventListener('DOMContentLoaded', () => {

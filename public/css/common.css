@@ -85,6 +85,7 @@ html, body {
   color: #333;
   text-decoration: none;
   border-bottom: 1px solid #f0f0f0;
+  font-size: 0.9rem;
 }
 .side-menu a:hover {
   background-color: #f8f9fa;
