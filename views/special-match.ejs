@@ -89,6 +89,8 @@
         .show-compact .compact-view { display: block; }
         .show-compact .full-view { display: none; }
         #player-score-table th { cursor: pointer; }
+        #player-score-table .odd-row td { background-color: #ffffff; }
+        #player-score-table .even-row td { background-color: #f5f5f5; }
         .table-responsive {
             font-size: 0.8rem;
             text-align: center;
@@ -307,7 +309,7 @@
                     </div>
                 </div>
                 <div class="table-responsive p-2">
-                    <table class="table table-sm table-striped table-hover" id="player-score-table">
+                    <table class="table table-sm table-hover" id="player-score-table">
                         <thead class="table-light" style="position: sticky; top: 0;">
                             <tr>
                                 <th onclick="sortTable(0, 'number')">순위 <i class="bi bi-arrow-down-up"></i></th>
@@ -465,6 +467,27 @@
             });
         }
 
+        // 개인 스코어 테이블 스트라이프 적용 함수
+        function restripeScoreTable() {
+            const tbody = document.querySelector("#player-score-table tbody");
+            if (!tbody) return;
+            // 필터링되어 보이는 행만 대상으로 스트라이프를 다시 적용합니다.
+            const visibleRows = tbody.querySelectorAll("tr[style='']");
+            
+            let visibleIndex = 0;
+            tbody.querySelectorAll("tr").forEach((row) => {
+                row.classList.remove('odd-row', 'even-row');
+                if (row.style.display !== 'none') {
+                    if (visibleIndex % 2 !== 0) {
+                        row.classList.add('even-row');
+                    } else {
+                        row.classList.add('odd-row');
+                    }
+                    visibleIndex++;
+                }
+            });
+        }
+
         function clearInputValue(inputId) {
             const inputElement = document.getElementById(inputId);
             if (inputElement) {
@@ -570,6 +593,7 @@
                     }
                 });
                 updatePlayerRanks();
+                restripeScoreTable();
             };
 
             const syncAndUpdateToggles = (sourceToggle) => {
@@ -596,6 +620,7 @@
 
             if (document.getElementById('player-score-table')) {
                 updateSortIcons();
+                restripeTable(); 
             }
 
             if (document.getElementById('player-match-count-table')) {
@@ -857,6 +882,8 @@
             // 정렬된 행을 다시 테이블에 추가
             rows.forEach(row => tbody.appendChild(row));
             
+            restripeScoreTable();
+
             // 아이콘 상태 업데이트
             updateSortIcons();
         }
