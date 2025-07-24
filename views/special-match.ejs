@@ -26,23 +26,32 @@
             font-size: 0.9rem
         }
         .bracket-table-wrapper {
-            width: 100%;
+            /* width: 100%; */
             padding: 0 8px 10px 8px;
+        }
+        .bracket-table-wrapper {
+            /* width: 100%; */
+            padding: 0 5px 5px 5px;
+            overflow-x: auto; /* 가로 스크롤을 다시 추가합니다. */
         }
         .bracket-table {
             font-size: 0.8rem;
-            width: 100%;
+            /* width: 100%; */
+            min-width: 100%;
             table-layout: fixed;
-        }
-        .bracket-table th {
-            background-color: #f8f9fa;
+            margin: 0 auto;
         }
         .bracket-table th,
         .bracket-table td {
             text-align: center;
             vertical-align: middle;
             border: 1px solid #dee2e6;
-            word-break: break-all;
+            word-break: keep-all;
+            white-space: nowrap;
+            /* height: 100px; */
+        }
+        .bracket-table th {
+            background-color: #f8f9fa;
         }
         .bracket-table th:first-child,
         .bracket-table td:first-child {
@@ -53,7 +62,7 @@
         .match-cell {
             cursor: pointer;
             padding: 4px !important;
-            min-width: 100px;
+            /* min-width: 100px; */
             height: 45px;
         }
         .match-cell:hover {
@@ -67,7 +76,6 @@
         .players {
             text-align: center;
             flex: 3;
-            word-break: keep-all;
         }
         .score {
             text-align: center;
@@ -198,6 +206,7 @@
                                                 <div class="team-info <%= team1_bg %>">
                                                     <div class="players">
                                                         <span><%- stylePlayerName(match.team1_deuce, genderMap) %></span>
+                                                        <% if (selectedSchedule.total_court_num >= 4) { %><br><% } %>
                                                         <span><%- stylePlayerName(match.team1_ad, genderMap) %></span>
                                                     </div>
                                                     <div class="score"><%= match.team1_score %></div>
@@ -205,6 +214,7 @@
                                                 <div class="team-info <%= team2_bg %>">
                                                     <div class="players">
                                                         <span><%- stylePlayerName(match.team2_deuce, genderMap) %></span>
+                                                        <% if (selectedSchedule.total_court_num >= 4) { %><br><% } %>
                                                         <span><%- stylePlayerName(match.team2_ad, genderMap) %></span>
                                                     </div>
                                                     <div class="score"><%= match.team2_score %></div>
