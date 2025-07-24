@@ -705,7 +705,7 @@
 					// 3. 검색어가 있을 경우, 일치하는 텍스트를 찾아 굵게 표시합니다.
 					if (keywords.length > 0) {
 						const searchRegex = new RegExp(keywords.join('|'), 'gi');
-						const highlightWrapper = (match) => `<strong>${match}</strong>`;
+						const highlightWrapper = (match) => `<span class="search-highlight">${match}</span>`;
 
 						// 기존 필드 하이라이트
 						if (infoElement) {

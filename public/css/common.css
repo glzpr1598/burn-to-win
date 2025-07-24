@@ -113,3 +113,7 @@ html, body {
   color:#884D5B;
   font-weight: 600;
 }
+
+.search-highlight {
+    background-color: #FFF387 !important;
+}

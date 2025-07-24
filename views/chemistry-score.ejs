@@ -270,7 +270,7 @@
                         const nameSpans = cell.querySelectorAll('.text-male, .text-female');
                         nameSpans.forEach(span => {
                             // span 태그와 스타일은 그대로 두고, 그 안의 텍스트에만 <strong> 태그를 적용합니다.
-                            span.innerHTML = span.innerText.replace(searchRegex, '<strong>$&</strong>');
+                            span.innerHTML = span.innerText.replace(searchRegex, '<span class="search-highlight">$&</span>');
                         });
                     }
                     
@@ -354,7 +354,7 @@
                 const gender = genderMap[player];
                 // 성별에 따라 배경색 지정
                 const genderClass = gender === '남' ? 'text-male' : (gender === '여' ? 'text-female' : '');
-                const content = isBold ? `<strong>${player}</strong>` : player;
+                const content = isBold ? `<span class="search-highlight">${player}</span>` : player;
                 // 'backgrond-color' 오타 수정 및 스타일 적용
                 return `<span class="${genderClass}">${content}</span>`;
             };

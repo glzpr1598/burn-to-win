@@ -405,7 +405,7 @@
                 if (!player) return '';
                 const gender = genderMap[player];
                 const genderClass = gender === '남' ? 'text-male' : (gender === '여' ? 'text-female' : '');
-                const content = isBold ? `<strong>${player}</strong>` : player;
+                const content = isBold ? `<span class="search-highlight">${player}</span>` : player;
                 return `<span class="${genderClass}">${content}</span>`;
             };
 

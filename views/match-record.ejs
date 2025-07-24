@@ -61,7 +61,6 @@
     #matchTable tbody tr:hover td { cursor: pointer; background-color: #e2e2e2; }
     #matchTable td { overflow: hidden; text-overflow: ellipsis; }
     td.hidden-etc { display: none; }
-
   </style>
 </head>
 
@@ -351,7 +350,7 @@
                 // 복제된 행의 모든 셀(td)을 순회하며 하이라이팅 적용
                 newRow.querySelectorAll('td').forEach(td => {
                     // '<strong>$&</strong>'에서 $&는 정규식에 매칭된 원래 문자열을 의미
-                    td.innerHTML = td.innerHTML.replace(searchRegex, '<strong>$&</strong>');
+                    td.innerHTML = td.innerHTML.replace(searchRegex, '<span class="search-highlight">$&</span>');
                 });
 
                 matchTableBody.appendChild(newRow);

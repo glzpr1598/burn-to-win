@@ -104,9 +104,9 @@
         #deleteMatchRecordBtn {
             display: none;
         }
-        .highlight-player {
+        /* .search {
             background-color: #FFF387 !important;
-        }
+        } */
     </style>
 </head>
 
@@ -153,7 +153,7 @@
                 <div class="p-2 d-flex justify-content-between align-items-center">
                     <div>
                         <select class="form-select form-select-sm" id="playerHighlighter" style="width: 120px;">
-                            <option value="">선수 필터</option>
+                            <option value="">선수 찾기</option>
                             <% if (participatingPlayers) { %>
                                 <% participatingPlayers.forEach(player => { %>
                                     <option value="<%= player %>"><%= player %></option>
@@ -489,15 +489,13 @@
             if (playerHighlighter) {
                 playerHighlighter.addEventListener('change', function() {
                     const selectedPlayer = this.value;
-                    
-                    // 모든 .full-view에서 기존 강조 효과 제거
-                    document.querySelectorAll('.full-view').forEach(view => {
-                        view.querySelectorAll('.players, .score').forEach(el => {
-                            el.classList.remove('highlight-player');
-                        });
+
+                    // 1. 모든 셀에서 기존 하이라이트 효과를 먼저 제거합니다.
+                    document.querySelectorAll('.full-view span, .compact-view span').forEach(span => {
+                        span.classList.remove('search-highlight');
                     });
 
-                    // 선택된 선수가 있으면 강조 효과 추가
+                    // 2. 선수가 선택된 경우, full-view와 compact-view 모두에 강조 효과를 적용합니다.
                     if (selectedPlayer) {
                         document.querySelectorAll('.match-cell').forEach(cell => {
                             const matchDataStr = cell.dataset.match;
@@ -505,27 +503,19 @@
 
                             const match = JSON.parse(decodeURIComponent(matchDataStr));
                             const playersInMatch = [match.team1_deuce, match.team1_ad, match.team2_deuce, match.team2_ad];
-                            const fullView = cell.querySelector('.full-view');
 
-                            if (fullView) {
-                                fullView.querySelectorAll('.players span').forEach(span => {
+                            if (playersInMatch.includes(selectedPlayer)) {
+                                // 해당 셀의 full-view와 compact-view 안의 모든 span을 대상으로 검색
+                                cell.querySelectorAll('.full-view span, .compact-view span').forEach(span => {
                                     if (span.textContent === selectedPlayer) {
-                                        span.classList.add('highlight-player');
-                                    } else {
-                                        span.classList.remove('highlight-player'); // 기존 하이라이트 제거
+                                        span.classList.add('search-highlight');
                                     }
                                 });
                             }
                         });
-                    } else {
-                        // 선택 해제 시 모든 하이라이트 제거
-                        document.querySelectorAll('.full-view .players span').forEach(span => {
-                            span.classList.remove('highlight-player');
-                        });
                     }
                 });
             }
-            // --- 이벤트 리스너 (페이지 로드 시) ---
             
             // 일정 선택 드롭다운
             document.getElementById('scheduleSelector').addEventListener('change', function() {
