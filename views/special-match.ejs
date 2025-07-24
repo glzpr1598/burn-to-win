@@ -96,6 +96,9 @@
         #deleteMatchRecordBtn {
             display: none;
         }
+        .highlight-player {
+            background-color: #FFF387 !important;
+        }
     </style>
 </head>
 
@@ -139,10 +142,22 @@
 
         <div class="tab-content content-area" id="myTabContent">
             <div class="tab-pane fade show active" id="bracket-pane" role="tabpanel">
-                <div class="p-2 d-flex justify-content-end align-items-center">
-                    <label class="small me-2" for="opponentToggle" style="cursor: pointer;">상대팀 보기</label>
-                    <div class="form-check form-switch m-0">
-                        <input class="form-check-input" type="checkbox" role="switch" id="opponentToggle">
+                <div class="p-2 d-flex justify-content-between align-items-center">
+                    <div>
+                        <select class="form-select form-select-sm" id="playerHighlighter" style="width: 120px;">
+                            <option value="">선수 필터</option>
+                            <% if (participatingPlayers) { %>
+                                <% participatingPlayers.forEach(player => { %>
+                                    <option value="<%= player %>"><%= player %></option>
+                                <% }) %>
+                            <% } %>
+                        </select>
+                    </div>
+                    <div class="p-2 text-end">
+                        <div class="form-check form-switch d-inline-flex flex-row-reverse align-items-center">
+                            <input class="form-check-input" type="checkbox" role="switch" id="opponentToggle">
+                            <label class="form-check-label small me-5" for="opponentToggle" style="cursor: pointer;">상대팀 보기</label>
+                        </div>
                     </div>
                 </div>
                 <div class="bracket-table-wrapper">
@@ -459,7 +474,47 @@
             // --- 초기화 ---
             const matchRecordModal = new bootstrap.Modal(document.getElementById('matchRecordModal'));
             const videographerModal = new bootstrap.Modal(document.getElementById('videographerModal'));
+            const playerHighlighter = document.getElementById('playerHighlighter');
 
+            if (playerHighlighter) {
+                playerHighlighter.addEventListener('change', function() {
+                    const selectedPlayer = this.value;
+                    
+                    // 모든 .full-view에서 기존 강조 효과 제거
+                    document.querySelectorAll('.full-view').forEach(view => {
+                        view.querySelectorAll('.players, .score').forEach(el => {
+                            el.classList.remove('highlight-player');
+                        });
+                    });
+
+                    // 선택된 선수가 있으면 강조 효과 추가
+                    if (selectedPlayer) {
+                        document.querySelectorAll('.match-cell').forEach(cell => {
+                            const matchDataStr = cell.dataset.match;
+                            if (!matchDataStr) return;
+
+                            const match = JSON.parse(decodeURIComponent(matchDataStr));
+                            const playersInMatch = [match.team1_deuce, match.team1_ad, match.team2_deuce, match.team2_ad];
+                            const fullView = cell.querySelector('.full-view');
+
+                            if (fullView) {
+                                fullView.querySelectorAll('.players span').forEach(span => {
+                                    if (span.textContent === selectedPlayer) {
+                                        span.classList.add('highlight-player');
+                                    } else {
+                                        span.classList.remove('highlight-player'); // 기존 하이라이트 제거
+                                    }
+                                });
+                            }
+                        });
+                    } else {
+                        // 선택 해제 시 모든 하이라이트 제거
+                        document.querySelectorAll('.full-view .players span').forEach(span => {
+                            span.classList.remove('highlight-player');
+                        });
+                    }
+                });
+            }
             // --- 이벤트 리스너 (페이지 로드 시) ---
             
             // 일정 선택 드롭다운

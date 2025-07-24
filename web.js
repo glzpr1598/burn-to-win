@@ -2012,8 +2012,6 @@ app.delete('/api/notice-comments/:id', async (req, res) => {
 });
 
 // 리그ㆍ교류전 페이지
-// web.js
-
 app.get('/special-match', async (req, res) => {
     try {
         const { schedule_id } = req.query;
@@ -2124,6 +2122,9 @@ app.get('/special-match', async (req, res) => {
                 if (m.team1_ad) team1PlayerSet.add(m.team1_ad);
             });
             const team1Players = Array.from(team1PlayerSet);
+
+            // 참여 선수 목록 생성
+            const participatingPlayers = Array.from(allPlayerNames).sort();
             
             // 랭킹 계산
             let sortedStats = Object.values(playerStats).sort((a, b) => b.points - a.points);
@@ -2145,6 +2146,7 @@ app.get('/special-match', async (req, res) => {
                 allPlayers: allMembers,
                 genderMap,
                 team1Players,
+                participatingPlayers,
                 currentPage: 'special-match'
             });
 
@@ -2159,6 +2161,7 @@ app.get('/special-match', async (req, res) => {
                 allPlayers: [],
                 genderMap,
                 team1Players: [], 
+                participatingPlayers: [],
                 currentPage: 'special-match'
             });
         }
