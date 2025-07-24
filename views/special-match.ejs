@@ -495,6 +495,10 @@
                         span.classList.remove('search-highlight');
                     });
 
+                    document.querySelectorAll('#player-match-count-table tbody tr td span').forEach(row => {
+                        row.classList.remove('search-highlight');
+                    });
+
                     // 2. 선수가 선택된 경우, full-view와 compact-view 모두에 강조 효과를 적용합니다.
                     if (selectedPlayer) {
                         document.querySelectorAll('.match-cell').forEach(cell => {
@@ -513,6 +517,11 @@
                                 });
                             }
                         });
+
+                        const rowToHighlight = document.querySelector(`#player-match-count-table tbody tr[data-player-name="${selectedPlayer}"] td span`);
+                        if (rowToHighlight) {
+                            rowToHighlight.classList.add('search-highlight');
+                        }
                     }
                 });
             }
