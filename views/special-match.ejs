@@ -547,6 +547,18 @@
                         }
                     }
                 });
+
+                // LocalStorage에서 선수 자동 선택
+                const savedPlayer = localStorage.getItem('tennis-schedule-user');
+                if (savedPlayer) {
+                    // 드롭다운에 해당 선수가 있는지 확인
+                    const optionExists = Array.from(playerHighlighter.options).some(option => option.value === savedPlayer);
+                    if (optionExists) {
+                        playerHighlighter.value = savedPlayer;
+                        // 하이라이트 적용을 위해 change 이벤트 트리거
+                        playerHighlighter.dispatchEvent(new Event('change'));
+                    }
+                }
             }
             
             // 일정 선택 드롭다운
