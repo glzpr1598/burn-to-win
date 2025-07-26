@@ -185,8 +185,8 @@
             hiddenDate.name = 'date';
             hiddenDate.value = dateInput.value;
             dateInput.form.appendChild(hiddenDate);
-            
-            if (matchDate < twoDaysAgo) {
+
+            if (matchDate <= twoDaysAgo) {
 
                 // 코트 필드
                 const courtInput = document.getElementById('court');

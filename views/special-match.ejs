@@ -745,7 +745,7 @@
 
             const saveBtn = document.getElementById('saveMatchRecordBtn');
 
-            if (scheduleDate < twoDaysAgo) {
+            if (scheduleDate <= twoDaysAgo) {
                 saveBtn.style.display = 'none';
 
                 // 선수 입력 필드 비활성화

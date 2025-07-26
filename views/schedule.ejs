@@ -1049,7 +1049,7 @@
                 twoDaysAgo.setDate(today.getDate() - 2);
 
                 const recordBtn = card.querySelector('.record-btn');
-                if (scheduleDate < twoDaysAgo) {
+                if (scheduleDate <= twoDaysAgo) {
                     recordBtn.classList.remove('btn-success');
                     recordBtn.classList.add('btn-outline-success');
                 } 
@@ -1205,7 +1205,7 @@
             const twoDaysAgo = new Date(today);
             twoDaysAgo.setDate(today.getDate() - 2);
 
-            if (scheduleDate < twoDaysAgo) {
+            if (scheduleDate <= twoDaysAgo) {
                 alert("지난 일정은 기록할 수 없습니다. 관리자에게 문의해 주세요.");
                 return;
             }
