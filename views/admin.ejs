@@ -22,6 +22,8 @@
         .logout-button { display: block; width: 100%; margin-top: 15px; }
         .attendee-list { max-height: 200px; overflow-y: auto; border: 1px solid #ddd; padding: 10px; border-radius: 4px; }
         .modal-body * { font-size: 0.9rem; }
+        #selectScheduleForMatchBtn, #selectScheduleForUpdateMatchBtn { width: 100px;}
+        #selectScheduleForMatchBtn, #selectScheduleForUpdateMatchBtn { width: 100px;}
     </style>
 </head>
 <body>
@@ -40,13 +42,13 @@
                     <div id="collapseAddSchedule" class="accordion-collapse collapse" data-bs-parent="#adminAccordion">
                         <div class="accordion-body">
                             <form id="addScheduleForm">
-                                <div class="form-row"><label for="addDate">날짜</label><input type="date" id="addDate" name="schedule_date" class="form-control" required></div>
-                                <div class="form-row"><label for="addStartTime">시작 시간</label><input type="time" id="addStartTime" name="start_time" class="form-control" value="20:00" required></div>
-                                <div class="form-row"><label for="addEndTime">종료 시간</label><input type="time" id="addEndTime" name="end_time" class="form-control" value="22:00" required></div>
-                                <div class="form-row"><label for="addLocation">장소</label><input type="text" id="addLocation" name="location" class="form-control" required></div>
-                                <div class="form-row"><label for="addBooker">예약자</label><input type="text" id="addBooker" name="booker" class="form-control" list="memberNames" required></div>
-                                <div class="form-row"><label for="addPrice">코트비</label><input type="number" id="addPrice" name="price" class="form-control" required></div>
-                                <div class="form-row"><label for="addMaximum">최대 인원</label><input type="number" id="addMaximum" name="maximum" class="form-control" value="6" required></div>
+                                <div class="form-row"><label for="addDate">날짜<span style="color: red;">*</span></label><input type="date" id="addDate" name="schedule_date" class="form-control" required></div>
+                                <div class="form-row"><label for="addStartTime">시작 시간<span style="color: red;">*</span></label><input type="time" id="addStartTime" name="start_time" class="form-control" value="20:00" required></div>
+                                <div class="form-row"><label for="addEndTime">종료 시간<span style="color: red;">*</span></label><input type="time" id="addEndTime" name="end_time" class="form-control" value="22:00" required></div>
+                                <div class="form-row"><label for="addLocation">장소<span style="color: red;">*</span></label><input type="text" id="addLocation" name="location" class="form-control" required></div>
+                                <div class="form-row"><label for="addBooker">예약자<span style="color: red;">*</span></label><input type="text" id="addBooker" name="booker" class="form-control" list="memberNames" required></div>
+                                <div class="form-row"><label for="addPrice">코트비<span style="color: red;">*</span></label><input type="number" id="addPrice" name="price" class="form-control" required></div>
+                                <div class="form-row"><label for="addMaximum">최대 인원<span style="color: red;">*</span></label><input type="number" id="addMaximum" name="maximum" class="form-control" value="6" required></div>
                                 <div class="form-row"><label for="addNotes">설명</label><input type="text" id="addNotes" name="notes" class="form-control" placeholder="여복데이, 정기대관 등"></div>
                                 <div class="form-row">
                                     <label for="addGroupId">그룹</label>
@@ -83,13 +85,13 @@
                             <button id="selectScheduleBtn" class="btn btn-sm btn-secondary mb-3">일정 선택</button>
                             <form id="updateScheduleForm" style="display:none;">
                                 <div class="form-row"><label for="updateId">일정 ID</label><input type="number" id="updateId" name="id" class="form-control" readonly></div>
-                                <div class="form-row"><label for="updateDate">날짜</label><input type="date" id="updateDate" name="schedule_date" class="form-control" required></div>
-                                <div class="form-row"><label for="updateStartTime">시작 시간</label><input type="time" id="updateStartTime" name="start_time" class="form-control" required></div>
-                                <div class="form-row"><label for="updateEndTime">종료 시간</label><input type="time" id="updateEndTime" name="end_time" class="form-control" required></div>
-                                <div class="form-row"><label for="updateLocation">장소</label><input type="text" id="updateLocation" name="location" class="form-control" required></div>
-                                <div class="form-row"><label for="updateBooker">예약자</label><input type="text" id="updateBooker" name="booker" class="form-control" list="memberNames" required></div>
-                                <div class="form-row"><label for="updatePrice">코트비</label><input type="number" id="updatePrice" name="price" class="form-control" required></div>
-                                <div class="form-row"><label for="updateMaximum">최대 인원</label><input type="number" id="updateMaximum" name="maximum" class="form-control" required></div>
+                                <div class="form-row"><label for="updateDate">날짜<span style="color: red;">*</span></label><input type="date" id="updateDate" name="schedule_date" class="form-control" required></div>
+                                <div class="form-row"><label for="updateStartTime">시작 시간<span style="color: red;">*</span></label><input type="time" id="updateStartTime" name="start_time" class="form-control" required></div>
+                                <div class="form-row"><label for="updateEndTime">종료 시간<span style="color: red;">*</span></label><input type="time" id="updateEndTime" name="end_time" class="form-control" required></div>
+                                <div class="form-row"><label for="updateLocation">장소<span style="color: red;">*</span></label><input type="text" id="updateLocation" name="location" class="form-control" required></div>
+                                <div class="form-row"><label for="updateBooker">예약자<span style="color: red;">*</span></label><input type="text" id="updateBooker" name="booker" class="form-control" list="memberNames" required></div>
+                                <div class="form-row"><label for="updatePrice">코트비<span style="color: red;">*</span></label><input type="number" id="updatePrice" name="price" class="form-control" required></div>
+                                <div class="form-row"><label for="updateMaximum">최대 인원<span style="color: red;">*</span></label><input type="number" id="updateMaximum" name="maximum" class="form-control" required></div>
                                 <div class="form-row"><label for="updateNotes">설명</label><input type="text" id="updateNotes" name="notes" class="form-control"></div>
                                 <div class="form-row">
                                     <label for="updateGroupId">그룹</label>
@@ -142,12 +144,17 @@
                     <div id="collapseAddMatchRecord" class="accordion-collapse collapse" data-bs-parent="#adminAccordion">
                         <div class="accordion-body">
                             <form id="addMatchRecordForm">
-                                <div class="form-row"><label for="addMatchDate">날짜</label><input type="date" id="addMatchDate" name="date" class="form-control" required></div>
-                                <div class="form-row"><label for="addMatchCourt">코트</label><input type="text" id="addMatchCourt" name="court" class="form-control" list="court-list" required></div>
+                                <div class="form-row">
+                                    <label for="addMatchScheduleId">일정 ID</label>
+                                    <input type="text" id="addMatchScheduleId" name="schedule_id" class="form-control" readonly>
+                                    <button type="button" id="selectScheduleForMatchBtn" class="btn btn-sm btn-secondary ms-2">일정 선택</button>
+                                </div>
+                                <div class="form-row"><label for="addMatchDate">날짜<span style="color: red;">*</span></label><input type="date" id="addMatchDate" name="date" class="form-control" required></div>
+                                <div class="form-row"><label for="addMatchCourt">코트<span style="color: red;">*</span></label><input type="text" id="addMatchCourt" name="court" class="form-control" list="court-list" required></div>
                                 <div class="border p-3 rounded my-2">
                                     <div class="row">
                                         <div class="col text-center">
-                                            <label class="form-label small">듀스코트(포)</label>
+                                            <label class="form-label small">듀스코트(포)<span style="color: red;">*</span></label>
                                             <input type="text" name="team1_deuce" class="form-control" list="memberNames" required>
                                         </div>
                                         <div class="col-auto d-flex align-items-end p-0">
@@ -158,7 +165,7 @@
                                             <input type="text" name="team1_ad" class="form-control" list="memberNames">
                                         </div>
                                         <div class="col-auto text-center">
-                                            <label class="form-label small">스코어</label>
+                                            <label class="form-label small">스코어<span style="color: red;">*</span></label>
                                             <select class="form-select text-center" name="team1_score" required>
                                                 <% for(let i = 0; i <= 7; i++) { %><option value="<%= i %>"><%= i %></option><% } %>
                                             </select>
@@ -169,7 +176,7 @@
                                 <div class="border p-3 rounded my-2">
                                     <div class="row">
                                         <div class="col text-center">
-                                            <label class="form-label small">듀스코트(포)</label>
+                                            <label class="form-label small">듀스코트(포)<span style="color: red;">*</span></label>
                                             <input type="text" name="team2_deuce" class="form-control" list="memberNames" required>
                                         </div>
                                         <div class="col-auto d-flex align-items-end p-0">
@@ -180,7 +187,7 @@
                                             <input type="text" name="team2_ad" class="form-control" list="memberNames">
                                         </div>
                                         <div class="col-auto text-center">
-                                            <label class="form-label small">스코어</label>
+                                            <label class="form-label small">스코어<span style="color: red;">*</span></label>
                                             <select class="form-select text-center" name="team2_score" required>
                                                 <% for(let i = 0; i <= 7; i++) { %><option value="<%= i %>"><%= i %></option><% } %>
                                             </select>
@@ -189,6 +196,9 @@
                                 </div>
                                 <div class="form-row"><label for="addMatchVideo">영상 링크</label><input type="url" id="addMatchVideo" name="video" class="form-control"></div>
                                 <div class="form-row"><label for="addMatchEtc">비고</label><input id="addMatchEtc" name="etc" class="form-control" placeholder="검색 시 활용"></div>
+                                <div class="form-row"><label for="addMatchCourtNum">코트 번호</label><input type="number" id="addMatchCourtNum" name="court_num" class="form-control" placeholder="리그ㆍ교류전인 경우 입력"></div>
+                                <div class="form-row"><label for="addMatchRoundNum">라운드</label><input type="number" id="addMatchRoundNum" name="round_num" class="form-control" placeholder="리그ㆍ교류전인 경우 입력"></div>
+                                <div class="form-row"><label for="addMatchVideographer">촬영담당자</label><input type="text" id="addMatchVideographer" name="videographer" class="form-control" list="memberNames" placeholder="리그ㆍ교류전인 경우 입력"></div>
                                 <button type="submit" class="btn btn-sm btn-primary">경기 기록 등록</button>
                             </form>
                             <p id="addMatchMessage" class="mt-3"></p>
@@ -203,12 +213,17 @@
                             <button id="selectMatchRecordBtn" class="btn btn-sm btn-secondary mb-3">경기 기록 선택</button>
                             <form id="updateMatchRecordForm" style="display:none;">
                                 <input type="hidden" id="updateMatchId" name="id">
-                                <div class="form-row"><label for="updateMatchDate">날짜</label><input type="date" id="updateMatchDate" name="date" class="form-control" required></div>
-                                <div class="form-row"><label for="updateMatchCourt">코트</label><input type="text" id="updateMatchCourt" name="court" class="form-control" list="court-list" required></div>
+                                <div class="form-row">
+                                    <label for="updateMatchScheduleId">일정 ID</label>
+                                    <input type="text" id="updateMatchScheduleId" name="schedule_id" class="form-control" readonly>
+                                    <button type="button" id="selectScheduleForUpdateMatchBtn" class="btn btn-sm btn-secondary ms-2">일정 선택</button>
+                                </div>
+                                <div class="form-row"><label for="updateMatchDate">날짜<span style="color: red;">*</span></label><input type="date" id="updateMatchDate" name="date" class="form-control" required></div>
+                                <div class="form-row"><label for="updateMatchCourt">코트<span style="color: red;">*</span></label><input type="text" id="updateMatchCourt" name="court" class="form-control" list="court-list" required></div>
                                 <div class="border p-3 rounded my-2">
                                     <div class="row">
                                         <div class="col text-center">
-                                            <label class="form-label small">듀스코트(포)</label>
+                                            <label class="form-label small">듀스코트(포)<span style="color: red;">*</span></label>
                                             <input type="text" id="updateMatchT1Deuce" name="team1_deuce" class="form-control" list="memberNames" required>
                                         </div>
                                         <div class="col-auto d-flex align-items-end p-0">
@@ -219,7 +234,7 @@
                                             <input type="text" id="updateMatchT1Ad" name="team1_ad" class="form-control" list="memberNames">
                                         </div>
                                         <div class="col-auto text-center">
-                                            <label class="form-label small">스코어</label>
+                                            <label class="form-label small">스코어<span style="color: red;">*</span></label>
                                             <select class="form-select text-center" id="updateMatchT1Score" name="team1_score" required>
                                                 <% for(let i = 0; i <= 7; i++) { %><option value="<%= i %>"><%= i %></option><% } %>
                                             </select>
@@ -230,7 +245,7 @@
                                 <div class="border p-3 rounded my-2">
                                     <div class="row">
                                         <div class="col text-center">
-                                            <label class="form-label small">듀스코트(포)</label>
+                                            <label class="form-label small">듀스코트(포)<span style="color: red;">*</span></label>
                                             <input type="text" id="updateMatchT2Deuce" name="team2_deuce" class="form-control" list="memberNames" required>
                                         </div>
                                         <div class="col-auto d-flex align-items-end p-0">
@@ -241,7 +256,7 @@
                                             <input type="text" id="updateMatchT2Ad" name="team2_ad" class="form-control" list="memberNames">
                                         </div>
                                         <div class="col-auto text-center">
-                                            <label class="form-label small">스코어</label>
+                                            <label class="form-label small">스코어<span style="color: red;">*</span></label>
                                             <select class="form-select text-center" id="updateMatchT2Score" name="team2_score" required>
                                                 <% for(let i = 0; i <= 7; i++) { %><option value="<%= i %>"><%= i %></option><% } %>
                                             </select>
@@ -250,6 +265,9 @@
                                 </div>
                                 <div class="form-row"><label for="updateMatchVideo">영상 링크</label><input type="url" id="updateMatchVideo" name="video" class="form-control"></div>
                                 <div class="form-row"><label for="updateMatchEtc">비고</label><input id="updateMatchEtc" name="etc" class="form-control" placeholder="검색 시 활용"></div>
+                                <div class="form-row"><label for="updateMatchCourtNum">코트 번호</label><input type="number" id="updateMatchCourtNum" name="court_num" class="form-control" placeholder="리그ㆍ교류전인 경우 입력"></div>
+                                <div class="form-row"><label for="updateMatchRoundNum">라운드</label><input type="number" id="updateMatchRoundNum" name="round_num" class="form-control" placeholder="리그ㆍ교류전인 경우 입력"></div>
+                                <div class="form-row"><label for="updateMatchVideographer">촬영담당자</label><input type="text" id="updateMatchVideographer" name="videographer" class="form-control" list="memberNames" placeholder="리그ㆍ교류전인 경우 입력"></div>
                                 <button type="submit" class="btn btn-sm btn-success">경기 기록 수정</button>
                                 <button id="deleteMatchRecordBtn" type="button" class="btn btn-sm btn-danger mt-2">경기 기록 삭제</button>
                             </form>
@@ -263,12 +281,12 @@
                     <div id="collapseAddMember" class="accordion-collapse collapse" data-bs-parent="#adminAccordion">
                         <div class="accordion-body">
                             <form id="addMemberForm">
-                                <div class="form-row"><label for="addMemberName">이름</label><input type="text" id="addMemberName" name="name" class="form-control" required></div>
-                                <div class="form-row"><label for="addMemberGender">성별</label><select id="addMemberGender" name="gender" class="form-select"><option value="남">남</option><option value="여">여</option></select></div>
+                                <div class="form-row"><label for="addMemberName">이름<span style="color: red;">*</span></label><input type="text" id="addMemberName" name="name" class="form-control" required></div>
+                                <div class="form-row"><label for="addMemberGender">성별<span style="color: red;">*</span></label><select id="addMemberGender" name="gender" class="form-select"><option value="남">남</option><option value="여">여</option></select></div>
                                 <div class="form-row"><label for="addMemberBirth">생년월일</label><input type="date" id="addMemberBirth" name="birth" class="form-control"></div>
                                 <div class="form-row"><label for="addMemberPhone">연락처</label><input type="tel" id="addMemberPhone" name="phone" class="form-control" placeholder="010-1234-5678"></div>
                                 <div class="form-row">
-                                    <label for="addMemberOrder">회원 구분</label>
+                                    <label for="addMemberOrder">회원 구분<span style="color: red;">*</span></label>
                                     <select id="addMemberOrder" name="order" class="form-select" required>
                                         <option value="0">정회원</option>
                                         <option value="2">비회원</option>
@@ -289,12 +307,12 @@
                             <button id="selectMemberBtn" class="btn btn-sm btn-secondary mb-3">멤버 선택</button>
                             <form id="updateMemberForm" style="display:none;">
                                 <div class="form-row"><label for="originalMemberName">이름</label><input type="text" id="originalMemberName" name="originalName" class="form-control" readonly></div>
-                                <div class="form-row" style="display: none;"><label for="updateMemberName">새 이름</label><input type="text" id="updateMemberName" name="name" class="form-control" required></div>
-                                <div class="form-row"><label for="updateMemberGender">성별</label><select id="updateMemberGender" name="gender" class="form-select"><option value="남">남</option><option value="여">여</option></select></div>
+                                <div class="form-row" style="display: none;"><label for="updateMemberName">새 이름<span style="color: red;">*</span></label><input type="text" id="updateMemberName" name="name" class="form-control" required></div>
+                                <div class="form-row"><label for="updateMemberGender">성별<span style="color: red;">*</span></label><select id="updateMemberGender" name="gender" class="form-select"><option value="남">남</option><option value="여">여</option></select></div>
                                 <div class="form-row"><label for="updateMemberBirth">생년월일</label><input type="date" id="updateMemberBirth" name="birth" class="form-control"></div>
                                 <div class="form-row"><label for="updateMemberPhone">연락처</label><input type="tel" id="updateMemberPhone" name="phone" class="form-control" placeholder="010-1234-5678"></div>
                                 <div class="form-row">
-                                    <label for="updateMemberOrder">회원 구분</label>
+                                    <label for="updateMemberOrder">회원 구분<span style="color: red;">*</span></label>
                                     <select id="updateMemberOrder" name="order" class="form-select" required>
                                         <option value="0">정회원</option>
                                         <option value="2">비회원</option>
@@ -414,7 +432,7 @@
                     return text;
                 }
                 const regex = new RegExp(keywords.join('|'), 'gi');
-                return text.replace(regex, (match) => `<strong>${match}</strong>`);
+                return text.replace(regex, (match) => `<span class="search-highlight">${match}</span>`);
             };
             
             const handleFormSubmit = (url, msgElementId, formId, additionalData = {}) => async (event) => {
@@ -493,7 +511,7 @@
                         return keywords.every(kw => targetText.includes(kw));
                     });
                     displayMembers(filtered, keywords);
-                } else if (modalContext === 'manageMatchRecord') {
+                } else if (modalContext === 'manageMatchRecord' || modalContext === 'addMatchRecord' || modalContext === 'updateMatchRecord') {
                     const filtered = allMatchRecords.filter(r => {
                         const targetText = `${r.date} | ${r.court} | ${r.team1_deuce}/${r.team1_ad || ''} vs ${r.team2_deuce}/${r.team2_ad || ''}`.toLowerCase();
                         return keywords.every(kw => targetText.includes(kw));
@@ -512,6 +530,8 @@
             // 일정
             document.getElementById('selectScheduleBtn').addEventListener('click', () => openModal('일정 선택', allSchedules, displaySchedules, 'manageSchedule'));
             document.getElementById('selectScheduleForAttendanceBtn').addEventListener('click', () => openModal('일정 선택', allSchedules, displaySchedules, 'manageAttendance'));
+            document.getElementById('selectScheduleForMatchBtn').addEventListener('click', () => openModal('일정 선택', allSchedules, displaySchedules, 'addMatchRecord'));
+            document.getElementById('selectScheduleForUpdateMatchBtn').addEventListener('click', () => openModal('일정 선택', allSchedules, displaySchedules, 'updateMatchRecord'));
             document.getElementById('addScheduleForm').addEventListener('submit', handleFormSubmit('/admin/add-schedule', 'addScheduleMessage', 'addScheduleForm'));
             document.getElementById('updateScheduleForm').addEventListener('submit', handleFormSubmit('/admin/update-schedule', 'manageScheduleMessage', 'updateScheduleForm'));
             document.getElementById('deleteScheduleBtn').addEventListener('click', () => {
@@ -740,6 +760,14 @@
                     document.getElementById('attendanceScheduleInfo').textContent = `${schedule.schedule_date} | ${schedule.start_time.slice(0,5)}-${schedule.end_time.slice(0,5)} | ${schedule.location} | ${schedule.notes || ''} | ${schedule.group_name || ''}`;
                     document.getElementById('attendanceScheduleInfo').style.display = 'block';
                     fetchAndDisplayAttendees(schedule.id);
+                } else if (modalContext === 'addMatchRecord') {
+                    document.getElementById('addMatchScheduleId').value = schedule.id;
+                    document.getElementById('addMatchDate').value = schedule.schedule_date;
+                    document.getElementById('addMatchCourt').value = schedule.location;
+                } else if (modalContext === 'updateMatchRecord') {
+                    document.getElementById('updateMatchScheduleId').value = schedule.id;
+                    document.getElementById('updateMatchDate').value = schedule.schedule_date;
+                    document.getElementById('updateMatchCourt').value = schedule.location;
                 }
             };
 
@@ -775,6 +803,10 @@
                     }
                 });
                 document.getElementById('updateMatchId').value = record.id;
+                document.getElementById('updateMatchScheduleId').value = record.schedule_id || '';
+                document.getElementById('updateMatchCourtNum').value = record.court_num || '';
+                document.getElementById('updateMatchRoundNum').value = record.round_num || '';
+                document.getElementById('updateMatchVideographer').value = record.videographer || '';
             };
 
             const handleGroupSelection = (group) => {

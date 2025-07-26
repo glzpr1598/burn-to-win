@@ -146,7 +146,7 @@ app.get('/match-record', async (req, res) => {
 
         // 1. 경기 기록과 회원 정보를 병렬로 가져옵니다. (WHERE 조건 추가)
         const matchesPromise = pool.query(
-            'SELECT * FROM matchrecord WHERE date <= ? ORDER BY date DESC, court ASC, id DESC',
+            'SELECT id, schedule_id, date, court, team1_deuce, team1_ad, team2_deuce, team2_ad, team1_score, team2_score, video, court_num, round_num, videographer, etc, team1_result, team2_result, type FROM matchrecord WHERE date <= ? ORDER BY date DESC, court ASC, id DESC',
             [today]
         );
         const membersPromise = pool.query('SELECT name, gender FROM member');
@@ -190,7 +190,7 @@ app.get('/new', async (req, res) => {
 app.get('/edit/:id', async (req, res) => {
     const matchId = req.params.id;
     try {
-        const matchPromise = pool.query('SELECT * FROM matchrecord WHERE id = ?', [matchId]);
+        const matchPromise = pool.query('SELECT *, schedule_id, court_num, round_num, videographer FROM matchrecord WHERE id = ?', [matchId]);
         const membersPromise = pool.query('SELECT name FROM member ORDER BY id ASC');
         const courtsPromise = pool.query("SELECT DISTINCT court AS name FROM matchrecord WHERE court IS NOT NULL AND court != '' ORDER BY name ASC");
 
@@ -1308,11 +1308,11 @@ app.post('/admin/delete-match', isAuthenticated, async (req, res) => {
 // [관리자] 경기 기록 등록
 app.post('/admin/add-match', isAuthenticated, async (req, res) => {
     const {
-        date, court,
+        schedule_id, date, court,
         team1_deuce, team1_ad,
         team2_deuce, team2_ad,
         team1_score, team2_score,
-        video, etc
+        video, court_num, round_num, videographer, etc
     } = req.body;
 
     try {
@@ -1332,15 +1332,15 @@ app.post('/admin/add-match', isAuthenticated, async (req, res) => {
 
         const sql = `
             INSERT INTO matchrecord 
-            (date, court, team1_deuce, team1_ad, team2_deuce, team2_ad, team1_score, team2_score, video, etc, team1_result, team2_result, type) 
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            (schedule_id, date, court, team1_deuce, team1_ad, team2_deuce, team2_ad, team1_score, team2_score, video, court_num, round_num, videographer, etc, team1_result, team2_result, type) 
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
         `;
         const params = [
-            date, court,
+            schedule_id || null, date, court,
             team1_deuce, team1_ad || null,
             team2_deuce, team2_ad || null,
             team1_score, team2_score,
-            video, etc,
+            video || null, court_num || null, round_num || null, videographer || null, etc || null,
             team1_result, team2_result, type
         ];
 
@@ -1356,12 +1356,12 @@ app.post('/admin/add-match', isAuthenticated, async (req, res) => {
 // [관리자] 경기 기록 수정
 app.post('/admin/update-match', isAuthenticated, async (req, res) => {
     const {
-        id,
+        id, schedule_id,
         date, court,
         team1_deuce, team1_ad,
         team2_deuce, team2_ad,
         team1_score, team2_score,
-        video, etc
+        video, court_num, round_num, videographer, etc
     } = req.body;
 
     try {
@@ -1381,21 +1381,21 @@ app.post('/admin/update-match', isAuthenticated, async (req, res) => {
 
         const sql = `
             UPDATE matchrecord SET
-                date = ?, court = ?,
+                schedule_id = ?, date = ?, court = ?,
                 team1_deuce = ?, team1_ad = ?,
                 team2_deuce = ?, team2_ad = ?,
                 team1_score = ?, team2_score = ?,
-                video = ?, etc = ?,
+                video = ?, court_num = ?, round_num = ?, videographer = ?, etc = ?,
                 team1_result = ?, team2_result = ?,
                 type = ?
             WHERE id = ?
         `;
         const params = [
-            date, court,
+            schedule_id || null, date, court,
             team1_deuce, team1_ad || null,
             team2_deuce, team2_ad || null,
             team1_score, team2_score,
-            video, etc,
+            video || null, court_num || null, round_num || null, videographer || null, etc || null,
             team1_result, team2_result, type,
             id
         ];
@@ -1674,7 +1674,7 @@ app.get('/api/admin/schedules', isAuthenticated, async (req, res) => {
 // API: 모든 경기 기록 가져오기
 app.get('/api/admin/matchrecords', isAuthenticated, async (req, res) => {
     try {
-        const [matchrecords] = await pool.query('SELECT id, date, court, team1_deuce, team1_ad, team2_deuce, team2_ad, team1_score, team2_score, video, etc FROM matchrecord ORDER BY date DESC, id DESC');
+        const [matchrecords] = await pool.query('SELECT id, schedule_id, date, court, team1_deuce, team1_ad, team2_deuce, team2_ad, team1_score, team2_score, video, court_num, round_num, videographer, etc FROM matchrecord ORDER BY date DESC, id DESC');
         res.json({ success: true, matchrecords });
     } catch (err) {
         console.error('모든 경기 기록 가져오기 에러:', err.message);
