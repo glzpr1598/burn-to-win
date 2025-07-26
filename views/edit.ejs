@@ -61,7 +61,7 @@
 
             <div class="mb-3">
                 <label for="date" class="form-label">날짜</label>
-                <input type="date" class="form-control" id="date" name="date" value="<%= match.date %>" required />
+                <input type="date" class="form-control" id="date" name="date" value="<%= match.date %>" />
             </div>
 
             <div class="mb-4">
@@ -169,6 +169,59 @@
             document.getElementById('team2_deuce').value = document.getElementById('team2_deuce').value.trim();
             document.getElementById('team2_ad').value = document.getElementById('team2_ad').value.trim();
         }
+
+        document.addEventListener('DOMContentLoaded', function() {
+            const matchDate = new Date('<%= match.date %>');
+            const today = new Date();
+            today.setHours(0, 0, 0, 0);
+            const twoDaysAgo = new Date();
+            twoDaysAgo.setDate(today.getDate() - 2);
+
+            // 날짜 필드
+            const dateInput = document.getElementById('date');
+            dateInput.disabled = true;
+            const hiddenDate = document.createElement('input');
+            hiddenDate.type = 'hidden';
+            hiddenDate.name = 'date';
+            hiddenDate.value = dateInput.value;
+            dateInput.form.appendChild(hiddenDate);
+            
+            if (matchDate < twoDaysAgo) {
+
+                // 코트 필드
+                const courtInput = document.getElementById('court');
+                courtInput.disabled = true;
+                const hiddenCourt = document.createElement('input');
+                hiddenCourt.type = 'hidden';
+                hiddenCourt.name = 'court';
+                hiddenCourt.value = courtInput.value;
+                courtInput.form.appendChild(hiddenCourt);
+
+                // 선수 이름 필드
+                const playerInputs = document.querySelectorAll('input[name^="team1_"], input[name^="team2_"]');
+                playerInputs.forEach(input => {
+                    if (input.type === 'text') { // type이 text인 input만
+                        input.disabled = true;
+                        const hiddenPlayer = document.createElement('input');
+                        hiddenPlayer.type = 'hidden';
+                        hiddenPlayer.name = input.name;
+                        hiddenPlayer.value = input.value;
+                        input.form.appendChild(hiddenPlayer);
+                    }
+                });
+
+                // 스코어 필드
+                const scoreSelectors = document.querySelectorAll('select[name$="_score"]');
+                scoreSelectors.forEach(selector => {
+                    selector.disabled = true;
+                    const hiddenScore = document.createElement('input');
+                    hiddenScore.type = 'hidden';
+                    hiddenScore.name = selector.name;
+                    hiddenScore.value = selector.value;
+                    selector.form.appendChild(hiddenScore);
+                });
+            }
+        });
     </script>
 </body>
 </html>

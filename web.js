@@ -1305,6 +1305,114 @@ app.post('/admin/delete-match', isAuthenticated, async (req, res) => {
     }
 });
 
+// [관리자] 경기 기록 등록
+app.post('/admin/add-match', isAuthenticated, async (req, res) => {
+    const {
+        date, court,
+        team1_deuce, team1_ad,
+        team2_deuce, team2_ad,
+        team1_score, team2_score,
+        video, etc
+    } = req.body;
+
+    try {
+        let team1_result, team2_result;
+        if (Number(team1_score) > Number(team2_score)) {
+            team1_result = '승';
+            team2_result = '패';
+        } else if (Number(team1_score) < Number(team2_score)) {
+            team1_result = '패';
+            team2_result = '승';
+        } else {
+            team1_result = '무';
+            team2_result = '무';
+        }
+
+        const type = await calculateMatchType([team1_deuce, team1_ad, team2_deuce, team2_ad]);
+
+        const sql = `
+            INSERT INTO matchrecord 
+            (date, court, team1_deuce, team1_ad, team2_deuce, team2_ad, team1_score, team2_score, video, etc, team1_result, team2_result, type) 
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        `;
+        const params = [
+            date, court,
+            team1_deuce, team1_ad || null,
+            team2_deuce, team2_ad || null,
+            team1_score, team2_score,
+            video, etc,
+            team1_result, team2_result, type
+        ];
+
+        const [result] = await pool.query(sql, params);
+        res.json({ success: true, message: `경기 기록(ID: ${result.insertId})이 성공적으로 등록되었습니다.` });
+
+    } catch (err) {
+        console.error('[ADMIN] 경기 기록 등록 에러:', err.message);
+        res.status(500).json({ success: false, message: '경기 기록 등록 중 오류가 발생했습니다.' });
+    }
+});
+
+// [관리자] 경기 기록 수정
+app.post('/admin/update-match', isAuthenticated, async (req, res) => {
+    const {
+        id,
+        date, court,
+        team1_deuce, team1_ad,
+        team2_deuce, team2_ad,
+        team1_score, team2_score,
+        video, etc
+    } = req.body;
+
+    try {
+        let team1_result, team2_result;
+        if (Number(team1_score) > Number(team2_score)) {
+            team1_result = '승';
+            team2_result = '패';
+        } else if (Number(team1_score) < Number(team2_score)) {
+            team1_result = '패';
+            team2_result = '승';
+        } else {
+            team1_result = '무';
+            team2_result = '무';
+        }
+
+        const type = await calculateMatchType([team1_deuce, team1_ad, team2_deuce, team2_ad]);
+
+        const sql = `
+            UPDATE matchrecord SET
+                date = ?, court = ?,
+                team1_deuce = ?, team1_ad = ?,
+                team2_deuce = ?, team2_ad = ?,
+                team1_score = ?, team2_score = ?,
+                video = ?, etc = ?,
+                team1_result = ?, team2_result = ?,
+                type = ?
+            WHERE id = ?
+        `;
+        const params = [
+            date, court,
+            team1_deuce, team1_ad || null,
+            team2_deuce, team2_ad || null,
+            team1_score, team2_score,
+            video, etc,
+            team1_result, team2_result, type,
+            id
+        ];
+
+        const [result] = await pool.query(sql, params);
+        if (result.affectedRows > 0) {
+            res.json({ success: true, message: `경기 기록(ID: ${id})이 성공적으로 수정되었습니다.` });
+        } else {
+            res.status(404).json({ success: false, message: `경기 기록(ID: ${id})을 찾을 수 없습니다.` });
+        }
+
+    } catch (err) {
+        console.error('[ADMIN] 경기 기록 수정 에러:', err.message);
+        res.status(500).json({ success: false, message: '경기 기록 수정 중 오류가 발생했습니다.' });
+    }
+});
+
 // 일정 등록
 app.post('/admin/add-schedule', isAuthenticated, async (req, res) => {
     const { 
@@ -1566,7 +1674,7 @@ app.get('/api/admin/schedules', isAuthenticated, async (req, res) => {
 // API: 모든 경기 기록 가져오기
 app.get('/api/admin/matchrecords', isAuthenticated, async (req, res) => {
     try {
-        const [matchrecords] = await pool.query('SELECT id, date, court, team1_deuce, team1_ad, team2_deuce, team2_ad, team1_score, team2_score, etc FROM matchrecord ORDER BY date DESC, id DESC');
+        const [matchrecords] = await pool.query('SELECT id, date, court, team1_deuce, team1_ad, team2_deuce, team2_ad, team1_score, team2_score, video, etc FROM matchrecord ORDER BY date DESC, id DESC');
         res.json({ success: true, matchrecords });
     } catch (err) {
         console.error('모든 경기 기록 가져오기 에러:', err.message);

@@ -136,6 +136,127 @@
                         </div>
                     </div>
                 </div>
+
+                <div class="accordion-item">
+                    <h2 class="accordion-header"><button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapseAddMatchRecord"><i class="bi bi-journal-plus"></i>&nbsp;&nbsp;경기 기록 등록</button></h2>
+                    <div id="collapseAddMatchRecord" class="accordion-collapse collapse" data-bs-parent="#adminAccordion">
+                        <div class="accordion-body">
+                            <form id="addMatchRecordForm">
+                                <div class="form-row"><label for="addMatchDate">날짜</label><input type="date" id="addMatchDate" name="date" class="form-control" required></div>
+                                <div class="form-row"><label for="addMatchCourt">코트</label><input type="text" id="addMatchCourt" name="court" class="form-control" list="court-list" required></div>
+                                <div class="border p-3 rounded my-2">
+                                    <div class="row">
+                                        <div class="col text-center">
+                                            <label class="form-label small">듀스코트(포)</label>
+                                            <input type="text" name="team1_deuce" class="form-control" list="memberNames" required>
+                                        </div>
+                                        <div class="col-auto d-flex align-items-end p-0">
+                                            <button type="button" class="btn swap-btn px-0" data-form-id="addMatchRecordForm" data-team="1"><i class="bi bi-arrow-left-right"></i></button>
+                                        </div>
+                                        <div class="col text-center">
+                                            <label class="form-label small">애드코트(백)</label>
+                                            <input type="text" name="team1_ad" class="form-control" list="memberNames">
+                                        </div>
+                                        <div class="col-auto text-center">
+                                            <label class="form-label small">스코어</label>
+                                            <select class="form-select text-center" name="team1_score" required>
+                                                <% for(let i = 0; i <= 7; i++) { %><option value="<%= i %>"><%= i %></option><% } %>
+                                            </select>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="text-center fw-bold my-2">VS</div>
+                                <div class="border p-3 rounded my-2">
+                                    <div class="row">
+                                        <div class="col text-center">
+                                            <label class="form-label small">듀스코트(포)</label>
+                                            <input type="text" name="team2_deuce" class="form-control" list="memberNames" required>
+                                        </div>
+                                        <div class="col-auto d-flex align-items-end p-0">
+                                            <button type="button" class="btn swap-btn px-0" data-form-id="addMatchRecordForm" data-team="2"><i class="bi bi-arrow-left-right"></i></button>
+                                        </div>
+                                        <div class="col text-center">
+                                            <label class="form-label small">애드코트(백)</label>
+                                            <input type="text" name="team2_ad" class="form-control" list="memberNames">
+                                        </div>
+                                        <div class="col-auto text-center">
+                                            <label class="form-label small">스코어</label>
+                                            <select class="form-select text-center" name="team2_score" required>
+                                                <% for(let i = 0; i <= 7; i++) { %><option value="<%= i %>"><%= i %></option><% } %>
+                                            </select>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="form-row"><label for="addMatchVideo">영상 링크</label><input type="url" id="addMatchVideo" name="video" class="form-control"></div>
+                                <div class="form-row"><label for="addMatchEtc">비고</label><input id="addMatchEtc" name="etc" class="form-control" placeholder="검색 시 활용"></div>
+                                <button type="submit" class="btn btn-sm btn-primary">경기 기록 등록</button>
+                            </form>
+                            <p id="addMatchMessage" class="mt-3"></p>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="accordion-item">
+                    <h2 class="accordion-header"><button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapseManageMatchRecord"><i class="bi bi-journal-minus"></i>&nbsp;&nbsp;경기 기록 관리</button></h2>
+                    <div id="collapseManageMatchRecord" class="accordion-collapse collapse" data-bs-parent="#adminAccordion">
+                        <div class="accordion-body">
+                            <button id="selectMatchRecordBtn" class="btn btn-sm btn-secondary mb-3">경기 기록 선택</button>
+                            <form id="updateMatchRecordForm" style="display:none;">
+                                <input type="hidden" id="updateMatchId" name="id">
+                                <div class="form-row"><label for="updateMatchDate">날짜</label><input type="date" id="updateMatchDate" name="date" class="form-control" required></div>
+                                <div class="form-row"><label for="updateMatchCourt">코트</label><input type="text" id="updateMatchCourt" name="court" class="form-control" list="court-list" required></div>
+                                <div class="border p-3 rounded my-2">
+                                    <div class="row">
+                                        <div class="col text-center">
+                                            <label class="form-label small">듀스코트(포)</label>
+                                            <input type="text" id="updateMatchT1Deuce" name="team1_deuce" class="form-control" list="memberNames" required>
+                                        </div>
+                                        <div class="col-auto d-flex align-items-end p-0">
+                                            <button type="button" class="btn swap-btn px-0" data-form-id="updateMatchRecordForm" data-team="1"><i class="bi bi-arrow-left-right"></i></button>
+                                        </div>
+                                        <div class="col text-center">
+                                            <label class="form-label small">애드코트(백)</label>
+                                            <input type="text" id="updateMatchT1Ad" name="team1_ad" class="form-control" list="memberNames">
+                                        </div>
+                                        <div class="col-auto text-center">
+                                            <label class="form-label small">스코어</label>
+                                            <select class="form-select text-center" id="updateMatchT1Score" name="team1_score" required>
+                                                <% for(let i = 0; i <= 7; i++) { %><option value="<%= i %>"><%= i %></option><% } %>
+                                            </select>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="text-center fw-bold my-2">VS</div>
+                                <div class="border p-3 rounded my-2">
+                                    <div class="row">
+                                        <div class="col text-center">
+                                            <label class="form-label small">듀스코트(포)</label>
+                                            <input type="text" id="updateMatchT2Deuce" name="team2_deuce" class="form-control" list="memberNames" required>
+                                        </div>
+                                        <div class="col-auto d-flex align-items-end p-0">
+                                            <button type="button" class="btn swap-btn px-0" data-form-id="updateMatchRecordForm" data-team="2"><i class="bi bi-arrow-left-right"></i></button>
+                                        </div>
+                                        <div class="col text-center">
+                                            <label class="form-label small">애드코트(백)</label>
+                                            <input type="text" id="updateMatchT2Ad" name="team2_ad" class="form-control" list="memberNames">
+                                        </div>
+                                        <div class="col-auto text-center">
+                                            <label class="form-label small">스코어</label>
+                                            <select class="form-select text-center" id="updateMatchT2Score" name="team2_score" required>
+                                                <% for(let i = 0; i <= 7; i++) { %><option value="<%= i %>"><%= i %></option><% } %>
+                                            </select>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="form-row"><label for="updateMatchVideo">영상 링크</label><input type="url" id="updateMatchVideo" name="video" class="form-control"></div>
+                                <div class="form-row"><label for="updateMatchEtc">비고</label><input id="updateMatchEtc" name="etc" class="form-control" placeholder="검색 시 활용"></div>
+                                <button type="submit" class="btn btn-sm btn-success">경기 기록 수정</button>
+                                <button id="deleteMatchRecordBtn" type="button" class="btn btn-sm btn-danger mt-2">경기 기록 삭제</button>
+                            </form>
+                            <p id="manageMatchMessage" class="mt-3"></p>
+                        </div>
+                    </div>
+                </div>
                 
                 <div class="accordion-item">
                     <h2 class="accordion-header" id="headingAddMember"><button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapseAddMember"><i class="bi bi-person-add"></i>&nbsp;&nbsp;멤버 등록</button></h2>
@@ -209,17 +330,6 @@
                     </div>
                 </div>
 
-                <div class="accordion-item">
-                    <h2 class="accordion-header" id="headingDeleteMatchRecord"><button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapseDeleteMatchRecord"><i class="bi bi-trash"></i>&nbsp;&nbsp;경기 기록 삭제</button></h2>
-                    <div id="collapseDeleteMatchRecord" class="accordion-collapse collapse" data-bs-parent="#adminAccordion">
-                        <div class="accordion-body">
-                            <button id="selectMatchRecordBtn" class="btn btn-sm btn-secondary mb-3">경기 기록 선택</button>
-                            <div id="selectedMatchRecordInfo" class="mb-3 p-3 border rounded bg-light" style="display:none;"></div>
-                            <button id="deleteMatchRecordBtn" type="button" class="btn btn-sm btn-danger" style="display:none;">경기 기록 삭제</button>
-                            <p id="deleteMatchRecordMessage" class="mt-3"></p>
-                        </div>
-                    </div>
-                </div>
             </div>
             <a href="/" class="btn btn-sm btn-secondary logout-button">불꽃 홈으로</a>
             <a href="/admin/logout" class="btn btn-sm btn-outline-secondary logout-button">로그아웃</a>
@@ -314,6 +424,14 @@
                      data = Object.fromEntries(new FormData(document.getElementById(formId)).entries());
                 }
                 Object.assign(data, additionalData);
+
+                // 경기 기록 저장 시 선수 이름 앞뒤 공백 제거
+                if (formId === 'addMatchRecordForm' || formId === 'updateMatchRecordForm') {
+                    if (data.team1_deuce) data.team1_deuce = data.team1_deuce.trim();
+                    if (data.team1_ad) data.team1_ad = data.team1_ad.trim();
+                    if (data.team2_deuce) data.team2_deuce = data.team2_deuce.trim();
+                    if (data.team2_ad) data.team2_ad = data.team2_ad.trim();
+                }
 
                 try {
                     const response = await fetch(url, {
@@ -438,14 +556,15 @@
                 }
             });
             
-            // 경기 기록
+            document.getElementById('addMatchRecordForm').addEventListener('submit', handleFormSubmit('/admin/add-match', 'addMatchMessage', 'addMatchRecordForm'));
+            document.getElementById('updateMatchRecordForm').addEventListener('submit', handleFormSubmit('/admin/update-match', 'manageMatchMessage', 'updateMatchRecordForm'));
             document.getElementById('selectMatchRecordBtn').addEventListener('click', () => openModal('경기 기록 선택', allMatchRecords, displayMatchRecords, 'manageMatchRecord'));
             document.getElementById('deleteMatchRecordBtn').addEventListener('click', () => {
-                const id = document.getElementById('deleteMatchRecordBtn').dataset.matchId;
+                const id = document.getElementById('updateMatchId').value;
                 if(confirm(`경기 기록(ID: ${id})을 삭제하시겠습니까?`)) {
-                    handleDelete('/admin/delete-match', { matchId: id }, 'deleteMatchRecordMessage', () => {
-                        document.getElementById('selectedMatchRecordInfo').style.display = 'none';
-                        document.getElementById('deleteMatchRecordBtn').style.display = 'none';
+                    handleDelete('/admin/delete-match', { matchId: id }, 'manageMatchMessage', () => {
+                        document.getElementById('updateMatchRecordForm').style.display = 'none';
+                        document.getElementById('updateMatchRecordForm').reset();
                     });
                 }
             });
@@ -487,6 +606,24 @@
                         currentGroupId = null;
                     });
                 }
+            });
+
+            // 스왑 버튼
+            document.querySelectorAll('.swap-btn').forEach(button => {
+                button.addEventListener('click', function() {
+                    const formId = this.dataset.formId;
+                    const team = this.dataset.team;
+                    const form = document.getElementById(formId);
+                    if (form) {
+                        const deuceInput = form.querySelector(`input[name="team${team}_deuce"]`);
+                        const adInput = form.querySelector(`input[name="team${team}_ad"]`);
+                        if (deuceInput && adInput) {
+                            const tempValue = deuceInput.value;
+                            deuceInput.value = adInput.value;
+                            adInput.value = tempValue;
+                        }
+                    }
+                });
             });
 
             // --- UI 렌더링 함수 ---
@@ -628,12 +765,16 @@
             };
             
             const handleMatchRecordSelection = (record) => {
-                const infoDiv = document.getElementById('selectedMatchRecordInfo');
-                infoDiv.style.display = 'block';
-                infoDiv.innerHTML = `<p><strong>ID:</strong> ${record.id}</p><p><strong>날짜:</strong> ${record.date}</p><p><strong>코트:</strong> ${record.court}</p><p><strong>팀1:</strong> ${record.team1_deuce}/${record.team1_ad || ''}</p><p><strong>팀2:</strong> ${record.team2_deuce}/${record.team2_ad || ''}</p><p><strong>스코어:</strong> ${record.team1_score}:${record.team2_score}</p>`;
-                const deleteBtn = document.getElementById('deleteMatchRecordBtn');
-                deleteBtn.style.display = 'block';
-                deleteBtn.dataset.matchId = record.id;
+                const form = document.getElementById('updateMatchRecordForm');
+                form.style.display = 'block';
+                Object.keys(record).forEach(key => {
+                    const input = form.querySelector(`[name="${key}"]`);
+                    if (input) {
+                        // record[key]가 null이나 undefined가 아니면 그 값을 사용하고, 그렇지 않으면 빈 문자열을 사용합니다.
+                        input.value = record[key] ?? '';
+                    }
+                });
+                document.getElementById('updateMatchId').value = record.id;
             };
 
             const handleGroupSelection = (group) => {

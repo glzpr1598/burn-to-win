@@ -127,6 +127,10 @@
             color: #dc3545; /* 원래 글자색 유지 */
             background-color: transparent; /* 배경색 투명하게 유지 */
         }
+		.btn-outline-success:focus, .btn-outline-success:hover, .btn-outline-success:active {
+            color: #198754; /* 원래 글자색 유지 */
+            background-color: transparent; /* 배경색 투명하게 유지 */
+        }
 		.modal-body * {
 			font-size: 0.9rem;
 		}
@@ -1029,12 +1033,26 @@
         }
 
         function stylePastSchedules() {
-            const today = new Date().toLocaleDateString('en-CA');
+            const today = new Date();
+            today.setHours(0, 0, 0, 0);
+
             document.querySelectorAll('.schedule-card').forEach(card => {
-                const isPast = card.dataset.date < today;
+                const scheduleDate = new Date(card.dataset.date + 'T00:00:00');
+                const isPast = scheduleDate < today; // 오늘보다 이전 날짜인지
+
                 if (isPast) {
                     card.classList.add('past-schedule');
                 }
+
+                // 오늘로부터 이틀 전인지 확인 (기록 버튼 비활성화용)
+                const twoDaysAgo = new Date(today);
+                twoDaysAgo.setDate(today.getDate() - 2);
+
+                const recordBtn = card.querySelector('.record-btn');
+                if (scheduleDate <= twoDaysAgo) {
+                    recordBtn.classList.remove('btn-success');
+                    recordBtn.classList.add('btn-outline-success');
+                } 
             });
         }
 
@@ -1180,6 +1198,18 @@
 
 		// 경기 기록 모달
 		function openRecordModal(scheduleId) {
+            const card = document.getElementById(`schedule-${scheduleId}`);
+            const scheduleDate = new Date(card.dataset.date + 'T00:00:00');
+            const today = new Date();
+            today.setHours(0, 0, 0, 0);
+            const twoDaysAgo = new Date(today);
+            twoDaysAgo.setDate(today.getDate() - 2);
+
+            if (scheduleDate <= twoDaysAgo) {
+                alert("지난 일정은 기록할 수 없습니다. 관리자에게 문의해 주세요.");
+                return;
+            }
+
 			if (!selectedUser) return userSelectModal.show();
 
 			const schedule = schedulesData.find(s => s.id == scheduleId);

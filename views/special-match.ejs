@@ -155,7 +155,7 @@
                 <div class="p-2 d-flex justify-content-between align-items-center">
                     <div>
                         <select class="form-select form-select-sm" id="playerHighlighter" style="width: 120px;">
-                            <option value="">선수 찾기</option>
+                            <option value="">-선수 찾기-</option>
                             <% if (participatingPlayers) { %>
                                 <% participatingPlayers.forEach(player => { %>
                                     <option value="<%= player %>"><%= player %></option>
@@ -370,7 +370,7 @@
                                     <input type="text" class="form-control" id="team1_deuce" name="team1_deuce" list="modal-player-list" required>
 								</div>
                                 <div class="col-auto d-flex align-items-end p-0">
-                                    <button type="button" class="btn swap-btn px-0" data-team="1">
+                                    <button type="button" class="btn swap-btn px-0" data-team="1" style="border: none;">
                                         <i class="bi bi-arrow-left-right"></i>
                                     </button>
                                 </div>
@@ -394,7 +394,7 @@
                                     <input type="text" class="form-control" id="team2_deuce" name="team2_deuce" list="modal-player-list" required>
 								</div>
                                 <div class="col-auto d-flex align-items-end p-0">
-                                    <button type="button" class="btn swap-btn px-0" data-team="2">
+                                    <button type="button" class="btn swap-btn px-0" data-team="2" style="border: none;">
                                         <i class="bi bi-arrow-left-right"></i>
                                     </button>
                                 </div>
@@ -734,10 +734,54 @@
         }
 
         function openMatchRecordModal(cell, modalInstance) {
-            populatePlayerDatalist(); // 선수 목록 생성 함수 호출
-
             const form = document.getElementById('matchRecordForm');
             form.reset();
+
+            const scheduleDate = new Date('<%= selectedSchedule.schedule_date %>');
+            const today = new Date();
+            today.setHours(0, 0, 0, 0);
+            const twoDaysAgo = new Date(today);
+            twoDaysAgo.setDate(today.getDate() - 2);
+
+            const saveBtn = document.getElementById('saveMatchRecordBtn');
+
+            if (scheduleDate < twoDaysAgo) {
+                saveBtn.style.display = 'none';
+
+                // 선수 입력 필드 비활성화
+                form.querySelector('#team1_deuce').disabled = true;
+                form.querySelector('#team1_ad').disabled = true;
+                form.querySelector('#team2_deuce').disabled = true;
+                form.querySelector('#team2_ad').disabled = true;
+
+                // 스코어 선택 필드 비활성화
+                form.querySelector('select[name="team1_score"]').disabled = true;
+                form.querySelector('select[name="team2_score"]').disabled = true;
+
+                // 스왑 버튼 비활성화
+                form.querySelectorAll('.swap-btn').forEach(btn => {
+                    btn.disabled = true;
+                });
+
+            } else {
+                saveBtn.style.display = '';
+
+                // 필드 활성화 (이전 상태로 되돌리기)
+                form.querySelector('#team1_deuce').disabled = false;
+                form.querySelector('#team1_ad').disabled = false;
+                form.querySelector('#team2_deuce').disabled = false;
+                form.querySelector('#team2_ad').disabled = false;
+
+                form.querySelector('select[name="team1_score"]').disabled = false;
+                form.querySelector('select[name="team2_score"]').disabled = false;
+
+                form.querySelectorAll('.swap-btn').forEach(btn => {
+                    btn.disabled = false;
+                });
+            }
+
+            populatePlayerDatalist(); // 선수 목록 생성 함수 호출
+
             const matchDataStr = cell.dataset.match;
             const match = matchDataStr ? JSON.parse(decodeURIComponent(matchDataStr)) : null;
             const playerNames = JSON.parse('<%- selectedSchedule && allPlayers ? JSON.stringify(allPlayers.map(p => p.name)) : "[]" %>');
