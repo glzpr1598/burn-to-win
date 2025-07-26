@@ -765,6 +765,11 @@
 			const formData = new FormData(form);
 			const data = Object.fromEntries(formData.entries());
 
+			data.team1_deuce = data.team1_deuce.trim();
+			data.team1_ad = data.team1_ad.trim();
+			data.team2_deuce = data.team2_deuce.trim();
+			data.team2_ad = data.team2_ad.trim();
+
 			if (!data.team1_deuce || !data.team2_deuce || !data.team1_score || !data.team2_score) {
 				alert('필수 선수 및 스코어 정보를 모두 입력해주세요.');
 				return;

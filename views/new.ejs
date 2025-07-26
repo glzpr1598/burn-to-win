@@ -51,7 +51,7 @@
     </div>
 
     <div class="container my-4">
-        <form action="/matches" method="POST">
+        <form action="/matches" method="POST" onsubmit="trimPlayerNames()">
             <datalist id="player-list">
                 <% members.forEach(member => { %>
                     <option value="<%= member.name %>"></option>
@@ -166,6 +166,13 @@
                 });
             });
         });
+
+        function trimPlayerNames() {
+            document.getElementById('team1_deuce').value = document.getElementById('team1_deuce').value.trim();
+            document.getElementById('team1_ad').value = document.getElementById('team1_ad').value.trim();
+            document.getElementById('team2_deuce').value = document.getElementById('team2_deuce').value.trim();
+            document.getElementById('team2_ad').value = document.getElementById('team2_ad').value.trim();
+        }
     </script>
 </body>
 </html>
