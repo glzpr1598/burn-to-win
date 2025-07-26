@@ -413,7 +413,7 @@
 					</div>
 					<div class="modal-footer">
 						<button type="button" class="btn btn-sm btn-danger me-auto" id="deleteMatchRecordBtn">삭제</button>
-						<button type="button" class="btn btn-sm btn-secondary" data-bs-dismiss="modal">취소</button>
+						<!-- <button type="button" class="btn btn-sm btn-secondary" data-bs-dismiss="modal">취소</button> -->
 						<button type="button" class="btn btn-sm btn-primary" id="saveMatchRecordBtn">저장</button>
 					</div>
 				</form>
@@ -744,6 +744,9 @@
             twoDaysAgo.setDate(today.getDate() - 2);
 
             const saveBtn = document.getElementById('saveMatchRecordBtn');
+
+            scheduleDate.setHours(0, 0, 0, 0);
+            twoDaysAgo.setHours(0, 0, 0, 0);
 
             if (scheduleDate <= twoDaysAgo) {
                 saveBtn.style.display = 'none';

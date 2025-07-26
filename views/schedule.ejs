@@ -1044,9 +1044,12 @@
                     card.classList.add('past-schedule');
                 }
 
-                // 오늘로부터 이틀 전인지 확인 (기록 버튼 비활성화용)
+				// 오늘로부터 이틀 전인지 확인 (기록 버튼 비활성화용)
                 const twoDaysAgo = new Date(today);
                 twoDaysAgo.setDate(today.getDate() - 2);
+				
+				scheduleDate.setHours(0, 0, 0, 0);
+           		twoDaysAgo.setHours(0, 0, 0, 0);
 
                 const recordBtn = card.querySelector('.record-btn');
                 if (scheduleDate <= twoDaysAgo) {
@@ -1204,6 +1207,9 @@
             today.setHours(0, 0, 0, 0);
             const twoDaysAgo = new Date(today);
             twoDaysAgo.setDate(today.getDate() - 2);
+
+			scheduleDate.setHours(0, 0, 0, 0);
+			twoDaysAgo.setHours(0, 0, 0, 0);
 
             if (scheduleDate <= twoDaysAgo) {
                 alert("지난 일정은 기록할 수 없습니다. 관리자에게 문의해 주세요.");

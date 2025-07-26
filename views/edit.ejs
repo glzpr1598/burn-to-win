@@ -173,7 +173,6 @@
         document.addEventListener('DOMContentLoaded', function() {
             const matchDate = new Date('<%= match.date %>');
             const today = new Date();
-            today.setHours(0, 0, 0, 0);
             const twoDaysAgo = new Date();
             twoDaysAgo.setDate(today.getDate() - 2);
 
@@ -185,6 +184,9 @@
             hiddenDate.name = 'date';
             hiddenDate.value = dateInput.value;
             dateInput.form.appendChild(hiddenDate);
+
+            matchDate.setHours(0, 0, 0, 0);
+            twoDaysAgo.setHours(0, 0, 0, 0);
 
             if (matchDate <= twoDaysAgo) {
 
