@@ -1052,7 +1052,7 @@
            		twoDaysAgo.setHours(0, 0, 0, 0);
 
                 const recordBtn = card.querySelector('.record-btn');
-                if (scheduleDate <= twoDaysAgo) {
+                if (scheduleDate <= twoDaysAgo || scheduleDate > today) { // 이틀 전 또는 미래의 일정인 경우
                     recordBtn.classList.remove('btn-success');
                     recordBtn.classList.add('btn-outline-success');
                 } 
@@ -1207,9 +1207,14 @@
             today.setHours(0, 0, 0, 0);
             const twoDaysAgo = new Date(today);
             twoDaysAgo.setDate(today.getDate() - 2);
-
+			
 			scheduleDate.setHours(0, 0, 0, 0);
 			twoDaysAgo.setHours(0, 0, 0, 0);
+
+            if (scheduleDate > today) {
+                alert("진행한 경기만 기록할 수 있습니다.");
+                return;
+            }
 
             if (scheduleDate <= twoDaysAgo) {
                 alert("지난 일정은 기록할 수 없습니다. 관리자에게 문의해 주세요.");
