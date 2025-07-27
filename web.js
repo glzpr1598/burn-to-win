@@ -1475,6 +1475,111 @@ app.post('/admin/update-schedule', isAuthenticated, async (req, res) => {
     }
 });
 
+// 일정 일괄 등록
+app.post('/admin/add-schedules-bulk', isAuthenticated, async (req, res) => {
+    const { schedules: schedulesText } = req.body;
+    const lines = schedulesText.trim().split('\n');
+    const schedules = [];
+    const currentYear = new Date().getFullYear();
+
+    const dayOfWeekMap = { '일': 0, '월': 1, '화': 2, '수': 3, '목': 4, '금': 5, '토': 6 };
+
+    for (let i = 0; i < lines.length; i++) {
+        const line = lines[i].trim();
+        if (!line) continue;
+
+        const parts = line.split(' ');
+        if (parts.length !== 6) {
+            return res.status(400).json({ success: false, message: `양식 오류 (라인 ${i + 1}): 6개의 항목이 필요합니다.` });
+        }
+
+        const [dateStr, dayOfWeekStr, timeStr, location, booker, priceStr] = parts;
+
+        // 1. 날짜 파싱 (e.g., "8/6")
+        const dateParts = dateStr.split('/');
+        if (dateParts.length !== 2) {
+            return res.status(400).json({ success: false, message: `날짜 형식 오류 (라인 ${i + 1}): '월/일' 형식이어야 합니다.` });
+        }
+        const month = parseInt(dateParts[0], 10);
+        const day = parseInt(dateParts[1], 10);
+
+        let year = currentYear;
+        const currentMonth = new Date().getMonth() + 1;
+        if (currentMonth === 12 && month === 1) {
+            year++;
+        }
+
+        const schedule_date = `${year}-${String(month).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+
+        // 2. 요일 확인 (선택적)
+        const dayOfWeek = dayOfWeekMap[dayOfWeekStr];
+        if (dayOfWeek === undefined) {
+            return res.status(400).json({ success: false, message: `요일 형식 오류 (라인 ${i + 1}): '월', '화' 등 올바른 요일을 입력하세요.` });
+        }
+        const dateObj = new Date(schedule_date);
+        if (dateObj.getDay() !== dayOfWeek) {
+            return res.status(400).json({ success: false, message: `날짜와 요일 불일치 (라인 ${i + 1}): ${schedule_date}는 ${Object.keys(dayOfWeekMap).find(key => dayOfWeekMap[key] === dateObj.getDay())}요일입니다.` });
+        }
+
+        // 3. 시간 파싱 (e.g., "20-22")
+        const timeParts = timeStr.split('-');
+        if (timeParts.length !== 2) {
+            return res.status(400).json({ success: false, message: `시간 형식 오류 (라인 ${i + 1}): '시작시간-종료시간' 형식이어야 합니다.` });
+        }
+        const start_time = `${timeParts[0]}:00`;
+        const end_time = `${timeParts[1]}:00`;
+
+        // 4. 가격 파싱
+        const price = parseInt(priceStr.replace(/,/g, ''), 10);
+        if (isNaN(price)) {
+            return res.status(400).json({ success: false, message: `가격 형식 오류 (라인 ${i + 1}): 숫자만 입력 가능합니다.` });
+        }
+
+        schedules.push({
+            schedule_date,
+            start_time,
+            end_time,
+            location,
+            booker,
+            price,
+            calculated: 'N',
+            maximum: 6,
+            notes: '',
+            is_special_match: 'N'
+        });
+    }
+
+    if (schedules.length === 0) {
+        return res.status(400).json({ success: false, message: '등록할 일정이 없습니다.' });
+    }
+
+    let connection;
+    try {
+        connection = await pool.getConnection();
+        await connection.beginTransaction();
+
+        const sql = `
+            INSERT INTO schedules (schedule_date, start_time, end_time, location, booker, price, calculated, maximum, notes, is_special_match) 
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        `;
+
+        for (const s of schedules) {
+            await connection.query(sql, [s.schedule_date, s.start_time, s.end_time, s.location, s.booker, s.price, s.calculated, s.maximum, s.notes, s.is_special_match]);
+        }
+
+        await connection.commit();
+        res.json({ success: true, message: `${schedules.length}개의 일정이 성공적으로 등록되었습니다.` });
+
+    } catch (err) {
+        if (connection) await connection.rollback();
+        console.error('일정 일괄 등록 에러:', err.message);
+        res.status(500).json({ success: false, message: '일정 등록 중 오류가 발생했습니다.' });
+    } finally {
+        if (connection) connection.release();
+    }
+});
+
+
 // 일정 삭제
 app.post('/admin/delete-schedule', isAuthenticated, async (req, res) => {
     const { scheduleId } = req.body;

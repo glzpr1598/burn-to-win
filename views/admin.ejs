@@ -79,6 +79,26 @@
                 </div>
 
                 <div class="accordion-item">
+                    <h2 class="accordion-header"><button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapseAddSchedulesBulk"><i class="bi bi-calendar-plus"></i>&nbsp;&nbsp;일정 일괄 등록</button></h2>
+                    <div id="collapseAddSchedulesBulk" class="accordion-collapse collapse" data-bs-parent="#adminAccordion">
+                        <div class="accordion-body">
+                            <form id="addSchedulesBulkForm">
+                                <div class="form-group">
+                                    <label for="schedulesText">
+                                        <b>(양식)</b> 8/6 수 20-22 돌모루 김준도 13,000
+                                    </label>
+                                    <textarea class="form-control" id="schedulesText" name="schedules" rows="10" placeholder="8/2 토 8-10 여울3 김태영 13,000
+8/6 수 20-22 돌모루 김준도 13,000
+8/11 월 20-22 여울1 조효민 13,000"></textarea>
+                                </div>
+                                <button type="submit" class="btn btn-sm btn-primary mt-3">일괄 등록</button>
+                            </form>
+                            <p id="addSchedulesBulkMessage" class="mt-3"></p>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="accordion-item">
                     <h2 class="accordion-header"><button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapseManageSchedule"><i class="bi bi-calendar-minus"></i>&nbsp;&nbsp;일정 관리</button></h2>
                     <div id="collapseManageSchedule" class="accordion-collapse collapse" data-bs-parent="#adminAccordion">
                         <div class="accordion-body">
@@ -533,6 +553,7 @@
             document.getElementById('selectScheduleForMatchBtn').addEventListener('click', () => openModal('일정 선택', allSchedules, displaySchedules, 'addMatchRecord'));
             document.getElementById('selectScheduleForUpdateMatchBtn').addEventListener('click', () => openModal('일정 선택', allSchedules, displaySchedules, 'updateMatchRecord'));
             document.getElementById('addScheduleForm').addEventListener('submit', handleFormSubmit('/admin/add-schedule', 'addScheduleMessage', 'addScheduleForm'));
+            document.getElementById('addSchedulesBulkForm').addEventListener('submit', handleFormSubmit('/admin/add-schedules-bulk', 'addSchedulesBulkMessage', 'addSchedulesBulkForm'));
             document.getElementById('updateScheduleForm').addEventListener('submit', handleFormSubmit('/admin/update-schedule', 'manageScheduleMessage', 'updateScheduleForm'));
             document.getElementById('deleteScheduleBtn').addEventListener('click', () => {
                 const id = document.getElementById('updateId').value;
