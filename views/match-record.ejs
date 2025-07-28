@@ -93,7 +93,7 @@
     <div class="table-responsive">
       <table id="matchTable" class="table table-sm text-center align-middle text-nowrap">
         <colgroup>
-            <col style="width: 70px;">
+            <col style="width: 90px;">
             <col style="width: 60px;">
             <col style="width: 110px;">
             <col style="width: 25px;">
@@ -136,6 +136,14 @@
             }
             return playerName; // 성별 정보가 없으면 이름만 반환
           };
+
+          const getDayOfWeek = (dateString) => {
+            if (!dateString) return '';
+            const days = ['일', '월', '화', '수', '목', '금', '토'];
+            const date = new Date(dateString);
+            return days[date.getDay()];
+          };
+        %>
         %>
         <tbody>
           <% 
@@ -153,7 +161,7 @@
               prevCourt = match.court;
             %>
             <tr class="<%= currentGroupClass %>" onclick="window.location.href='/edit/<%= match.id %>'">
-              <td><%= match.date ? match.date.substring(2) : '' %></td>
+              <td><%= match.date ? match.date.substring(2) + '(' + getDayOfWeek(match.date) + ')' : '' %></td>
               <td><%= match.court %></td>
               
               <% 
