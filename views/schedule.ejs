@@ -585,10 +585,9 @@
     		allScheduleCards.forEach(card => card.dataset.originalHtml = card.innerHTML);
 
 			initializeModals();
-			stylePastSchedules();
 			initializeUser();
 			initializeNavigators();
-			addEventListenersToElements();
+			addEventListenersToElements(); // 수정: 이벤트 리스너 초기화 함수 호출 위치 변경
 			setupSideMenu();
 
 			// --- 검색 관련 이벤트 리스너 설정 ---
@@ -661,13 +660,33 @@
 			document.getElementById('postponeModal').addEventListener('show.bs.modal', loadPostponeData);
 		}
 
+		// 수정: 이벤트 위임을 사용하여 이벤트 리스너 설정
 		function addEventListenersToElements() {
-			document.querySelectorAll('.record-btn').forEach(b => b.addEventListener('click', (e) => openRecordModal(e.target.dataset.scheduleId)));
-			document.querySelectorAll('.comment-btn').forEach(b => b.addEventListener('click', (e) => openCommentModal(e.target.dataset.scheduleId)));
-			document.querySelectorAll('.attend-btn').forEach(b => b.addEventListener('click', handleAttendClick));
-			document.querySelectorAll('.delete-comment-btn').forEach(b => b.addEventListener('click', handleDeleteCommentClick));
-			document.querySelectorAll('.show-more-comments-btn').forEach(btn => btn.addEventListener('click', handleShowMoreComments));
-			document.querySelectorAll('.settlement-checkbox').forEach(cb => cb.addEventListener('change', handleSettlementChange));
+			const scheduleList = document.getElementById('scheduleList');
+
+			scheduleList.addEventListener('click', function(event) {
+				const target = event.target;
+
+				if (target.classList.contains('record-btn')) {
+					openRecordModal(target.dataset.scheduleId);
+				} else if (target.classList.contains('comment-btn')) {
+					openCommentModal(target.dataset.scheduleId);
+				} else if (target.classList.contains('attend-btn')) {
+					handleAttendClick(event);
+				} else if (target.classList.contains('delete-comment-btn')) {
+					handleDeleteCommentClick(event);
+				} else if (target.classList.contains('show-more-comments-btn')) {
+					handleShowMoreComments(event);
+				}
+			});
+
+			scheduleList.addEventListener('change', function(event) {
+				const target = event.target;
+				if (target.classList.contains('settlement-checkbox')) {
+					handleSettlementChange(event);
+				}
+			});
+
 			document.getElementById('submitMatchRecordBtn').addEventListener('click', handleMatchRecordSubmit);
 			document.getElementById('submitCommentBtn').addEventListener('click', submitComment);
 			document.getElementById('loginBtn').addEventListener('click', handleLogin);
@@ -741,6 +760,8 @@
 							}
 						});
 					}
+					// 4. 검색 결과로 표시되는 카드의 UI를 업데이트합니다.
+					updateSingleCardUI(card);
 				} else {
 					card.style.display = 'none';
 				}
@@ -991,6 +1012,28 @@
             const isAttending = attendees.includes(selectedUser);
             const maxAttendees = parseInt(card.dataset.maximum, 10);
             const isFull = attendees.length >= maxAttendees;
+
+			const settleCheckbox = card.querySelector('.settlement-checkbox');
+            if (settleCheckbox) {
+                const booker = settleCheckbox.dataset.booker;
+                const isBooker = selectedUser && selectedUser === booker;
+                settleCheckbox.disabled = !isBooker;
+            }
+
+            card.classList.toggle('attending', isAttending);
+
+            // stylePastSchedules 로직 이동
+            const today = new Date();
+            today.setHours(0, 0, 0, 0);
+            const scheduleDate = new Date(card.dataset.date + 'T00:00:00');
+            const isPastSchedule = scheduleDate < today; // 오늘보다 이전 날짜인지
+
+            if (isPastSchedule) {
+                card.classList.add('past-schedule');
+            } else {
+                card.classList.remove('past-schedule');
+            }
+
             const isPast = card.classList.contains('past-schedule');
 
             const scheduleId = card.id.split('-')[1];
@@ -1022,42 +1065,26 @@
 
             attendeeCountSpan.style.color = isFull ? 'red' : '';
 
-            const settleCheckbox = card.querySelector('.settlement-checkbox');
-            if (settleCheckbox) {
-                const booker = settleCheckbox.dataset.booker;
-                const isBooker = selectedUser && selectedUser === booker;
-                settleCheckbox.disabled = !isBooker;
-            }
+            // 오늘로부터 이틀 전인지 확인 (기록 버튼 비활성화용)
+            const twoDaysAgo = new Date(today);
+            twoDaysAgo.setDate(today.getDate() - 2);
 
-            card.classList.toggle('attending', isAttending);
-        }
+            scheduleDate.setHours(0, 0, 0, 0);
+            twoDaysAgo.setHours(0, 0, 0, 0);
 
-        function stylePastSchedules() {
-            const today = new Date();
-            today.setHours(0, 0, 0, 0);
-
-            document.querySelectorAll('.schedule-card').forEach(card => {
-                const scheduleDate = new Date(card.dataset.date + 'T00:00:00');
-                const isPast = scheduleDate < today; // 오늘보다 이전 날짜인지
-
-                if (isPast) {
-                    card.classList.add('past-schedule');
-                }
-
-				// 오늘로부터 이틀 전인지 확인 (기록 버튼 비활성화용)
-                const twoDaysAgo = new Date(today);
-                twoDaysAgo.setDate(today.getDate() - 2);
-				
-				scheduleDate.setHours(0, 0, 0, 0);
-           		twoDaysAgo.setHours(0, 0, 0, 0);
-
-                const recordBtn = card.querySelector('.record-btn');
+            const recordBtn = card.querySelector('.record-btn');
+            if (recordBtn) {
                 if (scheduleDate <= twoDaysAgo || scheduleDate > today) { // 이틀 전 또는 미래의 일정인 경우
                     recordBtn.classList.remove('btn-success');
                     recordBtn.classList.add('btn-outline-success');
-                } 
-            });
+                } else {
+                    recordBtn.classList.remove('btn-outline-success');
+                    recordBtn.classList.add('btn-success');
+                }
+            }
         }
+
+        
 
 		function scrollToUpcoming() {
 			const today = new Date();
