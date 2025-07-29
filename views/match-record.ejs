@@ -1,451 +1,451 @@
 <!DOCTYPE html>
 <html lang="ko">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <link rel="apple-touch-icon" href="/image/btw.png"/> 
-  <link rel="icon" type="image/png" href="/image/btw.png"/> 
-  <link rel="stylesheet" href="/css/common.css" />
-  <title>불꽃테니스</title>
-  <link
-    href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css"
-    rel="stylesheet"
-  />
-  <style>
-    /* --- 테이블 스크롤 영역 --- */
-    .table-responsive {
-        flex-grow: 1; /* 남는 공간을 모두 차지하도록 설정 */
-        overflow-y: auto; /* 내용이 넘치면 스크롤 생성 */
-    }
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <link rel="apple-touch-icon" href="/image/btw.png"/> 
+    <link rel="icon" type="image/png" href="/image/btw.png"/> 
+    <link rel="stylesheet" href="/css/common.css" />
+    <title>불꽃테니스</title>
+    <link
+        href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css"
+        rel="stylesheet"
+    />
+    <style>
+        /* --- 테이블 스크롤 영역 --- */
+        .table-responsive {
+            flex-grow: 1; /* 남는 공간을 모두 차지하도록 설정 */
+            overflow-y: auto; /* 내용이 넘치면 스크롤 생성 */
+        }
 
-    /* --- 테이블 헤더 고정 --- */
-    #matchTable thead th {
-        position: sticky;
-        top: 0; /* 스크롤 영역의 최상단에 고정 */
-        background-color: #f8f9fa;
-        z-index: 90;
-        box-shadow: 0 2px 2px -1px rgba(0,0,0,0.1);
-    }
+        /* --- 테이블 헤더 고정 --- */
+        #matchTable thead th {
+            position: sticky;
+            top: 0; /* 스크롤 영역의 최상단에 고정 */
+            background-color: #f8f9fa;
+            z-index: 90;
+            box-shadow: 0 2px 2px -1px rgba(0,0,0,0.1);
+        }
 
-    .group-a-bg td { background-color: #ffffff; }
-    .group-b-bg td { background-color: #f2f2f2; }
-    
-    /* --- 플로팅 버튼 --- */
-    .floating-button {
-        position: absolute;
-        bottom: 100px; /* 하단 네비게이션 높이를 고려하여 조정 */
-        right: 20px;
-        font-size: 2rem;
-        background-color: #007bff;
-        color: white;
-        border-radius: 50%;
-        width: 52px;
-        height: 52px;
-        line-height: 52px;
-        display: flex;
-        justify-content: center;
-        box-shadow: 0 2px 6px rgba(0,0,0,0.2);
-        cursor: pointer;
-        text-decoration: none;
-        text-align: center;
-        z-index: 100;
-    }
+        .group-a-bg td { background-color: #ffffff; }
+        .group-b-bg td { background-color: #f2f2f2; }
+        
+        /* --- 플로팅 버튼 --- */
+        .floating-button {
+            position: absolute;
+            bottom: 100px; /* 하단 네비게이션 높이를 고려하여 조정 */
+            right: 20px;
+            font-size: 2rem;
+            background-color: #007bff;
+            color: white;
+            border-radius: 50%;
+            width: 52px;
+            height: 52px;
+            line-height: 52px;
+            display: flex;
+            justify-content: center;
+            box-shadow: 0 2px 6px rgba(0,0,0,0.2);
+            cursor: pointer;
+            text-decoration: none;
+            text-align: center;
+            z-index: 100;
+        }
 
-    /* --- 나머지 기존 스타일 (검색, 테이블 셀 등) --- */
-    #searchContainer { display: none; width: 150px; }
-    #searchInput { min-width: 100px; }
-    #searchToggle .bi-search { font-size: 1.2rem; color: black; margin-right: 15px; }
-    #searchToggle { white-space: nowrap; }
-    #matchTable { table-layout: fixed; width: 100%; font-size: 0.8rem; }
-    #matchTable tbody tr { height: 30px; }
-    #matchTable tbody tr:hover td { cursor: pointer; background-color: #e2e2e2; }
-    #matchTable td { overflow: hidden; text-overflow: ellipsis; }
-    td.hidden-etc { display: none; }
-  </style>
+        /* --- 나머지 기존 스타일 (검색, 테이블 셀 등) --- */
+        #searchContainer { display: none; width: 150px; }
+        #searchInput { min-width: 100px; }
+        #searchToggle .bi-search { font-size: 1.2rem; color: black; margin-right: 15px; }
+        #searchToggle { white-space: nowrap; }
+        #matchTable { table-layout: fixed; width: 100%; font-size: 0.8rem; }
+        #matchTable tbody tr { height: 30px; }
+        #matchTable tbody tr:hover td { cursor: pointer; background-color: #e2e2e2; }
+        #matchTable td { overflow: hidden; text-overflow: ellipsis; }
+        td.hidden-etc { display: none; }
+    </style>
 </head>
 
 <body>
-  <div class="app-container">
-    <div class="d-flex align-items-center sticky-header">
-      <div class="d-flex align-items-center flex-grow-1">
-        <a href="/schedule">
-          <img src="/image/btw-tran-180x180.png" alt="로고" style="height: 35px; margin-right: 5px;">
-        </a>
-        <a href="/match-record" style="color: black; text-decoration: none;">
-          <h5 style="margin-bottom: 0;"><b>경기 기록</b></h5>
-        </a>
-      </div>
-      <div class="d-flex align-items-center">
-        <div id="searchContainer" class="input-group input-group-sm me-2">
-          <input type="text" id="searchInput" class="form-control" placeholder="검색" />
-          <button class="btn btn-outline-secondary" type="button" id="clearSearchBtn">
-            <i class="bi bi-x-lg"></i>
-          </button>
+    <div class="app-container">
+        <div class="d-flex align-items-center sticky-header">
+            <div class="d-flex align-items-center flex-grow-1">
+                <a href="/schedule">
+                    <img src="/image/btw-tran-180x180.png" alt="로고" style="height: 35px; margin-right: 5px;">
+                </a>
+                <a href="/match-record" style="color: black; text-decoration: none;">
+                    <h5 style="margin-bottom: 0;"><b>경기 기록</b></h5>
+                </a>
+            </div>
+            <div class="d-flex align-items-center">
+                <div id="searchContainer" class="input-group input-group-sm me-2">
+                    <input type="text" id="searchInput" class="form-control" placeholder="검색" />
+                    <button class="btn btn-outline-secondary" type="button" id="clearSearchBtn">
+                        <i class="bi bi-x-lg"></i>
+                    </button>
+                </div>
+                <a href="#" id="searchToggle"><i class="bi bi-search"></i></a>
+                <i class="bi bi-list hamburger-icon"></i>
+            </div>
         </div>
-        <a href="#" id="searchToggle"><i class="bi bi-search"></i></a>
-        <i class="bi bi-list hamburger-icon"></i>
-      </div>
-    </div>
 
-    <!-- 사이드 메뉴 -->
-    <%- include('partials/sidemenu') %>
+        <!-- 사이드 메뉴 -->
+        <%- include('partials/sidemenu') %>
 
-    <div class="p-2 d-flex justify-content-start align-items-center">
-        <div>
-            <select class="form-select form-select-sm" id="playerHighlighter" style="width: 120px; font-size: 0.8rem;">
-                <option value="">- 선수 찾기 -</option>
-                <% if (locals.allPlayers) { %>
-                    <% allPlayers.forEach(player => { %>
-                        <option value="<%= player.name %>"><%= player.name %></option>
+        <div class="p-2 d-flex justify-content-start align-items-center">
+            <div>
+                <select class="form-select form-select-sm" id="playerHighlighter" style="width: 120px; font-size: 0.8rem;">
+                    <option value="">- 선수 찾기 -</option>
+                    <% if (locals.allPlayers) { %>
+                        <% allPlayers.forEach(player => { %>
+                            <option value="<%= player.name %>"><%= player.name %></option>
+                        <% }) %>
+                    <% } %>
+                </select>
+            </div>
+        </div>
+
+        <div class="table-responsive">
+            <table id="matchTable" class="table table-sm text-center align-middle text-nowrap">
+                <colgroup>
+                    <col style="width: 90px;">
+                    <col style="width: 60px;">
+                    <col style="width: 110px;">
+                    <col style="width: 25px;">
+                    <col style="width: 110px;">
+                    <col style="width: 80px;">
+                    <col style="width: 50px;">
+                    <col style="width: 30px;"> 
+                    <col style="width: 0px;" class="hidden-etc-col">
+                </colgroup>
+                <thead class="table-light">
+                    <tr>
+                        <th onclick="sortTable(0, this)" style="cursor: pointer;">
+                            날짜 <i class="bi bi-sort-down"></i>
+                        </th>
+                        <th>코트<span></span></th>
+                        <th colspan="3">결과<span></span></th>
+                        <th>분류<span></span></th>
+                        <th>영상<span></span></th>
+                        <th></th>
+                        <th class="hidden-etc"></th>
+                    </tr>
+                </thead>
+                <%
+                    // EJS 헬퍼 함수: 선수 이름에 성별에 따른 CSS 클래스를 입혀 반환
+                    const stylePlayerName = (playerName, genderMap) => {
+                        if (!playerName) return ''; // 플레이어가 없으면 빈 문자열 반환
+
+                        const gender = genderMap[playerName];
+                        let genderClass = ''; // 기본 클래스 없음
+
+                        if (gender === '남') {
+                            genderClass = 'text-male';
+                        } else if (gender === '여') {
+                            genderClass = 'text-female';
+                        }
+                        
+                        // 클래스가 있는 경우에만 span으로 감싸기
+                        if (genderClass) {
+                            return '<span class="' + genderClass + '">' + playerName + '</span>';
+                        }
+                        return playerName; // 성별 정보가 없으면 이름만 반환
+                    };
+
+                    const getDayOfWeek = (dateString) => {
+                        if (!dateString) return '';
+                        const days = ['일', '월', '화', '수', '목', '금', '토'];
+                        const date = new Date(dateString);
+                        return days[date.getDay()];
+                    };
+                %>
+                %>
+                <tbody>
+                    <% 
+                        let prevDate = null;
+                        let prevCourt = null;
+                        let currentGroupClass = 'group-a-bg'; 
+                    %>
+                    <% matches.forEach(match => { %>
+                        <%
+                            // 날짜 또는 코트가 변경되었는지 확인
+                            if (prevDate !== null && (match.date !== prevDate || match.court !== prevCourt)) {
+                                currentGroupClass = (currentGroupClass === 'group-a-bg') ? 'group-b-bg' : 'group-a-bg';
+                            }
+                            prevDate = match.date;
+                            prevCourt = match.court;
+                        %>
+                        <tr class="<%= currentGroupClass %>" onclick="window.location.href='/edit/<%= match.id %>'">
+                            <td><%= match.date ? match.date.substring(2) + '(' + getDayOfWeek(match.date) + ')' : '' %></td>
+                            <td><%= match.court %></td>
+                            
+                            <% 
+                                // 헬퍼 함수를 사용해 선수 이름에 스타일 적용
+                                const team1DeuceStyled = stylePlayerName(match.team1_deuce, genderMap);
+                                const team1AdStyled = stylePlayerName(match.team1_ad, genderMap);
+                                const team2DeuceStyled = stylePlayerName(match.team2_deuce, genderMap);
+                                const team2AdStyled = stylePlayerName(match.team2_ad, genderMap);
+
+                                const team1Players = `${team1DeuceStyled}${team1AdStyled ? ' ' + team1AdStyled : ''}`;
+                                const team2Players = `${team2DeuceStyled}${team2AdStyled ? ' ' + team2AdStyled : ''}`;
+                            %>
+
+                            <% if (Number(match.team1_score) > Number(match.team2_score)) { %>
+                                <td><%- team1Players %></td>
+                                <td style="padding: 0;"><b><%= match.team1_score %></b>:<%= match.team2_score %></td>
+                                <td><%- team2Players %></td>
+                            <% } else if (Number(match.team1_score) < Number(match.team2_score)) { %>
+                                <td><%- team2Players %></td>
+                                <td style="padding: 0;"><b><%= match.team2_score %></b>:<%= match.team1_score %></td>
+                                <td><%- team1Players %></td>
+                            <% } else { %>
+                                <td><%- team1Players %></td>
+                                <td style="padding: 0;"><%= match.team1_score %>:<%= match.team2_score %></td>
+                                <td><%- team2Players %></td>
+                            <% } %>
+
+                            <td><%= match.type %></td>
+                            <td>
+                                <% if (match.video) { %>
+                                    <a href="<%= match.video %>" target="_blank" rel="noopener" onclick="event.stopPropagation();">
+                                        <i class="bi bi-youtube text-danger fs-6"></i>
+                                    </a>
+                                <% } %>
+                            </td>
+                            <td><i class="bi bi-chevron-right text-muted"></i></td>
+                            <td class="hidden-etc"><%= match.etc || '' %></td>
+                        </tr>
                     <% }) %>
-                <% } %>
-            </select>
+                </tbody>
+            </table>
         </div>
+
+        <!-- <a href="/new" class="floating-button">+</a> -->
+
+        <!-- 하단 네비게이션 -->
+        <%- include('partials/navbar', { currentPage: 'match-record' }) %>
     </div>
 
-    <div class="table-responsive">
-      <table id="matchTable" class="table table-sm text-center align-middle text-nowrap">
-        <colgroup>
-            <col style="width: 90px;">
-            <col style="width: 60px;">
-            <col style="width: 110px;">
-            <col style="width: 25px;">
-            <col style="width: 110px;">
-            <col style="width: 80px;">
-            <col style="width: 50px;">
-            <col style="width: 30px;"> 
-            <col style="width: 0px;" class="hidden-etc-col">
-        </colgroup>
-        <thead class="table-light">
-          <tr>
-            <th onclick="sortTable(0, this)" style="cursor: pointer;">
-              날짜 <i class="bi bi-sort-down"></i>
-            </th>
-            <th>코트<span></span></th>
-            <th colspan="3">결과<span></span></th>
-            <th>분류<span></span></th>
-            <th>영상<span></span></th>
-            <th></th>
-            <th class="hidden-etc"></th>
-          </tr>
-        </thead>
-        <%
-          // EJS 헬퍼 함수: 선수 이름에 성별에 따른 CSS 클래스를 입혀 반환
-          const stylePlayerName = (playerName, genderMap) => {
-            if (!playerName) return ''; // 플레이어가 없으면 빈 문자열 반환
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css" />
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
 
-            const gender = genderMap[playerName];
-            let genderClass = ''; // 기본 클래스 없음
+    <script>
+        // 스크립트 정렬 부분은 기존 코드와 동일
+        let sortDirections = {};
+        let currentSortedCol = 0;
+        sortDirections[0] = false;
 
-            if (gender === '남') {
-              genderClass = 'text-male';
-            } else if (gender === '여') {
-              genderClass = 'text-female';
+        function sortTable(colIndex, thElement) {
+            const table = document.getElementById("matchTable");
+            const tbody = table.querySelector("tbody");
+            const rows = Array.from(tbody.querySelectorAll("tr"));
+            let ascending;
+
+            if (currentSortedCol !== colIndex) {
+                sortDirections = {}; 
+                ascending = true; 
+                currentSortedCol = colIndex;
+            } else {
+                ascending = !sortDirections[colIndex];
             }
             
-            // 클래스가 있는 경우에만 span으로 감싸기
-            if (genderClass) {
-              return '<span class="' + genderClass + '">' + playerName + '</span>';
+            if (colIndex === 0 && sortDirections[colIndex] === undefined) {
+                ascending = false;
             }
-            return playerName; // 성별 정보가 없으면 이름만 반환
-          };
 
-          const getDayOfWeek = (dateString) => {
-            if (!dateString) return '';
-            const days = ['일', '월', '화', '수', '목', '금', '토'];
-            const date = new Date(dateString);
-            return days[date.getDay()];
-          };
-        %>
-        %>
-        <tbody>
-          <% 
-            let prevDate = null;
-            let prevCourt = null;
-            let currentGroupClass = 'group-a-bg'; 
-          %>
-          <% matches.forEach(match => { %>
-            <%
-              // 날짜 또는 코트가 변경되었는지 확인
-              if (prevDate !== null && (match.date !== prevDate || match.court !== prevCourt)) {
-                currentGroupClass = (currentGroupClass === 'group-a-bg') ? 'group-b-bg' : 'group-a-bg';
-              }
-              prevDate = match.date;
-              prevCourt = match.court;
-            %>
-            <tr class="<%= currentGroupClass %>" onclick="window.location.href='/edit/<%= match.id %>'">
-              <td><%= match.date ? match.date.substring(2) + '(' + getDayOfWeek(match.date) + ')' : '' %></td>
-              <td><%= match.court %></td>
-              
-              <% 
-                // 헬퍼 함수를 사용해 선수 이름에 스타일 적용
-                const team1DeuceStyled = stylePlayerName(match.team1_deuce, genderMap);
-                const team1AdStyled = stylePlayerName(match.team1_ad, genderMap);
-                const team2DeuceStyled = stylePlayerName(match.team2_deuce, genderMap);
-                const team2AdStyled = stylePlayerName(match.team2_ad, genderMap);
+            sortDirections[colIndex] = ascending;
 
-                const team1Players = `${team1DeuceStyled}${team1AdStyled ? ' ' + team1AdStyled : ''}`;
-                const team2Players = `${team2DeuceStyled}${team2AdStyled ? ' ' + team2AdStyled : ''}`;
-              %>
+            rows.sort((a, b) => {
+                const valA = a.children[colIndex].innerText.trim();
+                const valB = b.children[colIndex].innerText.trim();
 
-              <% if (Number(match.team1_score) > Number(match.team2_score)) { %>
-                <td><%- team1Players %></td>
-                <td style="padding: 0;"><b><%= match.team1_score %></b>:<%= match.team2_score %></td>
-                <td><%- team2Players %></td>
-              <% } else if (Number(match.team1_score) < Number(match.team2_score)) { %>
-                <td><%- team2Players %></td>
-                <td style="padding: 0;"><b><%= match.team2_score %></b>:<%= match.team1_score %></td>
-                <td><%- team1Players %></td>
-              <% } else { %>
-                <td><%- team1Players %></td>
-                <td style="padding: 0;"><%= match.team1_score %>:<%= match.team2_score %></td>
-                <td><%- team2Players %></td>
-              <% } %>
+                if (colIndex === 4) {
+                    const scoreA = valA.split(':').map(Number);
+                    const scoreB = valB.split(':').map(Number);
+                    const diffA = Math.abs(scoreA[0] - scoreA[1]);
+                    const diffB = Math.abs(scoreB[0] - scoreB[1]);
 
-              <td><%= match.type %></td>
-              <td>
-                <% if (match.video) { %>
-                  <a href="<%= match.video %>" target="_blank" rel="noopener" onclick="event.stopPropagation();">
-                    <i class="bi bi-youtube text-danger fs-6"></i>
-                  </a>
-                <% } %>
-              </td>
-              <td><i class="bi bi-chevron-right text-muted"></i></td>
-              <td class="hidden-etc"><%= match.etc || '' %></td>
-            </tr>
-          <% }) %>
-        </tbody>
-      </table>
-    </div>
-
-    <!-- <a href="/new" class="floating-button">+</a> -->
-
-    <!-- 하단 네비게이션 -->
-    <%- include('partials/navbar', { currentPage: 'match-record' }) %>
-  </div>
-
-  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css" />
-  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
-
-  <script>
-    // 스크립트 정렬 부분은 기존 코드와 동일
-    let sortDirections = {};
-    let currentSortedCol = 0;
-    sortDirections[0] = false;
-
-    function sortTable(colIndex, thElement) {
-      const table = document.getElementById("matchTable");
-      const tbody = table.querySelector("tbody");
-      const rows = Array.from(tbody.querySelectorAll("tr"));
-      let ascending;
-
-      if (currentSortedCol !== colIndex) {
-        sortDirections = {}; 
-        ascending = true; 
-        currentSortedCol = colIndex;
-      } else {
-        ascending = !sortDirections[colIndex];
-      }
-      
-      if (colIndex === 0 && sortDirections[colIndex] === undefined) {
-          ascending = false;
-      }
-
-      sortDirections[colIndex] = ascending;
-
-      rows.sort((a, b) => {
-        const valA = a.children[colIndex].innerText.trim();
-        const valB = b.children[colIndex].innerText.trim();
-
-        if (colIndex === 4) {
-          const scoreA = valA.split(':').map(Number);
-          const scoreB = valB.split(':').map(Number);
-          const diffA = Math.abs(scoreA[0] - scoreA[1]);
-          const diffB = Math.abs(scoreB[0] - scoreB[1]);
-
-          if (ascending) {
-            return diffA - diffB || Math.max(...scoreA) - Math.max(...scoreB);
-          } else {
-            return diffB - diffA || Math.max(...scoreB) - Math.max(...scoreA);
-          }
-        }
-        
-        if (colIndex === 0 || (!isNaN(parseFloat(valA)) && !isNaN(parseFloat(valB)))) {
-          if(ascending) {
-              return valA.localeCompare(valB, 'ko', { numeric: true });
-          } else {
-              return valB.localeCompare(valA, 'ko', { numeric: true });
-          }
-        }
-
-        return ascending
-          ? valA.localeCompare(valB, 'ko')
-          : valB.localeCompare(valA, 'ko');
-      });
-
-      rows.forEach(row => tbody.appendChild(row));
-
-      // ✨ 아이콘 변경 로직 수정
-      const icon = thElement.querySelector("i.bi");
-      if (icon) {
-        // 오름차순이면 'up', 내림차순이면 'down' 아이콘으로 클래스 변경
-        icon.className = ascending ? "bi bi-sort-up" : "bi bi-sort-down";
-      }
-    }
-
-    const searchToggle = document.getElementById('searchToggle');
-    const searchContainer = document.getElementById('searchContainer');
-    const searchInput = document.getElementById('searchInput');
-    const clearSearchBtn = document.getElementById('clearSearchBtn');
-    const matchTableBody = document.querySelector('#matchTable tbody');
-    
-    const originalRows = Array.from(matchTableBody.querySelectorAll('tr')).map(row => {
-      const rowText = Array.from(row.querySelectorAll('td'))
-        .map(td => td.innerText.trim())
-        .join(' ')
-        .toLowerCase();
-      
-      return {
-        element: row,
-        text: rowText
-      };
-    });
-
-    searchToggle.addEventListener('click', function(event) {
-      event.preventDefault();
-      searchToggle.style.display = 'none';
-      searchContainer.style.display = 'flex';
-      searchInput.focus();
-    });
-
-    clearSearchBtn.addEventListener('click', function() {
-      searchInput.value = '';
-      filterTable('');
-      searchContainer.style.display = 'none';
-      searchToggle.style.display = 'inline-block';
-    });
-
-    searchInput.addEventListener('keyup', function() {
-      const searchText = searchInput.value.trim();
-      filterTable(searchText);
-    });
-
-    function escapeRegex(string) {
-      return string.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-    }
-
-    // ✨ 검색 기능 수정: 띄어쓰기로 구분된 모든 단어 포함 시 검색 (AND 조건)
-    function filterTable(searchText) {
-        matchTableBody.innerHTML = ''; // 테이블 비우기
-
-        // 검색어가 없으면 원본 행들을 그대로 추가
-        if (!searchText) {
-            originalRows.forEach(rowData => {
-                matchTableBody.appendChild(rowData.element);
-            });
-            return;
-        }
-
-        // 1. 검색어를 소문자로 변환하고 띄어쓰기 기준으로 나눠 배열로 만듦
-        const keywords = searchText.toLowerCase().split(' ').filter(k => k);
-
-        // 검색어 배열이 비어있으면 (공백만 입력된 경우) 전체 목록 표시
-        if (keywords.length === 0) {
-            originalRows.forEach(rowData => {
-                matchTableBody.appendChild(rowData.element);
-            });
-            return;
-        }
-
-        // 2. 하이라이팅을 위한 정규식 생성 (모든 키워드와 일치하도록)
-        const escapedKeywords = keywords.map(escapeRegex); // 이스케이프
-        const searchRegex = new RegExp(escapedKeywords.join('|'), 'gi');
-
-        originalRows.forEach(rowData => {
-            // 3. 모든 키워드가 행 텍스트에 포함되어 있는지 확인
-            const isMatch = keywords.every(keyword => rowData.text.includes(keyword));
-
-            if (isMatch) {
-                const newRow = rowData.element.cloneNode(true);
+                    if (ascending) {
+                        return diffA - diffB || Math.max(...scoreA) - Math.max(...scoreB);
+                    } else {
+                        return diffB - diffA || Math.max(...scoreB) - Math.max(...scoreA);
+                    }
+                }
                 
-                // 복제된 행의 모든 셀(td)을 순회하며 하이라이팅 적용
-                newRow.querySelectorAll('td').forEach(td => {
-                    // '<strong>$&</strong>'에서 $&는 정규식에 매칭된 원래 문자열을 의미
-                    td.innerHTML = td.innerHTML.replace(searchRegex, '<span class="search-highlight">$&</span>');
-                });
+                if (colIndex === 0 || (!isNaN(parseFloat(valA)) && !isNaN(parseFloat(valB)))) {
+                    if(ascending) {
+                        return valA.localeCompare(valB, 'ko', { numeric: true });
+                    } else {
+                        return valB.localeCompare(valA, 'ko', { numeric: true });
+                    }
+                }
 
-                matchTableBody.appendChild(newRow);
+                return ascending
+                    ? valA.localeCompare(valB, 'ko')
+                    : valB.localeCompare(valA, 'ko');
+            });
+
+            rows.forEach(row => tbody.appendChild(row));
+
+            // ✨ 아이콘 변경 로직 수정
+            const icon = thElement.querySelector("i.bi");
+            if (icon) {
+                // 오름차순이면 'up', 내림차순이면 'down' 아이콘으로 클래스 변경
+                icon.className = ascending ? "bi bi-sort-up" : "bi bi-sort-down";
             }
+        }
+
+        const searchToggle = document.getElementById('searchToggle');
+        const searchContainer = document.getElementById('searchContainer');
+        const searchInput = document.getElementById('searchInput');
+        const clearSearchBtn = document.getElementById('clearSearchBtn');
+        const matchTableBody = document.querySelector('#matchTable tbody');
+        
+        const originalRows = Array.from(matchTableBody.querySelectorAll('tr')).map(row => {
+            const rowText = Array.from(row.querySelectorAll('td'))
+                .map(td => td.innerText.trim())
+                .join(' ')
+                .toLowerCase();
+            
+            return {
+                element: row,
+                text: rowText
+            };
         });
-    }
 
-    // --- ✨ 햄버거 메뉴 스크립트 추가 ---
-    document.addEventListener('DOMContentLoaded', function () {
-        const hamburger = document.querySelector('.hamburger-icon');
-        const sideMenu = document.querySelector('.side-menu');
-        const overlay = document.querySelector('.overlay');
-
-        hamburger.addEventListener('click', function () {
-            sideMenu.classList.toggle('active');
-            overlay.classList.toggle('active');
+        searchToggle.addEventListener('click', function(event) {
+            event.preventDefault();
+            searchToggle.style.display = 'none';
+            searchContainer.style.display = 'flex';
+            searchInput.focus();
         });
 
-        overlay.addEventListener('click', function () {
-            sideMenu.classList.remove('active');
-            overlay.classList.remove('active');
+        clearSearchBtn.addEventListener('click', function() {
+            searchInput.value = '';
+            filterTable('');
+            searchContainer.style.display = 'none';
+            searchToggle.style.display = 'inline-block';
         });
 
-        const playerHighlighter = document.getElementById('playerHighlighter');
+        searchInput.addEventListener('keyup', function() {
+            const searchText = searchInput.value.trim();
+            filterTable(searchText);
+        });
 
-        playerHighlighter.addEventListener('change', function() {
-            const selectedPlayer = this.value;
-            const tableRows = document.querySelectorAll('#matchTable tbody tr');
+        function escapeRegex(string) {
+            return string.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+        }
 
-            // 모든 행의 하이라이트 제거
-            tableRows.forEach(row => {
-                row.classList.remove('user-highlight-row');
-                const cells = row.querySelectorAll('td');
-                cells.forEach(cell => {
-                    // 하이라이트용으로 추가된 span 태그를 찾아 제거하고, 원래 내용(텍스트 또는 다른 태그)으로 복원
-                    cell.querySelectorAll('.user-highlight').forEach(highlightElement => {
-                        const parent = highlightElement.parentNode;
-                        while (highlightElement.firstChild) {
-                            parent.insertBefore(highlightElement.firstChild, highlightElement);
-                        }
-                        parent.removeChild(highlightElement);
+        // ✨ 검색 기능 수정: 띄어쓰기로 구분된 모든 단어 포함 시 검색 (AND 조건)
+        function filterTable(searchText) {
+            matchTableBody.innerHTML = ''; // 테이블 비우기
+
+            // 검색어가 없으면 원본 행들을 그대로 추가
+            if (!searchText) {
+                originalRows.forEach(rowData => {
+                    matchTableBody.appendChild(rowData.element);
+                });
+                return;
+            }
+
+            // 1. 검색어를 소문자로 변환하고 띄어쓰기 기준으로 나눠 배열로 만듦
+            const keywords = searchText.toLowerCase().split(' ').filter(k => k);
+
+            // 검색어 배열이 비어있으면 (공백만 입력된 경우) 전체 목록 표시
+            if (keywords.length === 0) {
+                originalRows.forEach(rowData => {
+                    matchTableBody.appendChild(rowData.element);
+                });
+                return;
+            }
+
+            // 2. 하이라이팅을 위한 정규식 생성 (모든 키워드와 일치하도록)
+            const escapedKeywords = keywords.map(escapeRegex); // 이스케이프
+            const searchRegex = new RegExp(escapedKeywords.join('|'), 'gi');
+
+            originalRows.forEach(rowData => {
+                // 3. 모든 키워드가 행 텍스트에 포함되어 있는지 확인
+                const isMatch = keywords.every(keyword => rowData.text.includes(keyword));
+
+                if (isMatch) {
+                    const newRow = rowData.element.cloneNode(true);
+                    
+                    // 복제된 행의 모든 셀(td)을 순회하며 하이라이팅 적용
+                    newRow.querySelectorAll('td').forEach(td => {
+                        // '<strong>$&</strong>'에서 $&는 정규식에 매칭된 원래 문자열을 의미
+                        td.innerHTML = td.innerHTML.replace(searchRegex, '<span class="search-highlight">$&</span>');
+                    });
+
+                    matchTableBody.appendChild(newRow);
+                }
+            });
+        }
+
+        // --- ✨ 햄버거 메뉴 스크립트 추가 ---
+        document.addEventListener('DOMContentLoaded', function () {
+            const hamburger = document.querySelector('.hamburger-icon');
+            const sideMenu = document.querySelector('.side-menu');
+            const overlay = document.querySelector('.overlay');
+
+            hamburger.addEventListener('click', function () {
+                sideMenu.classList.toggle('active');
+                overlay.classList.toggle('active');
+            });
+
+            overlay.addEventListener('click', function () {
+                sideMenu.classList.remove('active');
+                overlay.classList.remove('active');
+            });
+
+            const playerHighlighter = document.getElementById('playerHighlighter');
+
+            playerHighlighter.addEventListener('change', function() {
+                const selectedPlayer = this.value;
+                const tableRows = document.querySelectorAll('#matchTable tbody tr');
+
+                // 모든 행의 하이라이트 제거
+                tableRows.forEach(row => {
+                    row.classList.remove('user-highlight-row');
+                    const cells = row.querySelectorAll('td');
+                    cells.forEach(cell => {
+                        // 하이라이트용으로 추가된 span 태그를 찾아 제거하고, 원래 내용(텍스트 또는 다른 태그)으로 복원
+                        cell.querySelectorAll('.user-highlight').forEach(highlightElement => {
+                            const parent = highlightElement.parentNode;
+                            while (highlightElement.firstChild) {
+                                parent.insertBefore(highlightElement.firstChild, highlightElement);
+                            }
+                            parent.removeChild(highlightElement);
+                        });
                     });
                 });
+
+                if (selectedPlayer) {
+                    tableRows.forEach(row => {
+                        const rowText = row.textContent.toLowerCase();
+                        if (rowText.includes(selectedPlayer.toLowerCase())) {
+                            row.classList.add('user-highlight-row');
+
+                            const cells = row.querySelectorAll('td');
+                            cells.forEach(cell => {
+                                const cellHtml = cell.innerHTML;
+                                const regex = new RegExp(selectedPlayer, 'gi');
+                                cell.innerHTML = cellHtml.replace(regex, `<span class="user-highlight">${selectedPlayer}</span>`);
+                            });
+                        }
+                    });
+                }
             });
-
-            if (selectedPlayer) {
-                tableRows.forEach(row => {
-                    const rowText = row.textContent.toLowerCase();
-                    if (rowText.includes(selectedPlayer.toLowerCase())) {
-                        row.classList.add('user-highlight-row');
-
-                        const cells = row.querySelectorAll('td');
-                        cells.forEach(cell => {
-                            const cellHtml = cell.innerHTML;
-                            const regex = new RegExp(selectedPlayer, 'gi');
-                            cell.innerHTML = cellHtml.replace(regex, `<span class="user-highlight">${selectedPlayer}</span>`);
-                        });
+            
+            if (playerHighlighter) {
+                // LocalStorage에서 선수 자동 선택
+                const savedPlayer = localStorage.getItem('tennis-schedule-user');
+                if (savedPlayer) {
+                    const optionExists = Array.from(playerHighlighter.options).some(option => option.value === savedPlayer);
+                    if (optionExists) {
+                        playerHighlighter.value = savedPlayer;
+                        playerHighlighter.dispatchEvent(new Event('change'));
                     }
-                });
+                }
             }
         });
-        
-        if (playerHighlighter) {
-            // LocalStorage에서 선수 자동 선택
-            const savedPlayer = localStorage.getItem('tennis-schedule-user');
-            if (savedPlayer) {
-                  const optionExists = Array.from(playerHighlighter.options).some(option => option.value === savedPlayer);
-                  if (optionExists) {
-                      playerHighlighter.value = savedPlayer;
-                      playerHighlighter.dispatchEvent(new Event('change'));
-                  }
-            }
-        }
-    });
-  </script>
+    </script>
 </body>
 </html>
