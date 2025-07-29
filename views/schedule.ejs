@@ -1262,8 +1262,16 @@
 			// ✨ 참석자 및 게스트 목록으로 datalist 동적 생성
 			datalist.innerHTML = '';
 
-			// 1. 참석자 추가
-			schedule.attendees.forEach(attendee => {
+			// 1. 같은 날짜의 모든 일정에서 참석자 목록을 가져옵니다.
+			const currentScheduleDate = schedule.schedule_date;
+			const attendeesForDate = new Set();
+			schedulesData.filter(s => s.schedule_date === currentScheduleDate)
+				.forEach(s => {
+					s.attendees.forEach(attendee => attendeesForDate.add(attendee));
+				});
+
+			// datalist에 참석자 추가
+			Array.from(attendeesForDate).sort().forEach(attendee => {
 				const option = document.createElement('option');
 				option.value = attendee;
 				datalist.appendChild(option);
