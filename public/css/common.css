@@ -114,6 +114,10 @@ html, body {
   font-weight: 600;
 }
 
-.search-highlight {
+.user-highlight {
     background-color: #FFF387 !important;
+}
+
+.search-highlight {
+    background-color: #FFCA6C !important;
 }

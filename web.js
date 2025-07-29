@@ -150,7 +150,8 @@ app.get('/match-record', async (req, res) => {
             [today]
         );
         const membersPromise = pool.query('SELECT name, gender FROM member');
-        const [[matches], [members]] = await Promise.all([matchesPromise, membersPromise]);
+        const allPlayersPromise = pool.query('SELECT name FROM member ORDER BY `order` ASC, name ASC');
+        const [[matches], [members], [allPlayers]] = await Promise.all([matchesPromise, membersPromise, allPlayersPromise]);
 
         // 2. 이름으로 성별을 쉽게 찾을 수 있는 객체(genderMap)를 만듭니다.
         const genderMap = members.reduce((acc, member) => {
@@ -162,6 +163,7 @@ app.get('/match-record', async (req, res) => {
         res.render('match-record', {
             matches: matches,
             genderMap: genderMap,
+            allPlayers: allPlayers,
             currentPage: 'match-record'
         });
     } catch (err) {
@@ -630,8 +632,9 @@ app.get('/chemistry-score', async (req, res) => {
         // ✨ 모든 회원의 이름과 성별 정보를 가져오는 쿼리로 변경
         const allMembersPromise = pool.query("SELECT name, gender FROM member");
         const regularMembersPromise = pool.query("SELECT name FROM member WHERE `order` = 0");
+        const allPlayersPromise = pool.query('SELECT name FROM member ORDER BY `order` ASC, name ASC');
 
-        const [[allMatches], [courts], [allMembers], [regularMembers]] = await Promise.all([matchesPromise, courtsPromise, allMembersPromise, regularMembersPromise]);
+        const [[allMatches], [courts], [allMembers], [regularMembers], [allPlayers]] = await Promise.all([matchesPromise, courtsPromise, allMembersPromise, regularMembersPromise, allPlayersPromise]);
 
         // ✨ 모든 회원의 성별 정보를 담은 Map 생성
         const genderMap = allMembers.reduce((acc, member) => {
@@ -696,7 +699,7 @@ app.get('/chemistry-score', async (req, res) => {
             };
         });
 
-        res.render('chemistry-score', { pairData, courts, currentPage: 'chemistry-score' });
+        res.render('chemistry-score', { pairData, courts, allPlayers, currentPage: 'chemistry-score' });
 
     } catch (err) {
         console.error('[/chemistry-score] 에러:', err.message);

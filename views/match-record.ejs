@@ -90,6 +90,19 @@
     <!-- 사이드 메뉴 -->
     <%- include('partials/sidemenu') %>
 
+    <div class="p-2 d-flex justify-content-start align-items-center">
+        <div>
+            <select class="form-select form-select-sm" id="playerHighlighter" style="width: 120px; font-size: 0.8rem;">
+                <option value="">- 선수 찾기 -</option>
+                <% if (locals.allPlayers) { %>
+                    <% allPlayers.forEach(player => { %>
+                        <option value="<%= player.name %>"><%= player.name %></option>
+                    <% }) %>
+                <% } %>
+            </select>
+        </div>
+    </div>
+
     <div class="table-responsive">
       <table id="matchTable" class="table table-sm text-center align-middle text-nowrap">
         <colgroup>
@@ -381,6 +394,57 @@
             sideMenu.classList.remove('active');
             overlay.classList.remove('active');
         });
+
+        const playerHighlighter = document.getElementById('playerHighlighter');
+
+        playerHighlighter.addEventListener('change', function() {
+            const selectedPlayer = this.value;
+            const tableRows = document.querySelectorAll('#matchTable tbody tr');
+
+            // 모든 행의 하이라이트 제거
+            tableRows.forEach(row => {
+                row.classList.remove('user-highlight-row');
+                const cells = row.querySelectorAll('td');
+                cells.forEach(cell => {
+                    // 하이라이트용으로 추가된 span 태그를 찾아 제거하고, 원래 내용(텍스트 또는 다른 태그)으로 복원
+                    cell.querySelectorAll('.user-highlight').forEach(highlightElement => {
+                        const parent = highlightElement.parentNode;
+                        while (highlightElement.firstChild) {
+                            parent.insertBefore(highlightElement.firstChild, highlightElement);
+                        }
+                        parent.removeChild(highlightElement);
+                    });
+                });
+            });
+
+            if (selectedPlayer) {
+                tableRows.forEach(row => {
+                    const rowText = row.textContent.toLowerCase();
+                    if (rowText.includes(selectedPlayer.toLowerCase())) {
+                        row.classList.add('user-highlight-row');
+
+                        const cells = row.querySelectorAll('td');
+                        cells.forEach(cell => {
+                            const cellHtml = cell.innerHTML;
+                            const regex = new RegExp(selectedPlayer, 'gi');
+                            cell.innerHTML = cellHtml.replace(regex, `<span class="user-highlight">${selectedPlayer}</span>`);
+                        });
+                    }
+                });
+            }
+        });
+        
+        if (playerHighlighter) {
+            // LocalStorage에서 선수 자동 선택
+            const savedPlayer = localStorage.getItem('tennis-schedule-user');
+            if (savedPlayer) {
+                  const optionExists = Array.from(playerHighlighter.options).some(option => option.value === savedPlayer);
+                  if (optionExists) {
+                      playerHighlighter.value = savedPlayer;
+                      playerHighlighter.dispatchEvent(new Event('change'));
+                  }
+            }
+        }
     });
   </script>
 </body>

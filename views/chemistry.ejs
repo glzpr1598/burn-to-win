@@ -466,7 +466,7 @@
                 const gender = genderMap[player];
                 const genderClass = gender === '남' ? 'text-male' : (gender === '여' ? 'text-female' : '');
                 const isBold = player === basePlayer || player === comparePlayer;
-                const content = isBold ? `<span class="search-highlight">${player}</span>` : player;
+                const content = isBold ? `<span class="user-highlight">${player}</span>` : player;
                 return `<span class = "${genderClass}">${content}</span>`;
             };
 

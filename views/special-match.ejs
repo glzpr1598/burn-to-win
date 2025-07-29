@@ -155,7 +155,7 @@
                 <div class="p-2 d-flex justify-content-between align-items-center">
                     <div>
                         <select class="form-select form-select-sm" id="playerHighlighter" style="width: 120px;">
-                            <option value="">-선수 찾기-</option>
+                            <option value="">- 선수 찾기 -</option>
                             <% if (participatingPlayers) { %>
                                 <% participatingPlayers.forEach(player => { %>
                                     <option value="<%= player %>"><%= player %></option>
@@ -515,11 +515,11 @@
 
                     // 1. 모든 셀에서 기존 하이라이트 효과를 먼저 제거합니다.
                     document.querySelectorAll('.full-view span, .compact-view span').forEach(span => {
-                        span.classList.remove('search-highlight');
+                        span.classList.remove('user-highlight');
                     });
 
                     document.querySelectorAll('#player-match-count-table tbody tr td span').forEach(row => {
-                        row.classList.remove('search-highlight');
+                        row.classList.remove('user-highlight');
                     });
 
                     // 2. 선수가 선택된 경우, full-view와 compact-view 모두에 강조 효과를 적용합니다.
@@ -535,7 +535,7 @@
                                 // 해당 셀의 full-view와 compact-view 안의 모든 span을 대상으로 검색
                                 cell.querySelectorAll('.full-view span, .compact-view span').forEach(span => {
                                     if (span.textContent === selectedPlayer) {
-                                        span.classList.add('search-highlight');
+                                        span.classList.add('user-highlight');
                                     }
                                 });
                             }
@@ -543,7 +543,7 @@
 
                         const rowToHighlight = document.querySelector(`#player-match-count-table tbody tr[data-player-name="${selectedPlayer}"] td span`);
                         if (rowToHighlight) {
-                            rowToHighlight.classList.add('search-highlight');
+                            rowToHighlight.classList.add('user-highlight');
                         }
                     }
                 });

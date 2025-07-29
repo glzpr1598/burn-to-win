@@ -129,6 +129,19 @@
             </div>
         </div>
 
+        <div class="p-2 d-flex justify-content-start align-items-center">
+            <div>
+                <select class="form-select form-select-sm" id="playerHighlighter" style="width: 120px; font-size: 0.8rem;">
+                    <option value="">- 선수 찾기 -</option>
+                    <% if (locals.allPlayers) { %>
+                        <% allPlayers.forEach(player => { %>
+                            <option value="<%= player.name %>"><%= player.name %></option>
+                        <% }) %>
+                    <% } %>
+                </select>
+            </div>
+        </div>
+
         <div class="table-responsive">
             <table id="scoreTable" class="table table-sm table-striped text-center align-middle">
                 <thead class="table-light">
@@ -194,24 +207,46 @@
             window.location.href = `/chemistry-score?${params.toString()}`;
         }
 
-        // --- 정렬 및 검색 로직 ---
         let sortState = { col: 4, asc: false };
+        let originalRows = [];
+        let currentRows = [];
+
         function sortTable(colIndex, type) {
-            const tbody = document.getElementById("scoreTbody");
-            const rows = Array.from(tbody.querySelectorAll("tr"));
-            if (rows.length <= 1 && rows[0].children.length <= 1) return;
             sortState.asc = (sortState.col === colIndex) ? !sortState.asc : true;
             sortState.col = colIndex;
             const direction = sortState.asc ? 1 : -1;
-            rows.sort((a, b) => {
+
+            currentRows.sort((a, b) => {
                 let valA = a.children[colIndex].innerText.trim().replace('%', '');
                 let valB = b.children[colIndex].innerText.trim().replace('%', '');
                 return (parseFloat(valA) - parseFloat(valB)) * direction;
             });
-            sortedRows = rows;
-
+            
+            const tbody = document.getElementById("scoreTbody");
             tbody.innerHTML = "";
-            rows.forEach(row => tbody.appendChild(row));
+            currentRows.forEach(row => tbody.appendChild(row));
+            
+            updateSortIcons();
+        }
+
+        function defaultSort() {
+            currentRows.sort((a, b) => {
+                const matchesA = parseFloat(a.children[1].innerText.trim());
+                const matchesB = parseFloat(b.children[1].innerText.trim());
+                if (matchesB !== matchesA) return matchesB - matchesA;
+
+                const winRateA = parseFloat(a.children[4].innerText.trim().replace('%', ''));
+                const winRateB = parseFloat(b.children[4].innerText.trim().replace('%', ''));
+                return winRateB - winRateA;
+            });
+            
+            const tbody = document.getElementById("scoreTbody");
+            tbody.innerHTML = "";
+            currentRows.forEach(row => tbody.appendChild(row));
+            updateSortIcons();
+        }
+
+        function updateSortIcons() {
             document.querySelectorAll('#scoreTable th i').forEach((icon, index) => {
                 const thIndex = icon.parentElement.cellIndex;
                 icon.className = 'bi bi-arrow-down-up';
@@ -221,63 +256,120 @@
             });
         }
 
-        function defaultSort() {
-            const tbody = document.getElementById("scoreTbody");
-            const rows = Array.from(tbody.querySelectorAll("tr"));
-            if (rows.length <= 1 && rows[0].children.length <= 1) return;
-            rows.sort((a, b) => {
-                const matchesA = parseFloat(a.children[1].innerText.trim());
-                const matchesB = parseFloat(b.children[1].innerText.trim());
-                if (matchesB !== matchesA) return matchesB - matchesA;
-
-                const winRateA = parseFloat(a.children[4].innerText.trim().replace('%', ''));
-                const winRateB = parseFloat(b.children[4].innerText.trim().replace('%', ''));
-                return winRateB - winRateA;
-            });
-            sortedRows = rows;
-
-            tbody.innerHTML = "";
-            rows.forEach(row => tbody.appendChild(row));
-            document.querySelectorAll('#scoreTable th i')[0].className = 'bi bi-sort-down';
-        }
-        
-        let originalRows = [];
-        let sortedRows = [];
-
-        function filterTable() {
-            const searchInput = document.getElementById('searchInput');
-            const searchText = searchInput.value.toLowerCase().trim();
-            const keywords = searchText.split(' ').filter(k => k);
-            const tbody = document.getElementById('scoreTbody');
-            tbody.innerHTML = '';
-
-            // 'sortedRows'는 EJS에 의해 렌더링된, 스타일이 적용된 원본 TR 요소들의 배열입니다.
-            sortedRows.forEach(row => {
-                // 검색어 매칭은 기존처럼 스타일이 제거된 순수 텍스트로 진행합니다.
-                const pairText = row.querySelector('td:first-child').innerText.toLowerCase();
-                const isMatch = keywords.every(keyword => pairText.includes(keyword));
-
-                if (isMatch) {
-                    // 일치하는 경우, 스타일이 포함된 원본 행을 복제합니다.
-                    const newRow = row.cloneNode(true);
-                    newRow.addEventListener('click', () => showMatchDetails(newRow));
-
-                    // ✨ 검색어가 있을 때만 하이라이트 로직을 실행합니다.
-                    if (keywords.length > 0) {
-                        const cell = newRow.querySelector('td:first-child');
-                        const searchRegex = new RegExp(keywords.join('|'), 'gi');
-
-                        const nameSpans = cell.querySelectorAll('.text-male, .text-female');
-                        nameSpans.forEach(span => {
-                            // span 태그와 스타일은 그대로 두고, 그 안의 텍스트에만 <strong> 태그를 적용합니다.
-                            span.innerHTML = span.innerText.replace(searchRegex, '<span class="search-highlight">$&</span>');
-                        });
+        function removeHighlight(className) {
+            document.querySelectorAll(`.${className}`).forEach(el => {
+                if (el.classList.contains('user-highlight-row')) {
+                    el.classList.remove('user-highlight-row');
+                } else {
+                    const parent = el.parentNode;
+                    if (parent) {
+                        parent.replaceChild(document.createTextNode(el.textContent), el);
+                        parent.normalize();
                     }
-                    
-                    tbody.appendChild(newRow);
                 }
             });
         }
+
+        function applyHighlight(baseElement, text, className) {
+            const regex = new RegExp(text, 'gi');
+            
+            Array.from(baseElement.childNodes).forEach(node => {
+                if (node.nodeType === Node.TEXT_NODE) {
+                    const matches = node.textContent.match(regex);
+                    if (matches) {
+                        const newNode = document.createElement('span');
+                        newNode.innerHTML = node.textContent.replace(regex, `<span class="${className}">$&</span>`);
+                        node.parentNode.replaceChild(newNode, node);
+                    }
+                } else if (node.nodeType === Node.ELEMENT_NODE && !node.classList.contains(className)) {
+                    applyHighlight(node, text, className);
+                }
+            });
+        }
+
+        function filterTable() {
+            const searchText = document.getElementById('searchInput').value.toLowerCase().trim();
+            const keywords = searchText.split(' ').filter(k => k);
+
+            removeHighlight('search-highlight');
+
+            currentRows.forEach(row => {
+                const pairText = row.querySelector('td:first-child').innerText.toLowerCase();
+                const isMatch = keywords.every(keyword => pairText.includes(keyword));
+                row.style.display = isMatch ? '' : 'none';
+
+                if (isMatch && keywords.length > 0) {
+                    const cell = row.querySelector('td:first-child');
+                    keywords.forEach(keyword => {
+                        applyHighlight(cell, keyword, 'search-highlight');
+                    });
+                }
+            });
+        }
+
+        function highlightPlayer(selectedPlayer) {
+            removeHighlight('user-highlight');
+            removeHighlight('user-highlight-row');
+
+            if (selectedPlayer) {
+                currentRows.forEach(row => {
+                    if (row.textContent.toLowerCase().includes(selectedPlayer.toLowerCase())) {
+                        row.classList.add('user-highlight-row');
+                        const cell = row.querySelector('td:first-child');
+                        applyHighlight(cell, selectedPlayer, 'user-highlight');
+                    }
+                });
+            }
+        }
+
+        document.addEventListener('DOMContentLoaded', () => {
+            originalRows = Array.from(document.querySelectorAll('#scoreTbody tr'));
+            currentRows = [...originalRows];
+
+            const savedFilters = filterStorage.load();
+            const currentParams = new URLSearchParams(window.location.search);
+            const scoreTypes = savedFilters.types.filter(t => !t.includes('단'));
+            const savedParams = new URLSearchParams();
+            savedParams.set('period', savedFilters.period);
+            if (scoreTypes.length > 0) savedParams.set('types', scoreTypes.join(','));
+            if (savedFilters.courts && savedFilters.courts.length > 0) savedParams.set('courts', savedFilters.courts.join(','));
+
+            if (currentParams.toString() !== savedParams.toString()) {
+                window.location.href = `/chemistry-score?${savedParams.toString()}`;
+                return;
+            }
+
+            const periods = [ { value: 'all', text: '전체' }, { value: '1m', text: '최근 1개월' }, { value: '3m', text: '최근 3개월' }, { value: '6m', text: '최근 6개월' }, { value: '1y', text: '최근 1년' }, { value: '2025', text: '2025년' }, { value: '2024', text: '2024년' } ];
+            const selectedPeriod = periods.find(p => p.value === savedFilters.period) || periods[3];
+            document.getElementById('periodDropdownButton').textContent = `기간: ${selectedPeriod.text}`;
+            document.querySelectorAll('#typeFilter input').forEach(cb => { if (savedFilters.types.includes(cb.value)) cb.checked = true; });
+            if (savedFilters.courts) document.querySelectorAll('#courtFilter input').forEach(cb => { if (savedFilters.courts.includes(cb.value)) cb.checked = true; });
+            
+            updateCheckboxDropdownText('typeDropdownButton', 'typeFilter', '분류');
+            updateCheckboxDropdownText('courtDropdownButton', 'courtFilter', '코트');
+            
+            defaultSort();
+
+            const searchToggle = document.getElementById('searchToggle');
+            const searchContainer = document.getElementById('searchContainer');
+            const clearSearchBtn = document.getElementById('clearSearchBtn');
+            const searchInput = document.getElementById('searchInput');
+            searchToggle.addEventListener('click', (e) => { e.preventDefault(); searchToggle.style.display = 'none'; searchContainer.style.display = 'flex'; searchInput.focus(); });
+            clearSearchBtn.addEventListener('click', () => { searchInput.value = ''; filterTable(); searchContainer.style.display = 'none'; searchToggle.style.display = 'inline-block'; });
+            searchInput.addEventListener('keyup', filterTable);
+
+            const playerHighlighter = document.getElementById('playerHighlighter');
+            playerHighlighter.addEventListener('change', (e) => highlightPlayer(e.target.value));
+            
+            const savedPlayer = localStorage.getItem('tennis-schedule-user');
+            if (savedPlayer) {
+                  const optionExists = Array.from(playerHighlighter.options).some(option => option.value === savedPlayer);
+                  if (optionExists) {
+                      playerHighlighter.value = savedPlayer;
+                      highlightPlayer(savedPlayer);
+                  }
+            }
+        });
 
         const matchDetailModal = new bootstrap.Modal(document.getElementById('matchDetailModal'));
         
@@ -300,13 +392,11 @@
                 if (!response.ok) {
                     throw new Error('경기 기록을 불러오는데 실패했습니다.');
                 }
-                // ✨ 수정: genderMap 받기
                 const { matches, genderMap } = await response.json();
                 
                 document.getElementById('matchDetailModalLabel').innerHTML = `<b>${pair.replace('/', ' ')}</b> 페어`;
                 const modalBody = document.getElementById('matchDetailModalBody');
                 
-                // ✨ 수정: genderMap 전달
                 modalBody.innerHTML = buildMatchTableHtml(matches, pair, stats, genderMap);
 
                 matchDetailModal.show();
@@ -348,14 +438,11 @@
                 </div>
             `;
 
-            // 플레이어 이름에 성별에 따른 배경색과 스타일을 적용하는 헬퍼 함수
             const stylePlayerName = (player, isBold = false) => {
                 if (!player) return '';
                 const gender = genderMap[player];
-                // 성별에 따라 배경색 지정
                 const genderClass = gender === '남' ? 'text-male' : (gender === '여' ? 'text-female' : '');
-                const content = isBold ? `<span class="search-highlight">${player}</span>` : player;
-                // 'backgrond-color' 오타 수정 및 스타일 적용
+                const content = isBold ? `<span class="user-highlight">${player}</span>` : player;
                 return `<span class="${genderClass}">${content}</span>`;
             };
 
@@ -385,24 +472,19 @@
                     let myTeamDisplay, opponentTeamDisplay, result, selectedScore, opponentScore;
 
                     if (isPairOnTeam1) {
-                        // 우리 팀이 team1일 경우 (듀스, 애드 순서로 표시)
                         myTeamDisplay = `${stylePlayerName(match.team1_deuce, true)} ${stylePlayerName(match.team1_ad, true)}`;
-                        // 상대 팀(team2) 선수들에게도 배경색 적용
                         opponentTeamDisplay = `${stylePlayerName(match.team2_deuce)} ${stylePlayerName(match.team2_ad || '')}`;
                         result = match.team1_result;
                         selectedScore = match.team1_score;
                         opponentScore = match.team2_score;
                     } else {
-                        // 우리 팀이 team2일 경우 (듀스, 애드 순서로 표시)
                         myTeamDisplay = `${stylePlayerName(match.team2_deuce, true)} ${stylePlayerName(match.team2_ad, true)}`;
-                        // 상대 팀(team1) 선수들에게도 배경색 적용
                         opponentTeamDisplay = `${stylePlayerName(match.team1_deuce)} ${stylePlayerName(match.team1_ad || '')}`;
                         result = match.team2_result;
                         selectedScore = match.team2_score;
                         opponentScore = match.team1_score;
                     }
                     
-                    // 불필요한 공백 제거
                     myTeamDisplay = myTeamDisplay.trim();
                     opponentTeamDisplay = opponentTeamDisplay.trim();
 
@@ -434,45 +516,6 @@
 
             return summaryHtml + tableHtml;
         }
-
-
-        document.addEventListener('DOMContentLoaded', () => {
-            originalRows = Array.from(document.querySelectorAll('#scoreTbody tr'));
-
-            const savedFilters = filterStorage.load();
-            
-            const currentParams = new URLSearchParams(window.location.search);
-            const scoreTypes = savedFilters.types.filter(t => !t.includes('단'));
-            const savedParams = new URLSearchParams();
-            savedParams.set('period', savedFilters.period);
-            if (scoreTypes.length > 0) savedParams.set('types', scoreTypes.join(','));
-            if (savedFilters.courts && savedFilters.courts.length > 0) savedParams.set('courts', savedFilters.courts.join(','));
-
-            if (currentParams.toString() !== savedParams.toString()) {
-                window.location.replace(`/chemistry-score?${savedParams.toString()}`);
-                return;
-            }
-
-            const periods = [ { value: 'all', text: '전체' }, { value: '1m', text: '최근 1개월' }, { value: '3m', text: '최근 3개월' }, { value: '6m', text: '최근 6개월' }, { value: '1y', text: '최근 1년' }, { value: '2025', text: '2025년' }, { value: '2024', text: '2024년' } ];
-            const selectedPeriod = periods.find(p => p.value === savedFilters.period) || periods[3];
-            document.getElementById('periodDropdownButton').textContent = `기간: ${selectedPeriod.text}`;
-            document.querySelectorAll('#typeFilter input').forEach(cb => { if (savedFilters.types.includes(cb.value)) cb.checked = true; });
-            if (savedFilters.courts) document.querySelectorAll('#courtFilter input').forEach(cb => { if (savedFilters.courts.includes(cb.value)) cb.checked = true; });
-            
-            updateCheckboxDropdownText('typeDropdownButton', 'typeFilter', '분류');
-            updateCheckboxDropdownText('courtDropdownButton', 'courtFilter', '코트');
-            
-            defaultSort();
-            // 검색 이벤트 리스너
-            const searchToggle = document.getElementById('searchToggle');
-            const searchContainer = document.getElementById('searchContainer');
-            const clearSearchBtn = document.getElementById('clearSearchBtn');
-            const searchInput = document.getElementById('searchInput');
-            searchToggle.addEventListener('click', (e) => { e.preventDefault(); searchToggle.style.display = 'none'; searchContainer.style.display = 'flex'; searchInput.focus(); });
-            clearSearchBtn.addEventListener('click', () => { searchInput.value = ''; filterTable(); searchContainer.style.display = 'none'; searchToggle.style.display = 'inline-block'; });
-            searchInput.addEventListener('keyup', filterTable);
-        });
-
     </script>
 </body>
 </html>
