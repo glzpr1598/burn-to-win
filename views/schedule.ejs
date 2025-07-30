@@ -265,7 +265,7 @@
 							<span class="fw-bold">참석(<span class="attendee-count"><%= schedule.attendees.length %></span>):</span>
 							<span class="attendees-list">
 								<% if (schedule.attendees.length > 0) { %>
-									<% schedule.attendees.sort().forEach((attendee, index) => { %>
+									<% schedule.attendees.forEach((attendee, index) => { %>
 										<% const gender = genderMap[attendee] || ''; %>
 										<% const genderClass = gender === '남' ? 'text-male' : (gender === '여' ? 'text-female' : ''); %>
 										<span class="<%= genderClass %>"><%= attendee %></span><% if (index < schedule.attendees.length - 1) { %><%= ', ' %><% } %>
@@ -1199,7 +1199,7 @@
 			attendeesListEl.innerHTML = ''; // 기존 목록을 완전히 비웁니다.
 
 			if (newAttendees.length > 0) {
-				newAttendees.sort().forEach((attendee, index) => {
+				newAttendees.forEach((attendee, index) => {
 					const gender = genderMap[attendee] || '';
 					const genderClass = gender === '남' ? 'text-male' : (gender === '여' ? 'text-female' : '');
 					

@@ -977,7 +977,7 @@ app.get('/schedule', async (req, res) => {
         if (schedules.length > 0) {
             const scheduleIds = schedules.map(s => s.id);
 
-            const attendeesPromise = pool.query(`SELECT schedule_id, member_name FROM schedule_attendees WHERE schedule_id IN (?)`, [scheduleIds]);
+            const attendeesPromise = pool.query(`SELECT schedule_id, member_name FROM schedule_attendees WHERE schedule_id IN (?) ORDER BY id ASC`, [scheduleIds]);
             const commentsPromise = pool.query(`SELECT * FROM schedule_comments WHERE schedule_id IN (?) ORDER BY created_at ASC`, [scheduleIds]);
             const groupMembersPromise = pool.query(`
                 SELECT gm.group_id, m.name
@@ -1822,7 +1822,7 @@ app.get('/api/admin/schedule/:id/attendees', isAuthenticated, async (req, res) =
     const { id } = req.params;
     try {
         const [attendees] = await pool.query(
-            'SELECT member_name FROM schedule_attendees WHERE schedule_id = ? ORDER BY member_name ASC',
+            'SELECT member_name FROM schedule_attendees WHERE schedule_id = ? ORDER BY id ASC',
             [id]
         );
         res.json({ success: true, attendees: attendees.map(a => a.member_name) });
