@@ -244,17 +244,24 @@
 									<% } %>
 					 	    	</div>
 								<div class="text-muted mt-1" style="font-size: 0.8rem;">
-									<span><i class="bi bi-person"></i> <%= schedule.booker || '-' %></span>
-									<span class="ms-2"><i class="bi bi-coin"></i> <%= new Intl.NumberFormat().format(schedule.price || 0) %>원</span>
-									<span class="ms-2 settlement-status">
-										<label>
-											<i class="bi bi-wallet"></i> 정산여부
-											<input type="checkbox" class="settlement-checkbox"
-												data-schedule-id="<%= schedule.id %>"
-												data-booker="<%= schedule.booker %>"
-												<%= schedule.calculated === 'Y' ? 'checked' : '' %>>
-										</label>
+									<span><i class="bi bi-person"></i>
+										<%= schedule.booker || '-' %>
 									</span>
+									<span class="ms-2"><i class="bi bi-coin"></i>
+										<%= new Intl.NumberFormat().format(schedule.price || 0) %>원
+									</span>
+									<span class="ms-2"><i class="bi bi-wallet"></i>
+										정산여부
+									</span>
+									<span class="settlement-status">
+										<div class="form-check form-switch d-inline-block">
+											<input class="form-check-input settlement-checkbox" type="checkbox" role="switch"
+												id="settlementSwitch<%= schedule.id %>" data-schedule-id="<%= schedule.id %>"
+												data-booker="<%= schedule.booker %>" <%=schedule.calculated==='Y' ? 'checked' : '' %>>
+											<label class="form-check-label" for="settlementSwitch<%= schedule.id %>">
+											</label>
+										</div>
+									</span>				
 								</div>
 							</div>
 							<button class="btn btn-sm btn-success py-0 px-2 record-btn"
