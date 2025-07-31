@@ -2595,6 +2595,7 @@ app.get('/special-match', async (req, res) => {
                 teamInfo,
                 teamStats: sortedTeamStats,
                 hasTeamData, // 팀 데이터 존재 여부 전달
+                memberToTeamMap,
                 currentPage: 'special-match'
             });
 
