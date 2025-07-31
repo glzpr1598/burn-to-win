@@ -81,7 +81,7 @@
                         <input type="text" class="form-control" id="team1_deuce" name="team1_deuce" list="player-list" value="<%= match.team1_deuce %>" required>
                     </div>
                     <div class="col-auto d-flex align-items-end p-0">
-                        <button type="button" class="btn swap-btn px-0" data-team="1">
+                        <button type="button" class="btn swap-btn px-0" style="border: none;" data-team="1">
                             <i class="bi bi-arrow-left-right"></i>
                         </button>
                     </div>
@@ -109,7 +109,7 @@
                         <input type="text" class="form-control" id="team2_deuce" name="team2_deuce" list="player-list" value="<%= match.team2_deuce %>" required>
                     </div>
                     <div class="col-auto d-flex align-items-end p-0">
-                        <button type="button" class="btn swap-btn px-0" data-team="2">
+                        <button type="button" class="btn swap-btn px-0" style="border: none;" data-team="2">
                             <i class="bi bi-arrow-left-right"></i>
                         </button>
                     </div>
@@ -221,6 +221,12 @@
                     hiddenScore.name = selector.name;
                     hiddenScore.value = selector.value;
                     selector.form.appendChild(hiddenScore);
+                });
+
+                // 스왑 버튼
+                const swapButtons = document.querySelectorAll('.swap-btn');
+                swapButtons.forEach(button => {
+                    button.disabled = true;
                 });
             }
         });
