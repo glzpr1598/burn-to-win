@@ -2237,7 +2237,6 @@ app.get('/special-match', async (req, res) => {
             const [[latestSchedule]] = await pool.query(
                 "SELECT id FROM schedules WHERE is_special_match = 'Y' ORDER BY schedule_date DESC LIMIT 1"
             );
-            // 최근 일정이 있으면 해당 일정 페이지로 이동
             if (latestSchedule) {
                 return res.redirect(`/special-match?schedule_id=${latestSchedule.id}`);
             }
@@ -2258,20 +2257,89 @@ app.get('/special-match', async (req, res) => {
         if (schedule_id) {
             const selectedSchedulePromise = pool.query('SELECT * FROM schedules WHERE id = ?', [schedule_id]);
             const matchRecordsPromise = pool.query('SELECT * FROM matchrecord WHERE schedule_id = ?', [schedule_id]);
-            
-            const [[selectedScheduleArr], [matchRecords]] = await Promise.all([selectedSchedulePromise, matchRecordsPromise]);
+            const teamsPromise = pool.query('SELECT id, team_name FROM match_team WHERE schedule_id = ? ORDER BY team_name ASC', [schedule_id]);
+
+            const [[selectedScheduleArr], [matchRecords], [teams]] = await Promise.all([selectedSchedulePromise, matchRecordsPromise, teamsPromise]);
             const selectedSchedule = selectedScheduleArr[0];
             
             if (!selectedSchedule) {
                  return res.status(404).send('선택한 리그ㆍ교류전 일정을 찾을 수 없습니다.');
             }
 
+            const teamMembers = {};
+            if (teams.length > 0) {
+                const teamIds = teams.map(t => t.id);
+                const [members] = await pool.query('SELECT team_id, member_name FROM match_team_memeber WHERE team_id IN (?) ORDER BY member_name ASC', [teamIds]);
+                members.forEach(m => {
+                    if (!teamMembers[m.team_id]) {
+                        teamMembers[m.team_id] = [];
+                    }
+                    teamMembers[m.team_id].push(m.member_name);
+                });
+            }
+
+            const teamInfo = teams.map(t => ({
+                id: t.id,
+                name: t.team_name,
+                members: teamMembers[t.id] || []
+            }));
+
+            const memberToTeamMap = {};
+            teamInfo.forEach(team => {
+                team.members.forEach(member => {
+                    memberToTeamMap[member] = team.name;
+                });
+            });
+
+            const teamStats = {};
+            teams.forEach(t => {
+                teamStats[t.team_name] = { name: t.team_name, matches: 0, wins: 0, losses: 0, points: 0 };
+            });
+
+            matchRecords.forEach(m => {
+                const team1Players = [m.team1_deuce, m.team1_ad].filter(p => p);
+                const team2Players = [m.team2_deuce, m.team2_ad].filter(p => p);
+
+                const team1Name = team1Players.length > 0 ? memberToTeamMap[team1Players[0]] : undefined;
+                const team2Name = team2Players.length > 0 ? memberToTeamMap[team2Players[0]] : undefined;
+
+                const isCompleted = !(parseInt(m.team1_score) === 0 && parseInt(m.team2_score) === 0);
+
+                if (isCompleted && team1Name && team2Name && team1Name === memberToTeamMap[team1Players[1]] && team2Name === memberToTeamMap[team2Players[1]]) {
+                    const score1 = parseInt(m.team1_score);
+                    const score2 = parseInt(m.team2_score);
+                    const pointDiff = score1 - score2;
+
+                    if (teamStats[team1Name]) {
+                        teamStats[team1Name].matches++;
+                        teamStats[team1Name].points += pointDiff;
+                        if (pointDiff > 0) teamStats[team1Name].wins++;
+                        else if (pointDiff < 0) teamStats[team1Name].losses++;
+                    }
+                    if (teamStats[team2Name]) {
+                        teamStats[team2Name].matches++;
+                        teamStats[team2Name].points -= pointDiff;
+                        if (pointDiff < 0) teamStats[team2Name].wins++;
+                        else if (pointDiff > 0) teamStats[team2Name].losses++;
+                    }
+                }
+            });
+            
+            const sortedTeamStats = Object.values(teamStats).sort((a, b) => b.points - a.points);
+            let teamRank = 1;
+            for (let i = 0; i < sortedTeamStats.length; i++) {
+                if (i > 0 && sortedTeamStats[i].points < sortedTeamStats[i - 1].points) {
+                    teamRank = i + 1;
+                }
+                sortedTeamStats[i].rank = teamRank;
+            }
+
+
             const matchData = {};
             const playerStats = {};
             const playerMatchCounts = {};
             const allPlayerNames = new Set();
 
-            // 데이터 1차 가공: 참여한 모든 선수 목록 생성 및 대진표 데이터 구성
             matchRecords.forEach(m => {
                 const players = [m.team1_deuce, m.team1_ad, m.team2_deuce, m.team2_ad].filter(p => p);
                 players.forEach(p => allPlayerNames.add(p));
@@ -2280,18 +2348,15 @@ app.get('/special-match', async (req, res) => {
                 matchData[m.round_num][m.court_num] = m;
             });
 
-            // 통계 객체 초기화
             allPlayerNames.forEach(name => {
                 playerStats[name] = { name, matches: 0, wins: 0, losses: 0, points: 0 };
                 playerMatchCounts[name] = { name, completed: 0, scheduled: 0, total: 0 };
             });
 
-            // 데이터 2차 가공: 개인 스코어 및 경기수 계산
             matchRecords.forEach(m => {
                 const players = [m.team1_deuce, m.team1_ad, m.team2_deuce, m.team2_ad].filter(p => p);
                 const isCompleted = !(parseInt(m.team1_score) === 0 && parseInt(m.team2_score) === 0);
 
-                // 개인별 경기수 계산
                 players.forEach(p => {
                     if (playerMatchCounts[p]) {
                         if (isCompleted) {
@@ -2303,7 +2368,6 @@ app.get('/special-match', async (req, res) => {
                     }
                 });
                 
-                // 개인 스코어 계산 (0:0 경기는 제외)
                 if (isCompleted) {
                     const team1 = [m.team1_deuce, m.team1_ad].filter(p => p);
                     const team2 = [m.team2_deuce, m.team2_ad].filter(p => p);
@@ -2331,7 +2395,6 @@ app.get('/special-match', async (req, res) => {
                 }
             });
 
-            // '팀1' 선수 목록 생성 (토글 기능용)
             const team1PlayerSet = new Set();
             matchRecords.forEach(m => {
                 if (m.team1_deuce) team1PlayerSet.add(m.team1_deuce);
@@ -2339,10 +2402,8 @@ app.get('/special-match', async (req, res) => {
             });
             const team1Players = Array.from(team1PlayerSet);
 
-            // 참여 선수 목록 생성
             const participatingPlayers = Array.from(allPlayerNames).sort();
             
-            // 랭킹 계산
             let sortedStats = Object.values(playerStats).sort((a, b) => b.points - a.points);
             let rank = 1;
             for (let i = 0; i < sortedStats.length; i++) {
@@ -2352,7 +2413,6 @@ app.get('/special-match', async (req, res) => {
                 sortedStats[i].rank = rank;
             }
 
-            // 4. 최종 데이터 렌더링
             res.render('special-match', {
                 schedules,
                 selectedSchedule,
@@ -2363,11 +2423,12 @@ app.get('/special-match', async (req, res) => {
                 genderMap,
                 team1Players,
                 participatingPlayers,
+                teamInfo,
+                teamStats: sortedTeamStats,
                 currentPage: 'special-match'
             });
 
         } else {
-            // 5. 선택된 일정이 없을 경우 (DB에 리그ㆍ교류전 하나도 없는 경우)
             res.render('special-match', {
                 schedules,
                 selectedSchedule: null,
@@ -2378,6 +2439,8 @@ app.get('/special-match', async (req, res) => {
                 genderMap,
                 team1Players: [], 
                 participatingPlayers: [],
+                teamInfo: [],
+                teamStats: [],
                 currentPage: 'special-match'
             });
         }

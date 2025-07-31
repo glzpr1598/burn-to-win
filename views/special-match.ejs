@@ -143,6 +143,9 @@
                 <button class="nav-link active" id="bracket-tab" data-bs-toggle="tab" data-bs-target="#bracket-pane" type="button" role="tab">대진표</button>
             </li>
             <li class="nav-item" role="presentation">
+                <button class="nav-link" id="team-score-tab" data-bs-toggle="tab" data-bs-target="#team-score-pane" type="button" role="tab">팀 스코어</button>
+            </li>
+            <li class="nav-item" role="presentation">
                 <button class="nav-link" id="score-tab" data-bs-toggle="tab" data-bs-target="#score-pane" type="button" role="tab">개인 스코어</button>
             </li>
             <li class="nav-item" role="presentation">
@@ -260,6 +263,61 @@
                                         </tr>
                                     <% }) %>
                                 <% } %>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <div class="tab-pane fade" id="team-score-pane" role="tabpanel">
+                <div class="p-2">
+                    <div class="table-responsive">
+                        <table class="table table-sm table-bordered text-center">
+                            <thead class="table-light">
+                                <tr>
+                                    <th>팀</th>
+                                    <th>선수</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <% teamInfo.forEach(team => { %>
+                                    <tr>
+                                        <td><%= team.name %></td>
+                                        <td>
+                                            <% team.members.forEach(member => { %>
+                                                <%- stylePlayerName(member, genderMap) %> 
+                                            <% }) %>
+                                        </td>
+                                    </tr>
+                                <% }) %>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+                <div class="p-2">
+                    <div class="table-responsive">
+                        <table class="table table-sm table-hover" id="team-score-table">
+                            <thead class="table-light">
+                                <tr>
+                                    <th onclick="sortTeamScoreTable(0, 'number')">순위 <i class="bi bi-arrow-down-up"></i></th>
+                                    <th onclick="sortTeamScoreTable(1, 'string')">팀 <i class="bi bi-arrow-down-up"></i></th>
+                                    <th onclick="sortTeamScoreTable(2, 'number')">경기수 <i class="bi bi-arrow-down-up"></i></th>
+                                    <th onclick="sortTeamScoreTable(3, 'number')">승 <i class="bi bi-arrow-down-up"></i></th>
+                                    <th onclick="sortTeamScoreTable(4, 'number')">패 <i class="bi bi-arrow-down-up"></i></th>
+                                    <th onclick="sortTeamScoreTable(5, 'number')">승점 <i class="bi bi-arrow-down-up"></i></th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <% teamStats.forEach(team => { %>
+                                    <tr>
+                                        <td><%= team.rank %></td>
+                                        <td><%= team.name %></td>
+                                        <td><%= team.matches %></td>
+                                        <td class="win"><%= team.wins %></td>
+                                        <td class="lose"><%= team.losses %></td>
+                                        <td class="<%= team.points > 0 ? 'plus' : 'minus' %>"><%= team.points > 0 ? '+' : '' %><%= team.points %></td>
+                                    </tr>
+                                <% }) %>
                             </tbody>
                         </table>
                     </div>
@@ -640,6 +698,11 @@
                 sortMatchCountTable(matchCountSortState.columnIndex, 'number', true);
             }
 
+            if (document.getElementById('team-score-table')) {
+                updateTeamScoreSortIcons();
+                sortTeamScoreTable(teamSortState.columnIndex, 'number', true);
+            }
+
             // 페이지 로드 시 URL 파라미터를 확인하여 활성 탭 지정
             const urlParams = new URLSearchParams(window.location.search);
             const activeTab = urlParams.get('active_tab');
@@ -988,6 +1051,56 @@
 
             rows.forEach(row => tbody.appendChild(row));
             updateMatchCountSortIcons();
+        }
+
+        let teamSortState = {
+            columnIndex: 0,
+            direction: 'asc'
+        };
+
+        function updateTeamScoreSortIcons() {
+            document.querySelectorAll('#team-score-table th i').forEach((icon, index) => {
+                icon.className = 'bi bi-arrow-down-up';
+                if (index === teamSortState.columnIndex) {
+                    icon.className = teamSortState.direction === 'asc' ? 'bi bi-sort-up' : 'bi bi-sort-down';
+                }
+            });
+        }
+
+        function sortTeamScoreTable(columnIndex, type, isInitialSort = false) {
+            const table = document.getElementById('team-score-table');
+            const tbody = table.querySelector('tbody');
+            const rows = Array.from(tbody.querySelectorAll('tr'));
+
+            if (!isInitialSort) {
+                if (teamSortState.columnIndex === columnIndex) {
+                    teamSortState.direction = teamSortState.direction === 'asc' ? 'desc' : 'asc';
+                } else {
+                    teamSortState.columnIndex = columnIndex;
+                    teamSortState.direction = (type === 'number') ? 'desc' : 'asc';
+                }
+            }
+
+            rows.sort((a, b) => {
+                const valA = a.cells[columnIndex].innerText.trim();
+                const valB = b.cells[columnIndex].innerText.trim();
+                let compareA, compareB;
+
+                if (type === 'number') {
+                    compareA = parseFloat(valA.replace('+', ''));
+                    compareB = parseFloat(valB.replace('+', ''));
+                } else {
+                    compareA = valA;
+                    compareB = valB;
+                }
+                
+                if (compareA < compareB) return teamSortState.direction === 'asc' ? -1 : 1;
+                if (compareA > compareB) return teamSortState.direction === 'asc' ? 1 : -1;
+                return 0;
+            });
+
+            rows.forEach(row => tbody.appendChild(row));
+            updateTeamScoreSortIcons();
         }
     </script>
 </body>
