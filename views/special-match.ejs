@@ -311,7 +311,8 @@
                                     <th onclick="sortTeamScoreTable(2, 'number')">경기수 <i class="bi bi-arrow-down-up"></i></th>
                                     <th onclick="sortTeamScoreTable(3, 'number')">승 <i class="bi bi-arrow-down-up"></i></th>
                                     <th onclick="sortTeamScoreTable(4, 'number')">패 <i class="bi bi-arrow-down-up"></i></th>
-                                    <th onclick="sortTeamScoreTable(5, 'number')">승점 <i class="bi bi-arrow-down-up"></i></th>
+                                    <th onclick="sortTeamScoreTable(5, 'number')">승률 <i class="bi bi-arrow-down-up"></i></th>
+                                    <th onclick="sortTeamScoreTable(6, 'number')">승점 <i class="bi bi-arrow-down-up"></i></th>
                                 </tr>
                             </thead>
                             <tbody>
@@ -322,6 +323,7 @@
                                         <td><%= team.matches %></td>
                                         <td class="win"><%= team.wins %></td>
                                         <td class="lose"><%= team.losses %></td>
+                                        <td><%= team.matches > 0 ? Math.round((team.wins / team.matches) * 100) : 0 %>%</td>
                                         <td class="<%= team.points > 0 ? 'plus' : 'minus' %>"><%= team.points > 0 ? '+' : '' %><%= team.points %></td>
                                     </tr>
                                 <% }) %>
@@ -388,7 +390,8 @@
                                 <th onclick="sortTable(2, 'number')">경기수 <i class="bi bi-arrow-down-up"></i></th>
                                 <th onclick="sortTable(3, 'number')">승 <i class="bi bi-arrow-down-up"></i></th>
                                 <th onclick="sortTable(4, 'number')">패 <i class="bi bi-arrow-down-up"></i></th>
-                                <th onclick="sortTable(5, 'number')">승점 <i class="bi bi-arrow-down-up"></i></th>
+                                <th onclick="sortTable(5, 'number')">승률 <i class="bi bi-arrow-down-up"></i></th>
+                                <th onclick="sortTable(6, 'number')">승점 <i class="bi bi-arrow-down-up"></i></th>
                             </tr>
                         </thead>
                         <tbody>
@@ -399,6 +402,7 @@
                                 <td><%= player.matches %></td>
                                 <td class = "win"><%= player.wins %></td>
                                 <td class = "lose"><%= player.losses %></td>
+                                <td><%= player.matches > 0 ? Math.round((player.wins / player.matches) * 100) : 0 %>%</td>
                                 <td class = "<%= player.points > 0 ? 'plus' : 'minus' %>"><%= player.points > 0 ? '+' : '' %><%= player.points %></td>
                             </tr>
                             <% }) %>
@@ -768,17 +772,34 @@
         function updatePlayerRanks() {
             const scoreTableRows = Array.from(document.querySelectorAll('#player-score-table tbody tr'));
             const visibleRows = scoreTableRows.filter(row => row.style.display !== 'none');
-            const playersToSort = visibleRows.map(row => ({
-                rankCell: row.cells[0],
-                points: parseFloat(row.cells[5].innerText.replace('+', ''))
-            }));
-            playersToSort.sort((a, b) => b.points - a.points);
+            const playersToSort = visibleRows.map(row => {
+                const matches = parseInt(row.cells[2].innerText);
+                const wins = parseInt(row.cells[3].innerText);
+                const winRate = matches > 0 ? (wins / matches) : 0;
+                return {
+                    row: row,
+                    winRate: winRate,
+                    points: parseFloat(row.cells[6].innerText.replace('+', ''))
+                };
+            });
+
+            playersToSort.sort((a, b) => {
+                if (b.winRate !== a.winRate) {
+                    return b.winRate - a.winRate;
+                }
+                return b.points - a.points;
+            });
+
             let rank = 1;
             for (let i = 0; i < playersToSort.length; i++) {
-                if (i > 0 && playersToSort[i].points < playersToSort[i - 1].points) {
-                    rank = i + 1;
+                if (i > 0) {
+                    const prev = playersToSort[i - 1];
+                    const curr = playersToSort[i];
+                    if (curr.winRate < prev.winRate || (curr.winRate === prev.winRate && curr.points < prev.points)) {
+                        rank = i + 1;
+                    }
                 }
-                playersToSort[i].rankCell.innerText = rank;
+                playersToSort[i].row.cells[0].innerText = rank;
             }
         }
 

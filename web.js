@@ -2462,11 +2462,27 @@ app.get('/special-match', async (req, res) => {
                 }
             });
             
-            const sortedTeamStats = Object.values(teamStats).sort((a, b) => b.points - a.points);
+            const sortedTeamStats = Object.values(teamStats).sort((a, b) => {
+                const aWinRate = a.matches > 0 ? a.wins / a.matches : 0;
+                const bWinRate = b.matches > 0 ? b.wins / b.matches : 0;
+
+                if (bWinRate !== aWinRate) {
+                    return bWinRate - aWinRate;
+                }
+                return b.points - a.points;
+            });
+
             let teamRank = 1;
             for (let i = 0; i < sortedTeamStats.length; i++) {
-                if (i > 0 && sortedTeamStats[i].points < sortedTeamStats[i - 1].points) {
-                    teamRank = i + 1;
+                if (i > 0) {
+                    const prev = sortedTeamStats[i - 1];
+                    const curr = sortedTeamStats[i];
+                    const prevWinRate = prev.matches > 0 ? prev.wins / prev.matches : 0;
+                    const currWinRate = curr.matches > 0 ? curr.wins / curr.matches : 0;
+
+                    if (currWinRate < prevWinRate || (currWinRate === prevWinRate && curr.points < prev.points)) {
+                        teamRank = i + 1;
+                    }
                 }
                 sortedTeamStats[i].rank = teamRank;
             }
@@ -2541,11 +2557,27 @@ app.get('/special-match', async (req, res) => {
 
             const participatingPlayers = Array.from(allPlayerNames).sort();
             
-            let sortedStats = Object.values(playerStats).sort((a, b) => b.points - a.points);
+            let sortedStats = Object.values(playerStats).sort((a, b) => {
+                const aWinRate = a.matches > 0 ? a.wins / a.matches : 0;
+                const bWinRate = b.matches > 0 ? b.wins / b.matches : 0;
+
+                if (bWinRate !== aWinRate) {
+                    return bWinRate - aWinRate;
+                }
+                return b.points - a.points;
+            });
+
             let rank = 1;
             for (let i = 0; i < sortedStats.length; i++) {
-                if (i > 0 && sortedStats[i].points < sortedStats[i - 1].points) {
-                    rank = i + 1;
+                if (i > 0) {
+                    const prev = sortedStats[i - 1];
+                    const curr = sortedStats[i];
+                    const prevWinRate = prev.matches > 0 ? prev.wins / prev.matches : 0;
+                    const currWinRate = curr.matches > 0 ? curr.wins / curr.matches : 0;
+
+                    if (currWinRate < prevWinRate || (currWinRate === prevWinRate && curr.points < prev.points)) {
+                        rank = i + 1;
+                    }
                 }
                 sortedStats[i].rank = rank;
             }
