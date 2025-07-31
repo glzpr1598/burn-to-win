@@ -2284,6 +2284,8 @@ app.get('/special-match', async (req, res) => {
                 members: teamMembers[t.id] || []
             }));
 
+            const hasTeamData = teams.length > 0;
+
             const memberToTeamMap = {};
             teamInfo.forEach(team => {
                 team.members.forEach(member => {
@@ -2425,6 +2427,7 @@ app.get('/special-match', async (req, res) => {
                 participatingPlayers,
                 teamInfo,
                 teamStats: sortedTeamStats,
+                hasTeamData, // 팀 데이터 존재 여부 전달
                 currentPage: 'special-match'
             });
 
@@ -2441,6 +2444,7 @@ app.get('/special-match', async (req, res) => {
                 participatingPlayers: [],
                 teamInfo: [],
                 teamStats: [],
+                hasTeamData: false, // 팀 데이터 없음으로 초기화
                 currentPage: 'special-match'
             });
         }
