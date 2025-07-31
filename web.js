@@ -1698,7 +1698,7 @@ app.post('/api/admin/groups', isAuthenticated, async (req, res) => {
 app.get('/api/admin/groups/:id/members', isAuthenticated, async (req, res) => {
     try {
         const [members] = await pool.query(
-            'SELECT m.id, m.name FROM member m JOIN group_member gm ON m.id = gm.member_id WHERE gm.group_id = ? ORDER BY m.name ASC',
+            'SELECT m.id, m.name, m.gender FROM member m JOIN group_member gm ON m.id = gm.member_id WHERE gm.group_id = ? ORDER BY m.name ASC',
             [req.params.id]
         );
         res.json({ success: true, members });
@@ -1845,7 +1845,14 @@ app.delete('/api/admin/teams/:id', isAuthenticated, async (req, res) => {
 app.get('/api/admin/teams/:teamId/members', isAuthenticated, async (req, res) => {
     const { teamId } = req.params;
     try {
-        const [members] = await pool.query('SELECT * FROM match_team_memeber WHERE team_id = ? ORDER BY member_name ASC', [teamId]);
+        const [members] = await pool.query(
+            `SELECT t.id, t.member_name, m.gender 
+             FROM match_team_memeber t
+             JOIN member m ON t.member_name = m.name
+             WHERE t.team_id = ? 
+             ORDER BY t.member_name ASC`,
+            [teamId]
+        );
         res.json({ success: true, members });
     } catch (err) {
         console.error(`[/api/admin/teams/${teamId}/members] 에러:`, err.message);
@@ -1946,10 +1953,14 @@ app.get('/api/admin/schedule/:id/attendees', isAuthenticated, async (req, res) =
     const { id } = req.params;
     try {
         const [attendees] = await pool.query(
-            'SELECT member_name FROM schedule_attendees WHERE schedule_id = ? ORDER BY id ASC',
+            `SELECT sa.member_name, m.gender 
+             FROM schedule_attendees sa
+             JOIN member m ON sa.member_name = m.name
+             WHERE sa.schedule_id = ? 
+             ORDER BY sa.id ASC`,
             [id]
         );
-        res.json({ success: true, attendees: attendees.map(a => a.member_name) });
+        res.json({ success: true, attendees });
     } catch (err) {
         console.error('[/api/admin/schedule/:id/attendees] 에러:', err.message);
         res.status(500).json({ success: false, message: '참석자 정보를 가져오는 중 오류가 발생했습니다.' });

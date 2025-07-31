@@ -24,7 +24,6 @@
         .modal-body * { font-size: 0.9rem; }
         .list-team-member { padding: 5px 10px;}
         #selectScheduleForMatchBtn, #selectScheduleForUpdateMatchBtn { width: 100px;}
-        #selectScheduleForMatchBtn, #selectScheduleForUpdateMatchBtn { width: 100px;}
     </style>
 </head>
 <body>
@@ -719,9 +718,10 @@
                 listBody.innerHTML = '';
                 
                 members.forEach(m => {
+                    const genderClass = m.gender === '남' ? 'text-male' : (m.gender === '여' ? 'text-female' : '');
                     const orderText = m.order == 0? "정회원" : "비회원";
                     const parts = [
-                        `${m.name} | ${m.gender} | ${orderText}`,
+                        `<span class="${genderClass}">${m.name}</span> | ${orderText}`,
                         m.etc
                     ];
                     const text = parts.filter(Boolean).join(' | ');
@@ -758,8 +758,9 @@
                     const container = document.getElementById('attendeeListContainer');
                     container.innerHTML = '';
                     if (result.success && result.attendees.length > 0) {
-                        result.attendees.forEach(name => {
-                            container.innerHTML += `<div class="form-check"><input class="form-check-input" type="checkbox" value="${name}" id="att-${name}"><label class="form-check-label" for="att-${name}">${name}</label></div>`;
+                        result.attendees.forEach(attendee => {
+                            const genderClass = attendee.gender === '남' ? 'text-male' : (attendee.gender === '여' ? 'text-female' : '');
+                            container.innerHTML += `<div class="form-check"><input class="form-check-input" type="checkbox" value="${attendee.member_name}" id="att-${attendee.member_name}"><label class="form-check-label ${genderClass}" for="att-${attendee.member_name}">${attendee.member_name}</label></div>`;
                         });
                     } else {
                         container.textContent = '참석자가 없습니다.';
@@ -779,7 +780,8 @@
                     container.innerHTML = '';
                     if(result.success && result.members.length > 0) {
                         result.members.forEach(member => {
-                             container.innerHTML += `<div class="form-check"><input class="form-check-input" type="checkbox" data-id="${member.id}" id="gm-${member.id}"><label class="form-check-label" for="gm-${member.id}">${member.name}</label></div>`;
+                            const genderClass = member.gender === '남' ? 'text-male' : (member.gender === '여' ? 'text-female' : '');
+                            container.innerHTML += `<div class="form-check"><input class="form-check-input" type="checkbox" data-id="${member.id}" id="gm-${member.id}"><label class="form-check-label ${genderClass}" for="gm-${member.id}">${member.name}</label></div>`;
                         });
                     } else {
                         container.textContent = '그룹 멤버가 없습니다.';
@@ -993,9 +995,10 @@
                     container.innerHTML = '';
                     if (result.success && result.members.length > 0) {
                         result.members.forEach(member => {
+                            const genderClass = member.gender === '남' ? 'text-male' : (member.gender === '여' ? 'text-female' : '');
                             const li = document.createElement('li');
                             li.className = 'list-group-item d-flex justify-content-between align-items-center list-team-member';
-                            li.innerHTML = `<span>${member.member_name}</span>
+                            li.innerHTML = `<span class="${genderClass}">${member.member_name}</span>
                                             <button type="button" class="btn btn-sm btn-danger delete-team-member-btn" style="width: 45px;" data-id="${member.id}" data-team-id="${teamId}">삭제</button>`;
                             container.appendChild(li);
                         });
