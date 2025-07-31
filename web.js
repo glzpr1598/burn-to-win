@@ -1763,6 +1763,130 @@ app.post('/api/admin/groups/delete', isAuthenticated, async (req, res) => {
     }
 });
 
+// --- 리그/교류전 팀 관리 API ---
+
+// API: 특정 일정의 모든 팀 가져오기
+app.get('/api/admin/schedules/:scheduleId/teams', isAuthenticated, async (req, res) => {
+    const { scheduleId } = req.params;
+    try {
+        const [teams] = await pool.query('SELECT * FROM match_team WHERE schedule_id = ? ORDER BY team_name ASC', [scheduleId]);
+        res.json({ success: true, teams });
+    } catch (err) {
+        console.error(`[/api/admin/schedules/${scheduleId}/teams] 에러:`, err.message);
+        res.status(500).json({ success: false, message: '팀 정보를 가져오는 중 오류가 발생했습니다.' });
+    }
+});
+
+// API: 새 팀 추가
+app.post('/api/admin/teams', isAuthenticated, async (req, res) => {
+    const { scheduleId, teamName } = req.body;
+    if (!scheduleId || !teamName) {
+        return res.status(400).json({ success: false, message: '일정 ID와 팀 이름이 필요합니다.' });
+    }
+    try {
+        const [result] = await pool.query('INSERT INTO match_team (schedule_id, team_name) VALUES (?, ?)', [scheduleId, teamName]);
+        res.status(201).json({ success: true, message: '팀이 성공적으로 추가되었습니다.', teamId: result.insertId });
+    } catch (err) {
+        console.error('[/api/admin/teams] 에러:', err.message);
+        res.status(500).json({ success: false, message: '팀 추가 중 오류가 발생했습니다.' });
+    }
+});
+
+// API: 팀 이름 수정
+app.put('/api/admin/teams/:id', isAuthenticated, async (req, res) => {
+    const { id } = req.params;
+    const { teamName } = req.body;
+    if (!teamName) {
+        return res.status(400).json({ success: false, message: '팀 이름이 필요합니다.' });
+    }
+    try {
+        const [result] = await pool.query('UPDATE match_team SET team_name = ? WHERE id = ?', [teamName, id]);
+        if (result.affectedRows > 0) {
+            res.json({ success: true, message: '팀 이름이 성공적으로 수정되었습니다.' });
+        } else {
+            res.status(404).json({ success: false, message: '해당 팀을 찾을 수 없습니다.' });
+        }
+    } catch (err) {
+        console.error(`[/api/admin/teams/${id}] 에러:`, err.message);
+        res.status(500).json({ success: false, message: '팀 수정 중 오류가 발생했습니다.' });
+    }
+});
+
+// API: 팀 삭제
+app.delete('/api/admin/teams/:id', isAuthenticated, async (req, res) => {
+    const { id } = req.params;
+    let connection;
+    try {
+        connection = await pool.getConnection();
+        await connection.beginTransaction();
+
+        // 팀에 속한 멤버들 먼저 삭제
+        await connection.query('DELETE FROM match_team_memeber WHERE team_id = ?', [id]);
+        // 팀 삭제
+        const [result] = await connection.query('DELETE FROM match_team WHERE id = ?', [id]);
+
+        await connection.commit();
+
+        if (result.affectedRows > 0) {
+            res.json({ success: true, message: '팀이 성공적으로 삭제되었습니다.' });
+        } else {
+            res.status(404).json({ success: false, message: '해당 팀을 찾을 수 없습니다.' });
+        }
+    } catch (err) {
+        if (connection) await connection.rollback();
+        console.error(`[/api/admin/teams/${id}] 에러:`, err.message);
+        res.status(500).json({ success: false, message: '팀 삭제 중 오류가 발생했습니다.' });
+    } finally {
+        if (connection) connection.release();
+    }
+});
+
+// API: 특정 팀의 모든 멤버 가져오기
+app.get('/api/admin/teams/:teamId/members', isAuthenticated, async (req, res) => {
+    const { teamId } = req.params;
+    try {
+        const [members] = await pool.query('SELECT * FROM match_team_memeber WHERE team_id = ? ORDER BY member_name ASC', [teamId]);
+        res.json({ success: true, members });
+    } catch (err) {
+        console.error(`[/api/admin/teams/${teamId}/members] 에러:`, err.message);
+        res.status(500).json({ success: false, message: '팀 멤버 정보를 가져오는 중 오류가 발생했습니다.' });
+    }
+});
+
+// API: 팀에 멤버 추가
+app.post('/api/admin/team-members', isAuthenticated, async (req, res) => {
+    const { teamId, memberName } = req.body;
+    if (!teamId || !memberName) {
+        return res.status(400).json({ success: false, message: '팀 ID와 멤버 이름이 필요합니다.' });
+    }
+    try {
+        const [result] = await pool.query('INSERT INTO match_team_memeber (team_id, member_name) VALUES (?, ?)', [teamId, memberName]);
+        res.status(201).json({ success: true, message: '팀에 멤버가 성공적으로 추가되었습니다.', memberId: result.insertId });
+    } catch (err) {
+        console.error('[/api/admin/team-members] 에러:', err.message);
+        if (err.code === 'ER_DUP_ENTRY') {
+            return res.status(400).json({ success: false, message: '이미 팀에 속한 멤버입니다.' });
+        }
+        res.status(500).json({ success: false, message: '팀 멤버 추가 중 오류가 발생했습니다.' });
+    }
+});
+
+// API: 팀에서 멤버 삭제
+app.delete('/api/admin/team-members/:id', isAuthenticated, async (req, res) => {
+    const { id } = req.params;
+    try {
+        const [result] = await pool.query('DELETE FROM match_team_memeber WHERE id = ?', [id]);
+        if (result.affectedRows > 0) {
+            res.json({ success: true, message: '팀 멤버가 성공적으로 삭제되었습니다.' });
+        } else {
+            res.status(404).json({ success: false, message: '해당 팀 멤버를 찾을 수 없습니다.' });
+        }
+    } catch (err) {
+        console.error(`[/api/admin/team-members/${id}] 에러:`, err.message);
+        res.status(500).json({ success: false, message: '팀 멤버 삭제 중 오류가 발생했습니다.' });
+    }
+});
+
 // API: 모든 일정 가져오기
 app.get('/api/admin/schedules', isAuthenticated, async (req, res) => {
     try {
