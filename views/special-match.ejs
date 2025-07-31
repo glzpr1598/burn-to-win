@@ -388,12 +388,12 @@
                             <tr>
                                 <th onclick="sortTable(0, 'number')">순위 <i class="bi bi-arrow-down-up"></i></th>
                                 <% if (hasTeamData) { %><th onclick="sortTable(1, 'string')">팀명 <i class="bi bi-arrow-down-up"></i></th><% } %>
-                                <th onclick="sortTable(2, 'string')">이름 <i class="bi bi-arrow-down-up"></i></th>
-                                <th onclick="sortTable(3, 'number')">경기수 <i class="bi bi-arrow-down-up"></i></th>
-                                <th onclick="sortTable(4, 'number')">승 <i class="bi bi-arrow-down-up"></i></th>
-                                <th onclick="sortTable(5, 'number')">패 <i class="bi bi-arrow-down-up"></i></th>
-                                <th onclick="sortTable(6, 'number')">승률 <i class="bi bi-arrow-down-up"></i></th>
-                                <th onclick="sortTable(7, 'number')">승점 <i class="bi bi-arrow-down-up"></i></th>
+                                <th onclick="sortTable(<%= hasTeamData ? 2 : 1 %>, 'string')">이름 <i class="bi bi-arrow-down-up"></i></th>
+                                <th onclick="sortTable(<%= hasTeamData ? 3 : 2 %>, 'number')">경기수 <i class="bi bi-arrow-down-up"></i></th>
+                                <th onclick="sortTable(<%= hasTeamData ? 4 : 3 %>, 'number')">승 <i class="bi bi-arrow-down-up"></i></th>
+                                <th onclick="sortTable(<%= hasTeamData ? 5 : 4 %>, 'number')">패 <i class="bi bi-arrow-down-up"></i></th>
+                                <th onclick="sortTable(<%= hasTeamData ? 6 : 5 %>, 'number')">승률 <i class="bi bi-arrow-down-up"></i></th>
+                                <th onclick="sortTable(<%= hasTeamData ? 7 : 6 %>, 'number')">승점 <i class="bi bi-arrow-down-up"></i></th>
                             </tr>
                         </thead>
                         <tbody>
