@@ -22,8 +22,7 @@
         .comment-content { flex-grow: 1; word-break: break-all; }
         .comment-meta { flex-shrink: 0; text-align: right; font-size: 0.75rem; color: #6c757d; }
         .delete-btn { cursor: pointer; color: #dc3545; }
-        .modal-body { font-size: 0.8rem;}
-        .modal-body .form-control { font-size: 0.8rem;}
+        .modal-body * { font-size: 0.9rem;}
         .ql-toolbar {
             border-top-left-radius: 0.375rem;
             border-top-right-radius: 0.375rem;
@@ -117,7 +116,7 @@
         <div class="modal-dialog modal-dialog-centered">
             <div class="modal-content">
                 <div class="modal-header">
-                    <h5 class="modal-title">사용자 선택</h5>
+                    <h6 class="modal-title"><b>사용자 선택</b></h6>
                     <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
                 </div>
                 <div class="modal-body">
@@ -267,7 +266,7 @@
                 if (storedUserName) {
                     loggedInUser = storedUserName;
                     document.getElementById('currentUser').textContent = loggedInUser;
-                    document.getElementById('userBar').style.display = 'flex';
+                    // document.getElementById('userBar').style.display = 'flex';
                     document.getElementById('mainContent').style.display = 'block';
                     refreshOpenNoticePermissions();
                 } else {
