@@ -22,6 +22,7 @@
         .logout-button { display: block; width: 100%; margin-top: 15px; }
         .attendee-list { max-height: 200px; overflow-y: auto; border: 1px solid #ddd; padding: 10px; border-radius: 4px; }
         .modal-body * { font-size: 0.9rem; }
+        .list-team-member { padding: 5px 10px;}
         #selectScheduleForMatchBtn, #selectScheduleForUpdateMatchBtn { width: 100px;}
         #selectScheduleForMatchBtn, #selectScheduleForUpdateMatchBtn { width: 100px;}
     </style>
@@ -304,15 +305,10 @@
                             <div id="leagueTeamScheduleInfo" class="mb-2 p-2 border rounded bg-light" style="display: none;"></div>
                             
                             <div id="teamListContainer" class="mb-3" style="display: none;">
-                                <h6>팀 목록</h6>
-                                <ul id="teamList" class="list-group mb-3"></ul>
-                                <button id="addTeamBtn" class="btn btn-sm btn-primary mb-2">팀 추가</button>
-                            </div>
-
-                            <div id="teamMemberContainer" class="mb-3" style="display: none;">
-                                <h6 id="selectedTeamName"></h6>
-                                <ul id="teamMemberList" class="list-group mb-3"></ul>
-                                <button id="addTeamMemberBtn" class="btn btn-sm btn-primary mb-2">팀원 추가</button>
+                                <div class="accordion" id="teamListAccordion">
+                                    <!-- Accordion items will be generated here by JS -->
+                                </div>
+                                <button id="addTeamBtn" class="btn btn-sm btn-primary mt-3">팀 추가</button>
                             </div>
                             <p id="manageLeagueTeamMessage" class="mt-3"></p>
                         </div>
@@ -541,13 +537,13 @@
             document.getElementById('listSearchInput').addEventListener('keyup', (e) => {
                 const keywords = e.target.value.toLowerCase().trim().split(/\s+/).filter(Boolean);
 
-                if (modalContext === 'manageSchedule' || modalContext === 'manageAttendance') {
+                if (modalContext === 'manageSchedule' || modalContext === 'manageAttendance' || modalContext === 'manageLeagueTeam') {
                     const filtered = allSchedules.filter(s => {
                         const targetText = `${s.schedule_date} | ${s.start_time.slice(0,5)}-${s.end_time.slice(0,5)} | ${s.location} | ${s.notes || ''} | ${s.group_name || ''}`.toLowerCase();
                         return keywords.every(kw => targetText.includes(kw));
                     });
                     displaySchedules(filtered, keywords);
-                } else if (modalContext === 'manageMember' || modalContext === 'addAttendee' || modalContext === 'addGroupMember') {
+                } else if (modalContext === 'manageMember' || modalContext === 'addAttendee' || modalContext === 'addGroupMember' || modalContext === 'addTeamMember') {
                     const filtered = allMembers.filter(m => {
                         const orderText = m.order == 0? "정회원" : "비회원";
                         const targetText = `${m.name} | ${m.gender} | ${orderText} | ${m.etc}`.toLowerCase();
@@ -730,7 +726,8 @@
                     ];
                     const text = parts.filter(Boolean).join(' | ');
                     const highlightedHTML = highlightText(text, keywords);
-                    listBody.appendChild(createListItem(m, highlightedHTML, modalContext, handleMemberSelection));
+                    const handler = (modalContext === 'addTeamMember') ? handleTeamMemberSelection : handleMemberSelection;
+                    listBody.appendChild(createListItem(m, highlightedHTML, modalContext, handler));
                 });
             };
             
@@ -812,6 +809,8 @@
                     document.getElementById('updateMatchScheduleId').value = schedule.id;
                     document.getElementById('updateMatchDate').value = schedule.schedule_date;
                     document.getElementById('updateMatchCourt').value = schedule.location;
+                } else if (modalContext === 'manageLeagueTeam') {
+                    handleLeagueTeamScheduleSelection(schedule);
                 }
             };
 
@@ -833,6 +832,11 @@
                 } else if (modalContext === 'addGroupMember') {
                      await handleFormSubmit('/api/admin/groups/members', 'manageGroupMessage', null, { groupId: currentGroupId, memberId: member.id })();
                      fetchAndDisplayGroupMembers(currentGroupId);
+                } else if (modalContext === 'addTeamMember') {
+                    await handleFormSubmit('/api/admin/team-members', 'manageLeagueTeamMessage', null, { teamId: currentTeamId, memberName: member.name })();
+                    const collapseElement = document.getElementById(`team-collapse-${currentTeamId}`);
+                    const listElement = collapseElement.querySelector('.team-member-list-ul');
+                    await fetchAndDisplayTeamMembers(currentTeamId, listElement);
                 }
             };
             
@@ -842,7 +846,6 @@
                 Object.keys(record).forEach(key => {
                     const input = form.querySelector(`[name="${key}"]`);
                     if (input) {
-                        // record[key]가 null이나 undefined가 아니면 그 값을 사용하고, 그렇지 않으면 빈 문자열을 사용합니다.
                         input.value = record[key] ?? '';
                     }
                 });
@@ -863,33 +866,15 @@
             let currentTeamId = null;
 
             document.getElementById('selectScheduleForLeagueTeamBtn').addEventListener('click', () => {
-                // is_special_match가 'Y'인 일정만 필터링하여 모달에 표시
                 const specialSchedules = allSchedules.filter(s => s.is_special_match === 'Y');
-                openModal('리그/교류전 일정 선택', specialSchedules, displaySchedulesForLeagueTeam, 'manageLeagueTeam');
+                openModal('리그/교류전 일정 선택', specialSchedules, displaySchedules, 'manageLeagueTeam');
             });
-
-            const displaySchedulesForLeagueTeam = (schedules, keywords = []) => {
-                const listBody = document.getElementById('listModalBody');
-                listBody.innerHTML = '';
-                schedules.forEach(s => {
-                    const parts = [
-                        `${s.schedule_date} | ${s.start_time.slice(0, 5)}-${s.end_time.slice(0, 5)}`,
-                        s.location,
-                        s.notes,
-                        s.group_name
-                    ];
-                    const text = parts.filter(Boolean).join(' | ');
-                    const highlightedHTML = highlightText(text, keywords);
-                    listBody.appendChild(createListItem(s, highlightedHTML, modalContext, handleLeagueTeamScheduleSelection));
-                });
-            };
 
             const handleLeagueTeamScheduleSelection = async (schedule) => {
                 currentScheduleIdForTeam = schedule.id;
                 document.getElementById('leagueTeamScheduleInfo').textContent = `${schedule.schedule_date} | ${schedule.start_time.slice(0, 5)}-${schedule.end_time.slice(0, 5)} | ${schedule.location} | ${schedule.notes || ''}`;
                 document.getElementById('leagueTeamScheduleInfo').style.display = 'block';
-                document.getElementById('teamMemberContainer').style.display = 'none'; // 일정 선택 시 팀원 컨테이너 숨김
-                currentTeamId = null; // 팀 선택 초기화
+                document.getElementById('teamListContainer').style.display = 'block';
                 await fetchAndDisplayTeams(schedule.id);
             };
 
@@ -897,21 +882,43 @@
                 try {
                     const response = await fetch(`/api/admin/schedules/${scheduleId}/teams`);
                     const result = await response.json();
-                    const container = document.getElementById('teamList');
-                    container.innerHTML = '';
+                    const accordionContainer = document.getElementById('teamListAccordion');
+                    accordionContainer.innerHTML = '';
                     if (result.success && result.teams.length > 0) {
                         result.teams.forEach(team => {
-                            const li = document.createElement('li');
-                            li.className = 'list-group-item d-flex justify-content-between align-items-center';
-                            li.innerHTML = `<span class="team-name-display">${team.team_name} <i class="bi bi-pencil-square edit-team-btn ms-1" data-id="${team.id}" data-name="${team.team_name}" style="cursor: pointer; color: blue;"></i></span>
-                                            <div style="display: flex;">
-                                                <button type="button" class="btn btn-sm btn-success me-2 select-team-btn" style="width: 90px;" data-id="${team.id}" data-name="${team.team_name}">팀원 관리</button>
-                                                <button type="button" class="btn btn-sm btn-danger delete-single-team-btn" style="width: 45px;" data-id="${team.id}" data-name="${team.team_name}">삭제</button>
-                                            </div>`;
-                            container.appendChild(li);
+                            const teamId = team.id;
+                            const teamName = team.team_name;
+                            const collapseId = `team-collapse-${teamId}`;
+
+                            const accordionItem = document.createElement('div');
+                            accordionItem.className = 'accordion-item';
+                            
+                            accordionItem.innerHTML = `
+                                <h2 class="accordion-header" id="heading-${teamId}">
+                                    <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#${collapseId}" aria-expanded="false" aria-controls="${collapseId}">
+                                        ${teamName}
+                                        <i class="bi bi-pencil-square edit-team-btn ms-2" data-id="${teamId}" data-name="${teamName}" style="cursor: pointer; color: blue;"></i>
+                                    </button>
+                                </h2>
+                                <div id="${collapseId}" class="accordion-collapse collapse" aria-labelledby="heading-${teamId}" data-bs-parent="#teamListAccordion">
+                                    <div class="accordion-body">
+                                        <ul class="list-group mb-2 team-member-list-ul" data-team-id="${teamId}">
+                                            <li class="list-group-item">Loading...</li>
+                                        </ul>
+                                        <button type="button" class="btn btn-sm btn-primary add-team-member-btn mb-2" data-team-id="${teamId}">팀원 추가</button>
+                                        <button type="button" class="btn btn-sm btn-danger delete-single-team-btn" data-id="${teamId}" data-name="${teamName}">팀 삭제</button>
+                                    </div>
+                                </div>
+                            `;
+                            accordionContainer.appendChild(accordionItem);
+
+                            const collapseElement = document.getElementById(collapseId);
+                            collapseElement.addEventListener('show.bs.collapse', async () => {
+                                await fetchAndDisplayTeamMembers(teamId, collapseElement.querySelector('.team-member-list-ul'));
+                            });
                         });
                     } else {
-                        container.textContent = '등록된 팀이 없습니다.';
+                        accordionContainer.innerHTML = '<p>등록된 팀이 없습니다.</p>';
                     }
                     document.getElementById('teamListContainer').style.display = 'block';
                 } catch (error) {
@@ -931,20 +938,16 @@
                 }
             });
 
-            document.getElementById('teamList').addEventListener('click', async (e) => {
-                // 이벤트 위임을 사용하여 아이콘 클릭도 처리
-                const targetBtn = e.target.closest('.select-team-btn, .edit-team-btn, .delete-single-team-btn');
+            document.getElementById('teamListAccordion').addEventListener('click', async (e) => {
+                const editBtn = e.target.closest('.edit-team-btn');
+                const deleteTeamBtn = e.target.closest('.delete-single-team-btn');
+                const addMemberBtn = e.target.closest('.add-team-member-btn');
+                const deleteMemberBtn = e.target.closest('.delete-team-member-btn');
 
-                if (!targetBtn) return; // 관련 없는 요소 클릭 시 무시
-
-                const teamId = targetBtn.dataset.id;
-                const teamName = targetBtn.dataset.name;
-
-                if (targetBtn.classList.contains('select-team-btn')) {
-                    currentTeamId = teamId;
-                    document.getElementById('selectedTeamName').innerHTML = `선택된 팀: <b>${teamName}</b>`;
-                    await fetchAndDisplayTeamMembers(currentTeamId);
-                } else if (targetBtn.classList.contains('edit-team-btn')) {
+                if (editBtn) {
+                    e.stopPropagation(); 
+                    const teamId = editBtn.dataset.id;
+                    const teamName = editBtn.dataset.name;
                     const newTeamName = prompt(`'${teamName}' 팀의 새 이름을 입력하세요:`, teamName);
                     if (newTeamName && newTeamName !== teamName) {
                         const response = await fetch(`/api/admin/teams/${teamId}`, {
@@ -958,83 +961,59 @@
                             fetchAndDisplayTeams(currentScheduleIdForTeam);
                         }
                     }
-                } else if (targetBtn.classList.contains('delete-single-team-btn')) {
+                } else if (deleteTeamBtn) {
+                    const teamId = deleteTeamBtn.dataset.id;
+                    const teamName = deleteTeamBtn.dataset.name;
                     if (confirm(`'${teamName}' 팀을 정말로 삭제하시겠습니까? (팀원 정보도 함께 삭제됩니다)`)) {
                         await handleDelete(`/api/admin/teams/${teamId}`, {}, 'manageLeagueTeamMessage', () => {
-                            // 삭제된 팀이 현재 선택된 팀이면 팀원 컨테이너 숨김
-                            if (currentTeamId === teamId) {
-                                document.getElementById('teamMemberContainer').style.display = 'none';
-                                currentTeamId = null;
-                            }
                             fetchAndDisplayTeams(currentScheduleIdForTeam);
+                        });
+                    }
+                } else if (addMemberBtn) {
+                    currentTeamId = addMemberBtn.dataset.teamId;
+                    openModal('팀에 추가할 멤버 선택', allMembers, displayMembers, 'addTeamMember');
+                } else if (deleteMemberBtn) {
+                    const memberId = deleteMemberBtn.dataset.id;
+                    const teamId = deleteMemberBtn.dataset.teamId;
+                    const memberName = deleteMemberBtn.closest('li').querySelector('span').textContent;
+                    if (confirm(`${memberName}님을 팀에서 삭제하시겠습니까?`)) {
+                        await handleDelete(`/api/admin/team-members/${memberId}`, {}, 'manageLeagueTeamMessage', async () => {
+                            const collapseElement = document.getElementById(`team-collapse-${teamId}`);
+                            const listElement = collapseElement.querySelector('.team-member-list-ul');
+                            await fetchAndDisplayTeamMembers(teamId, listElement);
                         });
                     }
                 }
             });
 
-            const fetchAndDisplayTeamMembers = async (teamId) => {
+            const fetchAndDisplayTeamMembers = async (teamId, container) => {
                 try {
                     const response = await fetch(`/api/admin/teams/${teamId}/members`);
                     const result = await response.json();
-                    const container = document.getElementById('teamMemberList');
                     container.innerHTML = '';
                     if (result.success && result.members.length > 0) {
                         result.members.forEach(member => {
                             const li = document.createElement('li');
-                            li.className = 'list-group-item d-flex justify-content-between align-items-center';
+                            li.className = 'list-group-item d-flex justify-content-between align-items-center list-team-member';
                             li.innerHTML = `<span>${member.member_name}</span>
-                                            <button type="button" class="btn btn-sm btn-danger delete-team-member-btn" style="width: 45px;" data-id="${member.id}">삭제</button>`;
+                                            <button type="button" class="btn btn-sm btn-danger delete-team-member-btn" style="width: 45px;" data-id="${member.id}" data-team-id="${teamId}">삭제</button>`;
                             container.appendChild(li);
                         });
                     } else {
-                        container.textContent = '등록된 팀원이 없습니다.';
+                        container.innerHTML = '<li class="list-group-item">등록된 팀원이 없습니다.</li>';
                     }
-                    document.getElementById('teamMemberContainer').style.display = 'block';
                 } catch (error) {
                     showMessage('팀원 목록 로딩 오류', 'manageLeagueTeamMessage', 'red');
+                    if(container) container.innerHTML = '<li class="list-group-item text-danger">팀원 목록 로딩 오류.</li>';
                 }
-            };
-
-            document.getElementById('addTeamMemberBtn').addEventListener('click', () => {
-                if (!currentTeamId) {
-                    showMessage('먼저 팀을 선택해주세요.', 'manageLeagueTeamMessage', 'red');
-                    return;
-                }
-                openModal('팀에 추가할 멤버 선택', allMembers, displayMembersForTeamMember, 'addTeamMember');
-            });
-
-            const displayMembersForTeamMember = (members, keywords = []) => {
-                const listBody = document.getElementById('listModalBody');
-                listBody.innerHTML = '';
-                members.forEach(m => {
-                    const orderText = m.order == 0? "정회원" : "비회원";
-                    const parts = [
-                        `${m.name} | ${m.gender} | ${orderText}`,
-                        m.etc
-                    ];
-                    const text = parts.filter(Boolean).join(' | ');
-                    const highlightedHTML = highlightText(text, keywords);
-                    listBody.appendChild(createListItem(m, highlightedHTML, modalContext, handleTeamMemberSelection));
-                });
             };
 
             const handleTeamMemberSelection = async (member) => {
                 await handleFormSubmit('/api/admin/team-members', 'manageLeagueTeamMessage', null, { teamId: currentTeamId, memberName: member.name })();
-                fetchAndDisplayTeamMembers(currentTeamId);
+                const collapseElement = document.getElementById(`team-collapse-${currentTeamId}`);
+                const listElement = collapseElement.querySelector('.team-member-list-ul');
+                await fetchAndDisplayTeamMembers(currentTeamId, listElement);
             };
-
-            document.getElementById('teamMemberList').addEventListener('click', async (e) => {
-                if (e.target.classList.contains('delete-team-member-btn')) {
-                    const memberId = e.target.dataset.id;
-                    const memberName = e.target.closest('li').querySelector('span').textContent;
-                    const teamName = document.getElementById('selectedTeamName').textContent.replace('선택된 팀: ', '');
-                    if (confirm(`${memberName}님을 ${teamName} 팀에서 삭제하시겠습니까?`)) {
-                        await handleDelete(`/api/admin/team-members/${memberId}`, {}, 'manageLeagueTeamMessage', () => {
-                            fetchAndDisplayTeamMembers(currentTeamId);
-                        });
-                    }
-                }
-            });
 
         });
     </script>
