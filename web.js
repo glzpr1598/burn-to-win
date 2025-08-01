@@ -525,6 +525,48 @@ app.get('/api/matches/player/:name', async (req, res) => {
     }
 });
 
+// API: 특정 일정의 특정 선수의 경기 기록 조회 (special-match용)
+app.get('/api/special-match/player-schedule-matches/:scheduleId/:playerName', async (req, res) => {
+    try {
+        const { scheduleId, playerName } = req.params;
+
+        const [allMatches] = await pool.query(
+            'SELECT id, schedule_id, date AS schedule_date, court_num, team1_deuce, team1_ad, team2_deuce, team2_ad, team1_score, team2_score, video AS video_link FROM matchrecord WHERE schedule_id = ? AND team1_result IS NOT NULL ORDER BY date DESC, id DESC',
+            [scheduleId]
+        );
+
+        const playerMatches = allMatches.filter(match => {
+            return [match.team1_deuce, match.team1_ad, match.team2_deuce, match.team2_ad].includes(playerName);
+        });
+        
+        const playerNames = new Set();
+        playerMatches.forEach(m => {
+            if (m.team1_deuce) playerNames.add(m.team1_deuce);
+            if (m.team1_ad) playerNames.add(m.team1_ad);
+            if (m.team2_deuce) playerNames.add(m.team2_deuce);
+            if (m.team2_ad) playerNames.add(m.team2_ad);
+        });
+
+        let genderMap = {};
+        if (playerNames.size > 0) {
+            const [genderRows] = await pool.query(
+                `SELECT name, gender FROM member WHERE name IN (?)`,
+                [[...playerNames]]
+            );
+            genderMap = genderRows.reduce((acc, member) => {
+                acc[member.name] = member.gender;
+                return acc;
+            }, {});
+        }
+
+        res.json({ matches: playerMatches, genderMap });
+
+    } catch (err) {
+        console.error(`[/api/special-match/player-schedule-matches/${req.params.scheduleId}/${req.params.playerName}] 에러:`, err.message);
+        res.status(500).json({ error: '서버 오류가 발생했습니다.' });
+    }
+});
+
 // 상대와 케미 페이지
 app.get('/chemistry', async (req, res) => {
     try {
