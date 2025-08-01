@@ -332,12 +332,13 @@
                             <thead class="table-light">
                                 <tr>
                                     <th onclick="sortTeamScoreTable(0, 'number')">순위 <i class="bi bi-arrow-down-up"></i></th>
-                                    <th onclick="sortTeamScoreTable(1, 'string')">팀명 <i class="bi bi-arrow-down-up"></i></th>
+                                    <th onclick="sortTeamScoreTable(1, 'string')">팀 <i class="bi bi-arrow-down-up"></i></th>
                                     <th onclick="sortTeamScoreTable(2, 'number')">경기수 <i class="bi bi-arrow-down-up"></i></th>
                                     <th onclick="sortTeamScoreTable(3, 'number')">승 <i class="bi bi-arrow-down-up"></i></th>
                                     <th onclick="sortTeamScoreTable(4, 'number')">패 <i class="bi bi-arrow-down-up"></i></th>
                                     <th onclick="sortTeamScoreTable(5, 'number')">승률 <i class="bi bi-arrow-down-up"></i></th>
                                     <th onclick="sortTeamScoreTable(6, 'number')">승점 <i class="bi bi-arrow-down-up"></i></th>
+                                    <th></th>
                                 </tr>
                             </thead>
                             <tbody>
@@ -350,6 +351,7 @@
                                         <td class="lose"><%= team.losses %></td>
                                         <td><%= team.matches > 0 ? Math.round((team.wins / team.matches) * 100) : 0 %>%</td>
                                         <td class="<%= team.points > 0 ? 'plus' : 'minus' %>"><%= team.points > 0 ? '+' : '' %><%= team.points %></td>
+                                        <td><i class="bi bi-chevron-right text-muted"></i></td>
                                     </tr>
                                 <% }) %>
                             </tbody>
@@ -418,6 +420,7 @@
                                 <th onclick="sortTable(<%= hasTeamData ? 5 : 4 %>, 'number')">패 <i class="bi bi-arrow-down-up"></i></th>
                                 <th onclick="sortTable(<%= hasTeamData ? 6 : 5 %>, 'number')">승률 <i class="bi bi-arrow-down-up"></i></th>
                                 <th onclick="sortTable(<%= hasTeamData ? 7 : 6 %>, 'number')">승점 <i class="bi bi-arrow-down-up"></i></th>
+                                <th></th>
                             </tr>
                         </thead>
                         <tbody>
@@ -434,6 +437,7 @@
                                 <td class = "lose"><%= player.losses %></td>
                                 <td><%= player.matches > 0 ? Math.round((player.wins / player.matches) * 100) : 0 %>%</td>
                                 <td class = "<%= player.points > 0 ? 'plus' : 'minus' %>"><%= player.points > 0 ? '+' : '' %><%= player.points %></td>
+                                <td><i class="bi bi-chevron-right text-muted"></i></td>
                             </tr>
                             <% }) %>
                         </tbody>
