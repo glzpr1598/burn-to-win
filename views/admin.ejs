@@ -509,7 +509,7 @@
             const handleDelete = async (url, body, msgElementId, callback) => {
                  try {
                     const response = await fetch(url, {
-                        method: 'DELETE', // POST 대신 DELETE 사용
+                        method: 'POST', // POST 대신 DELETE 사용
                         headers: { 'Content-Type': 'application/json' },
                         body: JSON.stringify(body),
                     });
@@ -967,7 +967,7 @@
                     const teamId = deleteTeamBtn.dataset.id;
                     const teamName = deleteTeamBtn.dataset.name;
                     if (confirm(`'${teamName}' 팀을 정말로 삭제하시겠습니까? (팀원 정보도 함께 삭제됩니다)`)) {
-                        await handleDelete(`/api/admin/teams/${teamId}`, {}, 'manageLeagueTeamMessage', () => {
+                        await handleDelete(`/api/admin/delete-team`, { teamId: teamId }, 'manageLeagueTeamMessage', () => {
                             fetchAndDisplayTeams(currentScheduleIdForTeam);
                         });
                     }
@@ -979,7 +979,7 @@
                     const teamId = deleteMemberBtn.dataset.teamId;
                     const memberName = deleteMemberBtn.closest('li').querySelector('span').textContent;
                     if (confirm(`${memberName}님을 팀에서 삭제하시겠습니까?`)) {
-                        await handleDelete(`/api/admin/team-members/${memberId}`, {}, 'manageLeagueTeamMessage', async () => {
+                        await handleDelete(`/api/admin/delete-team-member`, { memberId: memberId }, 'manageLeagueTeamMessage', async () => {
                             const collapseElement = document.getElementById(`team-collapse-${teamId}`);
                             const listElement = collapseElement.querySelector('.team-member-list-ul');
                             await fetchAndDisplayTeamMembers(teamId, listElement);
