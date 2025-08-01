@@ -1348,7 +1348,7 @@
                     <div class="table-responsive">
                         <table class="table table-sm text-center align-middle text-nowrap" style="font-size: 0.8rem; margin-bottom: 0;">
                             <thead class="table-light">
-                                <tr><th>날짜</th><th>우리 팀</th><th></th><th>상대 팀</th><th>결과</th><th>영상</th></tr>
+                                <tr><th>우리 팀</th><th></th><th>상대 팀</th><th>결과</th><th>영상</th></tr>
                             </thead>
                             <tbody>`;
 
@@ -1408,7 +1408,7 @@
                     const videoLink = match.video_link ? `<a href="${match.video_link}" target="_blank" rel="noopener" onclick="event.stopPropagation();"><i class="bi bi-youtube text-danger fs-6"></i></a>` : '';
                     const dateDisplay = match.schedule_date ? match.schedule_date.substring(2) : '';
                     
-                    tableHtml += `<tr class="${currentGroupClass}"><td>${dateDisplay}</td><td>${myTeamFormatted}</td><td>${scoreHtml}</td><td>${opponentTeamFormatted}</td><td>${result_display}</td><td>${videoLink}</td></tr>`;
+                    tableHtml += `<tr class="${currentGroupClass}"><td>${myTeamFormatted}</td><td>${scoreHtml}</td><td>${opponentTeamFormatted}</td><td>${result_display}</td><td>${videoLink}</td></tr>`;
                 });
 
                 tableHtml += '</tbody></table></div>';
