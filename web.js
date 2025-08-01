@@ -529,15 +529,22 @@ app.get('/api/matches/player/:name', async (req, res) => {
 app.get('/api/special-match/player-schedule-matches/:scheduleId/:playerName', async (req, res) => {
     try {
         const { scheduleId, playerName } = req.params;
+        console.log(`[API] Player Matches Request: scheduleId=${scheduleId}, playerName=${playerName}`); // Log request
 
         const [allMatches] = await pool.query(
             'SELECT id, schedule_id, date AS schedule_date, court_num, team1_deuce, team1_ad, team2_deuce, team2_ad, team1_score, team2_score, video AS video_link FROM matchrecord WHERE schedule_id = ? AND team1_result IS NOT NULL ORDER BY date DESC, id DESC',
             [scheduleId]
         );
+        console.log(`[API] Player Matches - allMatches for schedule ${scheduleId}:`, allMatches.length); // Log all matches fetched
 
         const playerMatches = allMatches.filter(match => {
-            return [match.team1_deuce, match.team1_ad, match.team2_deuce, match.team2_ad].includes(playerName);
+            const isPlayerInMatch = [match.team1_deuce, match.team1_ad, match.team2_deuce, match.team2_ad].includes(playerName);
+            if (!isPlayerInMatch) {
+                // console.log(`[API] Player Matches - Filtering out match (player not found):`, match); // Optional: log filtered out matches
+            }
+            return isPlayerInMatch;
         });
+        console.log(`[API] Player Matches - filtered playerMatches:`, playerMatches.length); // Log filtered matches
         
         const playerNames = new Set();
         playerMatches.forEach(m => {
@@ -558,11 +565,79 @@ app.get('/api/special-match/player-schedule-matches/:scheduleId/:playerName', as
                 return acc;
             }, {});
         }
+        console.log(`[API] Player Matches - genderMap size:`, Object.keys(genderMap).length); // Log genderMap size
 
         res.json({ matches: playerMatches, genderMap });
 
     } catch (err) {
         console.error(`[/api/special-match/player-schedule-matches/${req.params.scheduleId}/${req.params.playerName}] 에러:`, err.message);
+        res.status(500).json({ error: '서버 오류가 발생했습니다.' });
+    }
+});
+
+// API: 특정 일정의 특정 팀의 경기 기록 조회 (special-match용)
+app.get('/api/special-match/team-schedule-matches/:scheduleId/:teamName', async (req, res) => {
+    try {
+        const { scheduleId, teamName } = req.params;
+        console.log(`[API] Team Matches Request: scheduleId=${scheduleId}, teamName=${teamName}`); // Log request
+
+        // 1. 팀에 속한 멤버들을 가져옵니다.
+        const [teamMembersResult] = await pool.query('SELECT member_name FROM match_team_memeber WHERE team_id = (SELECT id FROM match_team WHERE schedule_id = ? AND team_name = ?)', [scheduleId, teamName]);
+        const teamMembers = teamMembersResult.map(row => row.member_name);
+        console.log(`[API] Team Matches - teamMembers for team ${teamName}:`, teamMembers); // Log team members
+
+        if (teamMembers.length === 0) {
+            console.log(`[API] Team Matches - No team members found for team ${teamName}.`); // Log if no team members
+            return res.json({ matches: [], genderMap: {} });
+        }
+
+        // 2. 해당 일정의 모든 경기 기록을 가져옵니다.
+        const [allMatches] = await pool.query(
+            'SELECT id, schedule_id, date AS schedule_date, court_num, team1_deuce, team1_ad, team2_deuce, team2_ad, team1_score, team2_score, video AS video_link FROM matchrecord WHERE schedule_id = ? AND team1_result IS NOT NULL ORDER BY date DESC, id DESC',
+            [scheduleId]
+        );
+        console.log(`[API] Team Matches - allMatches for schedule ${scheduleId}:`, allMatches.length); // Log all matches fetched
+
+        // 3. 팀 멤버가 포함된 경기만 필터링합니다.
+        const teamMatches = allMatches.filter(match => {
+            const team1PlayersInMatch = [match.team1_deuce, match.team1_ad].filter(p => p);
+            const team2PlayersInMatch = [match.team2_deuce, match.team2_ad].filter(p => p);
+
+            // Check if team1 of the match is the requested team
+            const isTeam1OurTeam = team1PlayersInMatch.length > 0 && team1PlayersInMatch.every(player => teamMembers.includes(player));
+            // Check if team2 of the match is the requested team
+            const isTeam2OurTeam = team2PlayersInMatch.length > 0 && team2PlayersInMatch.every(player => teamMembers.includes(player));
+
+            return isTeam1OurTeam || isTeam2OurTeam;
+        });
+        console.log(`[API] Team Matches - filtered teamMatches:`, teamMatches.length); // Log filtered matches
+        
+        // 4. 경기 참여 선수들의 성별 정보를 가져옵니다.
+        const playerNames = new Set();
+        teamMatches.forEach(m => {
+            if (m.team1_deuce) playerNames.add(m.team1_deuce);
+            if (m.team1_ad) playerNames.add(m.team1_ad);
+            if (m.team2_deuce) playerNames.add(m.team2_deuce);
+            if (m.team2_ad) playerNames.add(m.team2_ad);
+        });
+
+        let genderMap = {};
+        if (playerNames.size > 0) {
+            const [genderRows] = await pool.query(
+                `SELECT name, gender FROM member WHERE name IN (?)`,
+                [[...playerNames]]
+            );
+            genderMap = genderRows.reduce((acc, member) => {
+                acc[member.name] = member.gender;
+                return acc;
+            }, {});
+        }
+        console.log(`[API] Team Matches - genderMap size:`, Object.keys(genderMap).length); // Log genderMap size
+
+        res.json({ matches: teamMatches, genderMap });
+
+    } catch (err) {
+        console.error(`[/api/special-match/team-schedule-matches/${req.params.scheduleId}/${req.params.teamName}] 에러:`, err.message);
         res.status(500).json({ error: '서버 오류가 발생했습니다.' });
     }
 });

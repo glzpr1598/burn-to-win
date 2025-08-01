@@ -342,7 +342,7 @@
                             </thead>
                             <tbody>
                                 <% teamStats.forEach(team => { %>
-                                    <tr>
+                                    <tr data-team-name="<%= team.name %>" onclick="showTeamScheduleMatches(this)">
                                         <td><%= team.rank %></td>
                                         <td><%= team.name %></td>
                                         <td><%= team.matches %></td>
@@ -421,7 +421,10 @@
                             </tr>
                         </thead>
                         <tbody>
-                            <% playerStats.forEach(player => { %>
+                            <% playerStats.forEach(player => {
+                                // playerStats에 draws 속성이 없을 수 있으므로 기본값 0을 설정
+                                player.draws = player.draws || 0;
+                            %>
                             <tr data-player-name="<%= player.name %>" onclick="showPlayerScheduleMatches(this)">
                                 <td><%= player.rank %></td>
                                 <% if (hasTeamData) { %><td><%= memberToTeamMap[player.name] || '' %></td><% } %>
@@ -438,9 +441,14 @@
                 </div>
             </div>
         </div>
-        <% } else {
-            // No selectedSchedule block
-        } %>
+        <% } else { %>
+            <div class="content-area d-flex justify-content-center align-items-center">
+                <div class="text-center text-muted">
+                    <i class="bi bi-calendar-x" style="font-size: 3rem;"></i>
+                    <p class="mt-2">상단에서 일정을 선택해주세요.</p>
+                </div>
+            </div>
+        <% } %>
 
         <%- include('partials/navbar', { currentPage: 'special-match' }) %>
     </div>
@@ -1229,9 +1237,8 @@
                 winRate: player.matches > 0 ? Math.round((player.wins / player.matches) * 100) : 0,
             };
             
-            const summaryHtml = buildSummaryHtml(summaryData);
             const modalBody = document.getElementById('modalBodyContent');
-            modalBody.innerHTML = summaryHtml;
+            modalBody.innerHTML = buildSummaryHtml(summaryData);
 
             document.getElementById('modalPlayerName').textContent = playerName;
             
@@ -1247,7 +1254,55 @@
                 
                 const { matches, genderMap: fetchedGenderMap } = await response.json(); // 서버에서 genderMap도 함께 받아옴
                 
-                const tablesHtml = buildPlayerMatchTablesHtml(matches, playerName, fetchedGenderMap);
+                const tablesHtml = buildMatchTablesHtml(matches, playerName, fetchedGenderMap, 'player');
+                modalBody.innerHTML += tablesHtml;
+            } catch (error) {
+                console.error(error);
+                modalBody.innerHTML += `<p class="text-center p-3 text-danger">${error.message}</p>`;
+            }
+        }
+
+        async function showTeamScheduleMatches(rowElement) {
+            const teamName = rowElement.dataset.teamName;
+            const scheduleId = '<%= selectedSchedule.id %>'; // 현재 선택된 schedule_id
+
+            // teamStats에서 해당 팀의 데이터 찾기
+            const teamStats = JSON.parse('<%- JSON.stringify(teamStats) %>');
+            const team = teamStats.find(t => t.name === teamName);
+
+            if (!team) {
+                console.error('Team data not found for:', teamName);
+                return;
+            }
+
+            // 0전 0승 0패 요약 데이터
+            const summaryData = {
+                name: team.name,
+                matches: team.matches,
+                wins: team.wins,
+                losses: team.losses,
+                draws: team.draws || 0, // 팀 통계에 draws가 없을 수 있으므로 기본값 0
+                winRate: team.matches > 0 ? Math.round((team.wins / team.matches) * 100) : 0,
+            };
+            
+            const modalBody = document.getElementById('modalBodyContent');
+            modalBody.innerHTML = buildSummaryHtml(summaryData);
+
+            document.getElementById('modalPlayerName').textContent = teamName; // 모달 제목을 팀 이름으로 설정
+            
+            if (!detailModal) {
+                detailModal = new bootstrap.Modal(document.getElementById('playerDetailModal'));
+            }
+            detailModal.show();
+
+            try {
+                // 새로운 API 엔드포인트 호출 (schedule_id 포함)
+                const response = await fetch(`/api/special-match/team-schedule-matches/${scheduleId}/${teamName}`);
+                if (!response.ok) throw new Error('팀 경기 기록을 불러오는 데 실패했습니다.');
+                
+                const { matches, genderMap: fetchedGenderMap } = await response.json(); // 서버에서 genderMap도 함께 받아옴
+                
+                const tablesHtml = buildMatchTablesHtml(matches, teamName, fetchedGenderMap, 'team');
                 modalBody.innerHTML += tablesHtml;
             } catch (error) {
                 console.error(error);
@@ -1269,7 +1324,7 @@
                 </div>`;
         }
         
-        function buildPlayerMatchTablesHtml(matches, basePlayer, genderMap) {
+        function buildMatchTablesHtml(matches, baseName, genderMap, type) { // type: 'player' or 'team'
             if (matches.length === 0) {
                 return '<p class="text-center p-4">해당 조건의 경기 기록이 없습니다.</p>';
             }
@@ -1282,14 +1337,14 @@
                 return `<span class="${genderClass}">${content}</span>`;
             };
 
-            const createTable = (title, matchList) => {
+            const createTable = (matchList) => {
                 if (matchList.length === 0) return '';
                 
                 let tableHtml = `
                     <div class="table-responsive">
                         <table class="table table-sm text-center align-middle text-nowrap" style="font-size: 0.8rem; margin-bottom: 0;">
                             <thead class="table-light">
-                                <tr><th>우리 팀</th><th></th><th>상대 팀</th><th>결과</th><th>영상</th></tr>
+                                <tr><th>날짜</th><th>우리 팀</th><th></th><th>상대 팀</th><th>결과</th><th>영상</th></tr>
                             </thead>
                             <tbody>`;
 
@@ -1305,7 +1360,28 @@
 
                     const team1_raw = [match.team1_deuce, match.team1_ad].filter(p => p);
                     const team2_raw = [match.team2_deuce, match.team2_ad].filter(p => p);
-                    const isBaseOnTeam1 = team1_raw.includes(basePlayer);
+
+                    let isBaseOnTeam1 = false;
+                    if (type === 'player') {
+                        isBaseOnTeam1 = team1_raw.includes(baseName);
+                    } else if (type === 'team') {
+                        const allTeamInfo = JSON.parse('<%- JSON.stringify(teamInfo) %>');
+                        const targetTeam = allTeamInfo.find(t => t.name === baseName);
+                        if (targetTeam) {
+                            const targetTeamMembers = new Set(targetTeam.members);
+
+                            // Check if all players in team1_raw are members of the targetTeam
+                            const team1IsTargetTeam = team1_raw.every(player => targetTeamMembers.has(player));
+                            // Check if all players in team2_raw are members of the targetTeam
+                            const team2IsTargetTeam = team2_raw.every(player => targetTeamMembers.has(player));
+
+                            if (team1IsTargetTeam) {
+                                isBaseOnTeam1 = true;
+                            } else if (team2IsTargetTeam) {
+                                isBaseOnTeam1 = false; // This means team2 is our team
+                            }
+                        }
+                    }
                     
                     const myTeam = isBaseOnTeam1 ? team1_raw : team2_raw;
                     const opponentTeam = isBaseOnTeam1 ? team2_raw : team1_raw;
@@ -1315,14 +1391,20 @@
                     const scoreHtml = myTeamScore > opponentScore ? `<b>${myTeamScore}</b>:${opponentScore}` : myTeamScore < opponentScore ? `${myTeamScore}:<b>${opponentScore}</b>` : `${myTeamScore}:${opponentScore}`;
                     
                     const result = (myTeamScore > opponentScore) ? '승' : (myTeamScore < opponentScore ? '패' : '무'); // 결과 계산
-                    const myTeamFormatted = myTeam.map(p => stylePlayerName(p, p === basePlayer)).join(' ');
+                    
+                    let myTeamFormatted;
+                    if (type === 'player') {
+                        myTeamFormatted = myTeam.map(p => stylePlayerName(p, p === baseName)).join(' ');
+                    } else {
+                        myTeamFormatted = myTeam.map(p => stylePlayerName(p, false)).join(' '); // 팀 이름은 강조하지 않음
+                    }
                     const opponentTeamFormatted = opponentTeam.map(p => stylePlayerName(p, false)).join(' ');
 
                     const result_display = result === '승' ? '<span style="color: darkblue;">승</span>' : (result === '패' ? '<span style="color: darkred;">패</span>' : '<span>무</span>');
                     const videoLink = match.video_link ? `<a href="${match.video_link}" target="_blank" rel="noopener" onclick="event.stopPropagation();"><i class="bi bi-youtube text-danger fs-6"></i></a>` : '';
                     const dateDisplay = match.schedule_date ? match.schedule_date.substring(2) : '';
                     
-                    tableHtml += `<tr class="${currentGroupClass}"><td>${myTeamFormatted}</td><td>${scoreHtml}</td><td>${opponentTeamFormatted}</td><td>${result_display}</td><td>${videoLink}</td></tr>`;
+                    tableHtml += `<tr class="${currentGroupClass}"><td>${dateDisplay}</td><td>${myTeamFormatted}</td><td>${scoreHtml}</td><td>${opponentTeamFormatted}</td><td>${result_display}</td><td>${videoLink}</td></tr>`;
                 });
 
                 tableHtml += '</tbody></table></div>';
@@ -1330,8 +1412,7 @@
             };
 
             let finalHtml = '';
-            finalHtml += createTable('경기 기록', matches); // 모든 경기를 하나의 "경기 기록" 테이블로 표시
-
+            finalHtml += createTable(matches);
             return finalHtml;
         }
     </script>
