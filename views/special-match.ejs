@@ -893,12 +893,14 @@
             twoDaysAgo.setDate(today.getDate() - 2);
 
             const saveBtn = document.getElementById('saveMatchRecordBtn');
+            const deleteBtn = document.getElementById('deleteMatchRecordBtn');
 
             scheduleDate.setHours(0, 0, 0, 0);
             twoDaysAgo.setHours(0, 0, 0, 0);
 
             if (scheduleDate <= twoDaysAgo) {
                 saveBtn.style.display = 'none';
+                deleteBtn.style.display = 'none';
 
                 // 선수 입력 필드 비활성화
                 form.querySelector('#team1_deuce').disabled = true;
@@ -914,7 +916,6 @@
                 form.querySelectorAll('.swap-btn').forEach(btn => {
                     btn.disabled = true;
                 });
-
             } else {
                 saveBtn.style.display = '';
 
@@ -930,6 +931,9 @@
                 form.querySelectorAll('.swap-btn').forEach(btn => {
                     btn.disabled = false;
                 });
+
+                // 삭제 버튼 활성화
+                deleteBtn.style.display = 'block';
             }
 
             populatePlayerDatalist(); // 선수 목록 생성 함수 호출
@@ -955,9 +959,8 @@
                 form.querySelector('[name="team2_deuce"]').value = match.team2_deuce || '';
                 form.querySelector('[name="team2_ad"]').value = match.team2_ad || '';
                 form.querySelector('[name="team2_score"]').value = match.team2_score || 0;
-                // document.getElementById('deleteMatchRecordBtn').style.display = 'block';
             } else {
-                document.getElementById('deleteMatchRecordBtn').style.display = 'none';
+                deleteBtn.style.display = 'none';
             }
             modalInstance.show();
         }
