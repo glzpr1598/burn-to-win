@@ -917,7 +917,8 @@
                     btn.disabled = true;
                 });
             } else {
-                saveBtn.style.display = '';
+                saveBtn.style.display = 'block';
+                deleteBtn.style.display = 'block';
 
                 // 필드 활성화 (이전 상태로 되돌리기)
                 form.querySelector('#team1_deuce').disabled = false;
@@ -931,9 +932,6 @@
                 form.querySelectorAll('.swap-btn').forEach(btn => {
                     btn.disabled = false;
                 });
-
-                // 삭제 버튼 활성화
-                deleteBtn.style.display = 'block';
             }
 
             populatePlayerDatalist(); // 선수 목록 생성 함수 호출
