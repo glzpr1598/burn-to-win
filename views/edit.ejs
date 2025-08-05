@@ -92,7 +92,7 @@
                     <div class="col-auto text-center">
                         <label class="form-label small">스코어</label>
                         <select class="form-select text-center" name="team1_score" required>
-                            <% for(let i = 0; i <= 7; i++) { %>
+                            <% for(let i = 0; i <= 11; i++) { %>
                                 <option value="<%= i %>" <%= match.team1_score == i ? 'selected' : '' %>><%= i %></option>
                             <% } %>
                         </select>
@@ -120,7 +120,7 @@
                     <div class="col-auto text-center">
                         <label class="form-label small">스코어</label>
                         <select class="form-select text-center" name="team2_score" required>
-                             <% for(let i = 0; i <= 7; i++) { %>
+                            <% for(let i = 0; i <= 11; i++) { %>
                                 <option value="<%= i %>" <%= match.team2_score == i ? 'selected' : '' %>><%= i %></option>
                             <% } %>
                         </select>
