@@ -1345,7 +1345,6 @@
 
 			const newDeleteBtn = commentList.querySelector(`#comment-${comment.id} .delete-comment-btn`);
 			newDeleteBtn.style.display = (newDeleteBtn.dataset.author === selectedUser) ? 'inline' : 'none';
-			newDeleteBtn.addEventListener('click', handleDeleteCommentClick);
 		}
 
 		async function handleDeleteCommentClick(event) {
